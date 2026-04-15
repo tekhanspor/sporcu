@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>TK Antrenman Platformu</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- GİRİŞ EKRANI -->
+  <div id="giris-ekrani" class="ekran">
+    <div class="giris-ust">
+      <div class="logo-daire">TK</div>
+      <h1 class="giris-baslik">Antrenman Platformu</h1>
+      <p class="giris-alt">Hesabını seç</p>
+    </div>
+    <div class="kullanici-listesi">
+      <div class="kullanici-item" onclick="kullaniciSec('admin')">
+        <div class="k-avatar admin-avatar">AD</div>
+        <div class="k-bilgi">
+          <div class="k-ad">Admin</div>
+          <div class="k-rol">Antrenör Paneli</div>
+        </div>
+        <div class="k-ok">›</div>
+      </div>
+      <div id="sporcu-giris-listesi"></div>
+    </div>
+    <div id="giris-yukleniyor" class="yukleniyor-yazi">Yükleniyor...</div>
+  </div>
+
+  <!-- ŞİFRE EKRANI -->
+  <div id="sifre-ekrani" class="sifre-katman hidden">
+    <div class="sifre-kutu">
+      <div class="sifre-avatar" id="sifre-avatar"></div>
+      <div class="sifre-ad" id="sifre-ad"></div>
+      <input type="password" id="sifre-input" class="sifre-input" placeholder="Şifren" />
+      <button class="btn-tam-kirmizi" onclick="sifreDogrula()">Giriş Yap</button>
+      <p id="sifre-hata" class="hata-yazi"></p>
+      <button class="btn-geri" onclick="sifreKapat()">← Geri</button>
+    </div>
+  </div>
+
+  <!-- ADMİN PANELİ -->
+  <div id="admin-panel" class="ekran hidden">
+    <div class="topbar">
+      <div class="topbar-sol">
+        <div class="topbar-logo">TK</div>
+        <span>Admin</span>
+      </div>
+      <button class="cikis-btn" onclick="cikisYap()">Çıkış</button>
+    </div>
+
+    <div class="icerik pb-nav">
+
+      <!-- SPORCULAR -->
+      <div id="a-sporcular" class="a-sayfa">
+        <div class="sayfa-baslik">
+          <h2>Sporcular</h2>
+          <button class="btn-kucuk" onclick="modalAc('m-sporcu-ekle')">+ Ekle</button>
+        </div>
+        <div id="sporcu-kart-listesi"></div>
+      </div>
+
+      <!-- MOTORİK TEST -->
+      <div id="a-test" class="a-sayfa hidden">
+        <div class="sayfa-baslik"><h2>Motorik Test Girişi</h2></div>
+        <div class="kart">
+          <div class="fg"><label>Sporcu</label><select id="t-sporcu"><option value="">Seçin...</option></select></div>
+          <div class="form-row">
+            <div class="fg"><label>Test Tarihi</label><input type="date" id="t-tarih"/></div>
+            <div class="fg"><label>Dönem</label><input type="text" id="t-donem" placeholder="2024 Güz"/></div>
+          </div>
+          <div class="test-izgara">
+            <div class="t-kutu"><div class="t-etiket">Uzun Atlama <b>cm</b></div><input type="number" id="ti-uzun-atlama" placeholder="155"/></div>
+            <div class="t-kutu"><div class="t-etiket">Sağlık Topu <b>cm</b></div><input type="number" id="ti-saglik-topu" placeholder="420"/></div>
+            <div class="t-kutu"><div class="t-etiket">30sn Mekik <b>tekrar</b></div><input type="number" id="ti-mekik" placeholder="22"/></div>
+            <div class="t-kutu"><div class="t-etiket">30m Sprint <b>sn</b></div><input type="number" step="0.01" id="ti-sprint" placeholder="5.0"/></div>
+            <div class="t-kutu"><div class="t-etiket">Illinois <b>sn</b></div><input type="number" step="0.01" id="ti-illinois" placeholder="17.2"/></div>
+            <div class="t-kutu"><div class="t-etiket">Flamingo <b>hata</b></div><input type="number" id="ti-flamingo" placeholder="4"/></div>
+            <div class="t-kutu"><div class="t-etiket">Otur-Uzan <b>cm</b></div><input type="number" id="ti-otur-uzan" placeholder="24"/></div>
+            <div class="t-kutu"><div class="t-etiket">Beep Test <b>seviye</b></div><input type="number" step="0.1" id="ti-beep" placeholder="6.2"/></div>
+            <div class="t-kutu"><div class="t-etiket">Çember Koord. <b>sn</b></div><input type="number" step="0.01" id="ti-cember" placeholder="11.2"/></div>
+            <div class="t-kutu"><div class="t-etiket">Cetvel Rek. <b>cm</b></div><input type="number" id="ti-cetvel" placeholder="19"/></div>
+            <div class="t-kutu"><div class="t-etiket">El Dinamom. <b>kg</b></div><input type="number" step="0.1" id="ti-dinamometre" placeholder="28"/></div>
+            <div class="t-kutu"><div class="t-etiket">Wingate <b>W/kg</b></div><input type="number" step="0.1" id="ti-wingate" placeholder="8.2"/></div>
+          </div>
+          <button class="btn-tam-kirmizi" onclick="testKaydet()">Kaydet</button>
+          <p id="test-mesaj" class="basari-yazi"></p>
+        </div>
+      </div>
+
+      <!-- PSİKOLOJİ ANTRENÖRFormu -->
+      <div id="a-psikoloji" class="a-sayfa hidden">
+        <div class="sayfa-baslik"><h2>Psikoloji — Antrenör</h2></div>
+        <div class="kart">
+          <div class="fg"><label>Sporcu</label><select id="p-sporcu"><option value="">Seçin...</option></select></div>
+          <div class="form-row">
+            <div class="fg"><label>Tarih</label><input type="date" id="p-tarih"/></div>
+            <div class="fg"><label>Dönem</label><input type="text" id="p-donem" placeholder="2024 Güz"/></div>
+          </div>
+        </div>
+        <div id="antrenor-anket-alani"></div>
+        <button class="btn-tam-kirmizi" style="margin:8px 0 24px;" onclick="antrenorPsikoKaydet()">Kaydet & Onayla</button>
+        <p id="psiko-a-mesaj" class="basari-yazi"></p>
+      </div>
+
+      <!-- ÖDEV -->
+      <div id="a-odev" class="a-sayfa hidden">
+        <div class="sayfa-baslik">
+          <h2>Ev Ödevleri</h2>
+          <button class="btn-kucuk" onclick="modalAc('m-odev-ekle')">+ Ekle</button>
+        </div>
+        <select id="odev-filtre" class="filtre-sec" onchange="adminOdevleriYukle()">
+          <option value="">Tüm Sporcular</option>
+        </select>
+        <div id="admin-odev-liste"></div>
+      </div>
+
+      <!-- TAKİP -->
+      <div id="a-takip" class="a-sayfa hidden">
+        <div class="sayfa-baslik"><h2>Ödev Takip</h2></div>
+        <div id="takip-liste"></div>
+      </div>
+
+    </div>
+
+    <!-- ALT NAV -->
+    <div class="alt-nav">
+      <div class="nav-item active" onclick="adminSayfa('sporcular',this)">
+        <div class="nav-ikon">👥</div><div>Sporcular</div>
+      </div>
+      <div class="nav-item" onclick="adminSayfa('test',this)">
+        <div class="nav-ikon">📋</div><div>Test</div>
+      </div>
+      <div class="nav-item" onclick="adminSayfa('psikoloji',this)">
+        <div class="nav-ikon">🧠</div><div>Psikoloji</div>
+      </div>
+      <div class="nav-item" onclick="adminSayfa('odev',this)">
+        <div class="nav-ikon">📚</div><div>Ödev</div>
+      </div>
+      <div class="nav-item" onclick="adminSayfa('takip',this)">
+        <div class="nav-ikon">👁</div><div>Takip</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SPORCU SAYFASI -->
+  <div id="sporcu-sayfasi" class="ekran hidden">
+    <div class="sporcu-hero">
+      <div class="sporcu-hero-av" id="sh-av"></div>
+      <div class="sporcu-hero-bilgi">
+        <div class="sporcu-hero-ad" id="sh-ad"></div>
+        <div class="sporcu-hero-alt" id="sh-alt"></div>
+      </div>
+      <button class="cikis-btn cikis-beyaz" onclick="cikisYap()">Çıkış</button>
+    </div>
+
+    <div class="sporcu-icerik" id="sporcu-icerik">
+      <!-- Dinamik olarak doldurulacak -->
+    </div>
+  </div>
+
+  <!-- SPORCU EKLE MODAL -->
+  <div id="m-sporcu-ekle" class="modal-zemin hidden">
+    <div class="modal-kutu">
+      <div class="modal-baslik">
+        <h3>Sporcu Ekle</h3>
+        <span class="modal-x" onclick="modalKapat('m-sporcu-ekle')">✕</span>
+      </div>
+      <div class="fg"><label>Ad Soyad</label><input type="text" id="s-ad" placeholder="Ahmet Kaya"/></div>
+      <div class="form-row">
+        <div class="fg"><label>Doğum Tarihi</label><input type="date" id="s-dogum"/></div>
+        <div class="fg"><label>Cinsiyet</label><select id="s-cinsiyet"><option value="Erkek">Erkek</option><option value="Kız">Kız</option></select></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Dan/Kuşak</label><input type="text" id="s-kusak" placeholder="Sarı Kuşak"/></div>
+        <div class="fg"><label>Şifre</label><input type="text" id="s-sifre" placeholder="1234"/></div>
+      </div>
+      <div class="form-row">
+        <div class="fg"><label>Boy (cm)</label><input type="number" id="s-boy" placeholder="165"/></div>
+        <div class="fg"><label>Kilo (kg)</label><input type="number" id="s-kilo" placeholder="58"/></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-gri" onclick="modalKapat('m-sporcu-ekle')">İptal</button>
+        <button class="btn-kirmizi" onclick="sporcuEkle()">Kaydet</button>
+      </div>
+      <p id="sporcu-ekle-mesaj" class="basari-yazi"></p>
+    </div>
+  </div>
+
+  <!-- SPORCU SİL MODAL -->
+  <div id="m-sporcu-sil" class="modal-zemin hidden">
+    <div class="modal-kutu">
+      <div class="modal-baslik">
+        <h3>Sporcu Sil</h3>
+        <span class="modal-x" onclick="modalKapat('m-sporcu-sil')">✕</span>
+      </div>
+      <p style="font-size:14px;color:#555;margin-bottom:16px;"><strong id="sil-sporcu-ad"></strong> adlı sporcuyu ve tüm verilerini silmek istediğine emin misin?</p>
+      <div class="modal-footer">
+        <button class="btn-gri" onclick="modalKapat('m-sporcu-sil')">İptal</button>
+        <button class="btn-kirmizi" onclick="sporcuSilOnayla()">Evet, Sil</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ÖDEV EKLE MODAL -->
+  <div id="m-odev-ekle" class="modal-zemin hidden">
+    <div class="modal-kutu">
+      <div class="modal-baslik">
+        <h3>Ev Ödevi Ekle</h3>
+        <span class="modal-x" onclick="modalKapat('m-odev-ekle')">✕</span>
+      </div>
+      <div class="fg"><label>Sporcu</label><select id="odev-sporcu-sec"></select></div>
+      <div class="fg"><label>Başlık</label><input type="text" id="odev-baslik" placeholder="Patlayıcı Kuvvet Çalışması"/></div>
+      <div class="fg"><label>Açıklama / Egzersizler</label><textarea id="odev-aciklama" rows="4" placeholder="Egzersizleri buraya yaz..."></textarea></div>
+      <div class="form-row">
+        <div class="fg"><label>Süre (dk)</label><input type="number" id="odev-sure" placeholder="30"/></div>
+        <div class="fg"><label>Tarih</label><input type="date" id="odev-tarih"/></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-gri" onclick="modalKapat('m-odev-ekle')">İptal</button>
+        <button class="btn-kirmizi" onclick="odevEkle()">Kaydet</button>
+      </div>
+      <p id="odev-ekle-mesaj" class="basari-yazi"></p>
+    </div>
+  </div>
+
+  <!-- ÖDEV BAŞLAT MODAL -->
+  <div id="m-odev-baslat" class="modal-zemin hidden">
+    <div class="modal-kutu">
+      <div class="modal-baslik">
+        <h3 id="ob-baslik"></h3>
+        <span class="modal-x" onclick="modalKapat('m-odev-baslat')">✕</span>
+      </div>
+      <div id="ob-aciklama" class="odev-aciklama-metin"></div>
+      <div class="sure-satir">Beklenen süre: <strong id="ob-sure"></strong></div>
+      <div class="timer-ekran" id="timer-ekran">00:00</div>
+      <div class="timer-durum" id="timer-durum">Hazır</div>
+      <div class="modal-footer">
+        <button class="btn-kirmizi btn-tam" id="ob-baslat-btn" onclick="odevBaslat()">Başlat</button>
+        <button class="btn-yesil btn-tam hidden" id="ob-bitir-btn" onclick="odevBitir()">Tamamladım ✓</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>
