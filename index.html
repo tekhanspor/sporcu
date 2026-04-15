@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TK Antrenman Platformu — Admin</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- GİRİŞ EKRANI -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-box">
+      <div class="logo-circle">TK</div>
+      <h1>Antrenör Girişi</h1>
+      <p class="login-sub">Taekwondo Antrenman Platformu</p>
+      <input type="password" id="login-password" placeholder="Şifre" />
+      <button onclick="adminGiris()">Giriş Yap</button>
+      <p id="login-error" class="error-text"></p>
+    </div>
+  </div>
+
+  <!-- ADMIN PANELİ -->
+  <div id="admin-panel" class="hidden">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-logo">
+        <div class="logo-dot"></div>
+        TK Antrenman Platformu
+      </div>
+      <div class="topbar-nav">
+        <span class="nav-item active" onclick="sayfaGoster('sporcular')">Sporcular</span>
+        <span class="nav-item" onclick="sayfaGoster('test-girisi')">Test Girişi</span>
+        <span class="nav-item" onclick="sayfaGoster('ev-odevleri')">Ev Ödevleri</span>
+        <span class="nav-item" onclick="sayfaGoster('odev-takip')">Ödev Takip</span>
+      </div>
+      <button class="cikis-btn" onclick="cikisYap()">Çıkış</button>
+    </div>
+
+    <!-- SPORCULAR SAYFASI -->
+    <div id="sayfa-sporcular" class="sayfa">
+      <div class="sayfa-header">
+        <h2>Sporcular</h2>
+        <button class="btn-primary" onclick="modalAc('sporcu-modal')">+ Sporcu Ekle</button>
+      </div>
+      <div id="sporcu-listesi" class="sporcu-grid"></div>
+    </div>
+
+    <!-- TEST GİRİŞİ SAYFASI -->
+    <div id="sayfa-test-girisi" class="sayfa hidden">
+      <div class="sayfa-header">
+        <h2>Test Girişi</h2>
+      </div>
+      <div class="form-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Sporcu</label>
+            <select id="test-sporcu-sec">
+              <option value="">Sporcu seçin...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Test Tarihi</label>
+            <input type="date" id="test-tarihi" />
+          </div>
+        </div>
+        <div class="test-grid">
+          <div class="test-input-card">
+            <div class="test-input-label">Durarak Uzun Atlama <span class="birim">cm</span></div>
+            <input type="number" id="t-uzun-atlama" placeholder="Norm: 155" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">2kg Sağlık Topu Fırlatma <span class="birim">cm</span></div>
+            <input type="number" id="t-saglik-topu" placeholder="Norm: 420" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">30 sn Mekik <span class="birim">tekrar</span></div>
+            <input type="number" id="t-mekik" placeholder="Norm: 22" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">30m Sprint <span class="birim">sn</span></div>
+            <input type="number" step="0.01" id="t-sprint" placeholder="Norm: 5.0" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">Illinois Çeviklik <span class="birim">sn</span></div>
+            <input type="number" step="0.01" id="t-illinois" placeholder="Norm: 17.2" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">Flamingo Denge <span class="birim">hata</span></div>
+            <input type="number" id="t-flamingo" placeholder="Norm: 4" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">Otur-Uzan <span class="birim">cm</span></div>
+            <input type="number" id="t-otur-uzan" placeholder="Norm: 24" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">20m Mekik Koşusu <span class="birim">seviye</span></div>
+            <input type="number" step="0.1" id="t-beep" placeholder="Norm: 6.2" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">Çember Koordinasyon <span class="birim">sn</span></div>
+            <input type="number" step="0.01" id="t-cember" placeholder="Norm: 11.2" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">Cetvel Reaksiyon <span class="birim">cm</span></div>
+            <input type="number" id="t-cetvel" placeholder="Norm: 19" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">El Dinamometresi <span class="birim">kg</span></div>
+            <input type="number" step="0.1" id="t-dinamometre" placeholder="Norm: 28" />
+          </div>
+          <div class="test-input-card">
+            <div class="test-input-label">Wingate 30sn <span class="birim">W/kg</span></div>
+            <input type="number" step="0.1" id="t-wingate" placeholder="Norm: 8.2" />
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn-primary" onclick="testKaydet()">Kaydet</button>
+          <p id="test-mesaj" class="success-text"></p>
+        </div>
+      </div>
+    </div>
+
+    <!-- EV ÖDEVLERİ SAYFASI -->
+    <div id="sayfa-ev-odevleri" class="sayfa hidden">
+      <div class="sayfa-header">
+        <h2>Ev Ödevleri</h2>
+        <button class="btn-primary" onclick="modalAc('odev-modal')">+ Ödev Ekle</button>
+      </div>
+      <div class="form-row" style="margin-bottom:16px;">
+        <div class="form-group">
+          <label>Sporcu Filtrele</label>
+          <select id="odev-filtre-sporcu" onchange="odevleriYukle()">
+            <option value="">Tüm Sporcular</option>
+          </select>
+        </div>
+      </div>
+      <div id="odev-listesi" class="odev-liste"></div>
+    </div>
+
+    <!-- ÖDEV TAKİP SAYFASI -->
+    <div id="sayfa-odev-takip" class="sayfa hidden">
+      <div class="sayfa-header">
+        <h2>Ödev Takip</h2>
+      </div>
+      <div id="takip-listesi" class="takip-liste"></div>
+    </div>
+
+  </div>
+
+  <!-- SPORCU EKLE MODAL -->
+  <div id="sporcu-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Sporcu Ekle</h3>
+        <span class="modal-kapat" onclick="modalKapat('sporcu-modal')">✕</span>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Ad Soyad</label>
+          <input type="text" id="s-ad" placeholder="Ahmet Kaya" />
+        </div>
+        <div class="form-group">
+          <label>Doğum Tarihi</label>
+          <input type="date" id="s-dogum" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Cinsiyet</label>
+          <select id="s-cinsiyet">
+            <option value="Erkek">Erkek</option>
+            <option value="Kız">Kız</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Dan / Kuşak</label>
+          <input type="text" id="s-kusak" placeholder="Sarı Kuşak" />
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Boy (cm)</label>
+          <input type="number" id="s-boy" placeholder="165" />
+        </div>
+        <div class="form-group">
+          <label>Kilo (kg)</label>
+          <input type="number" id="s-kilo" placeholder="58" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="modalKapat('sporcu-modal')">İptal</button>
+        <button class="btn-primary" onclick="sporcuKaydet()">Kaydet</button>
+      </div>
+      <p id="sporcu-mesaj" class="success-text"></p>
+    </div>
+  </div>
+
+  <!-- ÖDEV EKLE MODAL -->
+  <div id="odev-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3>Ev Ödevi Ekle</h3>
+        <span class="modal-kapat" onclick="modalKapat('odev-modal')">✕</span>
+      </div>
+      <div class="form-group">
+        <label>Sporcu</label>
+        <select id="odev-sporcu"></select>
+      </div>
+      <div class="form-group">
+        <label>Başlık</label>
+        <input type="text" id="odev-baslik" placeholder="Örn: Patlayıcı Kuvvet Çalışması" />
+      </div>
+      <div class="form-group">
+        <label>Açıklama / Egzersizler</label>
+        <textarea id="odev-aciklama" rows="4" placeholder="Egzersizleri buraya yaz..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Süre (dakika)</label>
+          <input type="number" id="odev-sure" placeholder="30" />
+        </div>
+        <div class="form-group">
+          <label>Tarih</label>
+          <input type="date" id="odev-tarih" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-secondary" onclick="modalKapat('odev-modal')">İptal</button>
+        <button class="btn-primary" onclick="odevKaydet()">Kaydet</button>
+      </div>
+      <p id="odev-mesaj" class="success-text"></p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="app.js"></script>
+</body>
+</html>

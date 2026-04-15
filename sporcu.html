@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sporcu Sayfası</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="sporcu-body">
+
+  <div id="yukleniyor" class="yukleniyor-ekran">
+    <div class="logo-circle">TK</div>
+    <p>Yükleniyor...</p>
+  </div>
+
+  <div id="sporcu-icerik" class="hidden">
+
+    <!-- HERO -->
+    <div class="sporcu-hero">
+      <div class="sporcu-avatar" id="s-avatar"></div>
+      <div class="sporcu-hero-info">
+        <h1 id="s-isim"></h1>
+        <p id="s-detay"></p>
+      </div>
+    </div>
+
+    <!-- SEKMELER -->
+    <div class="tab-bar">
+      <div class="tab active" onclick="sekmeGoster('analiz', this)">Test Analizi</div>
+      <div class="tab" onclick="sekmeGoster('program', this)">Antrenman</div>
+      <div class="tab" onclick="sekmeGoster('odev', this)">Ev Ödevi</div>
+    </div>
+
+    <!-- TEST ANALİZİ SEKMESİ -->
+    <div id="sekme-analiz" class="sekme-icerik">
+      <div class="container">
+        <div id="analiz-bos" class="bos-mesaj hidden">
+          <p>Henüz test sonucu girilmemiş.</p>
+        </div>
+        <div id="analiz-icerik">
+          <div class="ozet-kartlar" id="ozet-kartlar"></div>
+          <h3 class="bolum-baslik">Motorik Test Sonuçları</h3>
+          <div id="test-kartlari" class="test-kartlar"></div>
+          <h3 class="bolum-baslik">Geliştirilmesi Gereken Alanlar</h3>
+          <div id="zayif-alanlar" class="zayif-liste"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ANTRENMAN PROGRAMI SEKMESİ -->
+    <div id="sekme-program" class="sekme-icerik hidden">
+      <div class="container">
+        <div id="program-bos" class="bos-mesaj">
+          <p>Antrenman programı henüz eklenmedi.</p>
+        </div>
+        <div id="program-icerik" class="hidden">
+          <div id="program-kartlari"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- EV ÖDEVİ SEKMESİ -->
+    <div id="sekme-odev" class="sekme-icerik hidden">
+      <div class="container">
+        <div id="odev-bos" class="bos-mesaj">
+          <p>Henüz ev ödevi atanmamış.</p>
+        </div>
+        <div id="odev-icerik" class="hidden">
+          <div id="odev-kartlari"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ÖDEV BAŞLAT MODAL -->
+  <div id="odev-baslat-modal" class="modal-overlay hidden">
+    <div class="modal">
+      <div class="modal-header">
+        <h3 id="modal-odev-baslik"></h3>
+        <span class="modal-kapat" onclick="modalKapat('odev-baslat-modal')">✕</span>
+      </div>
+      <div id="modal-odev-aciklama" class="odev-aciklama-text"></div>
+      <div class="sure-bilgi">
+        <span>Beklenen süre:</span>
+        <strong id="modal-odev-sure"></strong>
+      </div>
+      <div id="timer-bolum">
+        <div class="timer-display" id="timer-display">00:00</div>
+        <div class="timer-durum" id="timer-durum">Hazır</div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-primary" id="odev-baslat-btn" onclick="odevBaslat()">Ödevi Başlat</button>
+        <button class="btn-success hidden" id="odev-bitir-btn" onclick="odevBitir()">Tamamladım</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="sporcu.js"></script>
+</body>
+</html>
