@@ -2,19 +2,19 @@
 <html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>TK Antrenman Platformu — Admin</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+  <title>TK Platform — Admin</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-  <!-- GİRİŞ EKRANI -->
+  <!-- GİRİŞ -->
   <div id="login-screen" class="login-screen">
     <div class="login-box">
       <div class="logo-circle">TK</div>
       <h1>Antrenör Girişi</h1>
       <p class="login-sub">Taekwondo Antrenman Platformu</p>
-      <input type="password" id="login-password" placeholder="Şifre" />
+      <input type="password" id="login-password" placeholder="Şifre" autocomplete="current-password" />
       <button onclick="adminGiris()">Giriş Yap</button>
       <p id="login-error" class="error-text"></p>
     </div>
@@ -23,130 +23,262 @@
   <!-- ADMIN PANELİ -->
   <div id="admin-panel" class="hidden">
 
-    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-logo">
         <div class="logo-dot"></div>
-        TK Antrenman Platformu
-      </div>
-      <div class="topbar-nav">
-        <span class="nav-item active" onclick="sayfaGoster('sporcular')">Sporcular</span>
-        <span class="nav-item" onclick="sayfaGoster('test-girisi')">Test Girişi</span>
-        <span class="nav-item" onclick="sayfaGoster('ev-odevleri')">Ev Ödevleri</span>
-        <span class="nav-item" onclick="sayfaGoster('odev-takip')">Ödev Takip</span>
+        <span class="topbar-title">TK Platform</span>
       </div>
       <button class="cikis-btn" onclick="cikisYap()">Çıkış</button>
     </div>
 
-    <!-- SPORCULAR SAYFASI -->
-    <div id="sayfa-sporcular" class="sayfa">
-      <div class="sayfa-header">
-        <h2>Sporcular</h2>
-        <button class="btn-primary" onclick="modalAc('sporcu-modal')">+ Sporcu Ekle</button>
+    <!-- MOBİL ALT NAV -->
+    <div class="mobile-nav">
+      <div class="mobile-nav-item active" onclick="sayfaGoster('sporcular', this)">
+        <div class="nav-icon">👥</div>
+        <div>Sporcular</div>
       </div>
-      <div id="sporcu-listesi" class="sporcu-grid"></div>
+      <div class="mobile-nav-item" onclick="sayfaGoster('test-girisi', this)">
+        <div class="nav-icon">📋</div>
+        <div>Test</div>
+      </div>
+      <div class="mobile-nav-item" onclick="sayfaGoster('psikoloji', this)">
+        <div class="nav-icon">🧠</div>
+        <div>Psikoloji</div>
+      </div>
+      <div class="mobile-nav-item" onclick="sayfaGoster('odevler', this)">
+        <div class="nav-icon">📚</div>
+        <div>Ödevler</div>
+      </div>
+      <div class="mobile-nav-item" onclick="sayfaGoster('takip', this)">
+        <div class="nav-icon">👁</div>
+        <div>Takip</div>
+      </div>
     </div>
 
-    <!-- TEST GİRİŞİ SAYFASI -->
-    <div id="sayfa-test-girisi" class="sayfa hidden">
-      <div class="sayfa-header">
-        <h2>Test Girişi</h2>
+    <div class="admin-content">
+
+      <!-- SPORCULAR -->
+      <div id="sayfa-sporcular" class="sayfa">
+        <div class="sayfa-header">
+          <h2>Sporcular</h2>
+          <button class="btn-primary" onclick="modalAc('sporcu-modal')">+ Ekle</button>
+        </div>
+        <div id="sporcu-listesi" class="sporcu-grid"></div>
       </div>
-      <div class="form-card">
-        <div class="form-row">
+
+      <!-- MOTORİK TEST GİRİŞİ -->
+      <div id="sayfa-test-girisi" class="sayfa hidden">
+        <div class="sayfa-header"><h2>Motorik Test Girişi</h2></div>
+        <div class="form-card">
           <div class="form-group">
             <label>Sporcu</label>
-            <select id="test-sporcu-sec">
-              <option value="">Sporcu seçin...</option>
-            </select>
+            <select id="test-sporcu-sec"></select>
           </div>
           <div class="form-group">
             <label>Test Tarihi</label>
             <input type="date" id="test-tarihi" />
           </div>
-        </div>
-        <div class="test-grid">
-          <div class="test-input-card">
-            <div class="test-input-label">Durarak Uzun Atlama <span class="birim">cm</span></div>
-            <input type="number" id="t-uzun-atlama" placeholder="Norm: 155" />
+          <div class="form-group">
+            <label>Dönem</label>
+            <input type="text" id="test-donem" placeholder="Örn: 2024 Güz Dönemi" />
           </div>
-          <div class="test-input-card">
-            <div class="test-input-label">2kg Sağlık Topu Fırlatma <span class="birim">cm</span></div>
-            <input type="number" id="t-saglik-topu" placeholder="Norm: 420" />
+          <div class="test-grid">
+            <div class="test-input-card">
+              <div class="test-input-label">Durarak Uzun Atlama <span class="birim">cm</span></div>
+              <input type="number" id="t-uzun-atlama" placeholder="Norm: 155" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">2kg Sağlık Topu <span class="birim">cm</span></div>
+              <input type="number" id="t-saglik-topu" placeholder="Norm: 420" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">30 sn Mekik <span class="birim">tekrar</span></div>
+              <input type="number" id="t-mekik" placeholder="Norm: 22" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">30m Sprint <span class="birim">sn</span></div>
+              <input type="number" step="0.01" id="t-sprint" placeholder="Norm: 5.0" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">Illinois Çeviklik <span class="birim">sn</span></div>
+              <input type="number" step="0.01" id="t-illinois" placeholder="Norm: 17.2" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">Flamingo Denge <span class="birim">hata</span></div>
+              <input type="number" id="t-flamingo" placeholder="Norm: 4" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">Otur-Uzan <span class="birim">cm</span></div>
+              <input type="number" id="t-otur-uzan" placeholder="Norm: 24" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">Beep Test <span class="birim">seviye</span></div>
+              <input type="number" step="0.1" id="t-beep" placeholder="Norm: 6.2" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">Çember Koordinasyon <span class="birim">sn</span></div>
+              <input type="number" step="0.01" id="t-cember" placeholder="Norm: 11.2" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">Cetvel Reaksiyon <span class="birim">cm</span></div>
+              <input type="number" id="t-cetvel" placeholder="Norm: 19" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">El Dinamometresi <span class="birim">kg</span></div>
+              <input type="number" step="0.1" id="t-dinamometre" placeholder="Norm: 28" />
+            </div>
+            <div class="test-input-card">
+              <div class="test-input-label">Wingate 30sn <span class="birim">W/kg</span></div>
+              <input type="number" step="0.1" id="t-wingate" placeholder="Norm: 8.2" />
+            </div>
           </div>
-          <div class="test-input-card">
-            <div class="test-input-label">30 sn Mekik <span class="birim">tekrar</span></div>
-            <input type="number" id="t-mekik" placeholder="Norm: 22" />
+          <div class="form-actions">
+            <button class="btn-primary btn-full" onclick="testKaydet()">Kaydet</button>
+            <p id="test-mesaj" class="success-text"></p>
           </div>
-          <div class="test-input-card">
-            <div class="test-input-label">30m Sprint <span class="birim">sn</span></div>
-            <input type="number" step="0.01" id="t-sprint" placeholder="Norm: 5.0" />
-          </div>
-          <div class="test-input-card">
-            <div class="test-input-label">Illinois Çeviklik <span class="birim">sn</span></div>
-            <input type="number" step="0.01" id="t-illinois" placeholder="Norm: 17.2" />
-          </div>
-          <div class="test-input-card">
-            <div class="test-input-label">Flamingo Denge <span class="birim">hata</span></div>
-            <input type="number" id="t-flamingo" placeholder="Norm: 4" />
-          </div>
-          <div class="test-input-card">
-            <div class="test-input-label">Otur-Uzan <span class="birim">cm</span></div>
-            <input type="number" id="t-otur-uzan" placeholder="Norm: 24" />
-          </div>
-          <div class="test-input-card">
-            <div class="test-input-label">20m Mekik Koşusu <span class="birim">seviye</span></div>
-            <input type="number" step="0.1" id="t-beep" placeholder="Norm: 6.2" />
-          </div>
-          <div class="test-input-card">
-            <div class="test-input-label">Çember Koordinasyon <span class="birim">sn</span></div>
-            <input type="number" step="0.01" id="t-cember" placeholder="Norm: 11.2" />
-          </div>
-          <div class="test-input-card">
-            <div class="test-input-label">Cetvel Reaksiyon <span class="birim">cm</span></div>
-            <input type="number" id="t-cetvel" placeholder="Norm: 19" />
-          </div>
-          <div class="test-input-card">
-            <div class="test-input-label">El Dinamometresi <span class="birim">kg</span></div>
-            <input type="number" step="0.1" id="t-dinamometre" placeholder="Norm: 28" />
-          </div>
-          <div class="test-input-card">
-            <div class="test-input-label">Wingate 30sn <span class="birim">W/kg</span></div>
-            <input type="number" step="0.1" id="t-wingate" placeholder="Norm: 8.2" />
-          </div>
-        </div>
-        <div class="form-actions">
-          <button class="btn-primary" onclick="testKaydet()">Kaydet</button>
-          <p id="test-mesaj" class="success-text"></p>
         </div>
       </div>
-    </div>
 
-    <!-- EV ÖDEVLERİ SAYFASI -->
-    <div id="sayfa-ev-odevleri" class="sayfa hidden">
-      <div class="sayfa-header">
-        <h2>Ev Ödevleri</h2>
-        <button class="btn-primary" onclick="modalAc('odev-modal')">+ Ödev Ekle</button>
+      <!-- PSİKOLOJİ ANTRENÖRFormu -->
+      <div id="sayfa-psikoloji" class="sayfa hidden">
+        <div class="sayfa-header"><h2>Psikoloji Formu</h2></div>
+        <div class="form-card">
+          <div class="form-group">
+            <label>Sporcu</label>
+            <select id="psiko-sporcu-sec"></select>
+          </div>
+          <div class="form-group">
+            <label>Test Tarihi</label>
+            <input type="date" id="psiko-tarihi" />
+          </div>
+          <div class="form-group">
+            <label>Dönem</label>
+            <input type="text" id="psiko-donem" placeholder="Örn: 2024 Güz" />
+          </div>
+
+          <!-- KAYGI ANTRENÖRFormu -->
+          <div class="psiko-bolum">
+            <div class="psiko-bolum-baslik">🔵 Rekabet Kaygısı — Antrenör Gözlemi</div>
+            <p class="psiko-bolum-alt">0: Gözlemlemedim · 1: Hiç Yok · 2: Hafif · 3: Belirgin · 4: Çok Belirgin</p>
+            <div class="psiko-sorular">
+              <div class="psiko-soru-baslik">Bilişsel Belirtiler</div>
+              <div class="psiko-soru"><span>Yarış öncesi aşırı soru soruyor, onay arıyor.</span><div class="likert-group" data-field="ka_b1"></div></div>
+              <div class="psiko-soru"><span>Dikkatini toplamakta güçlük çekiyor, dağınık görünüyor.</span><div class="likert-group" data-field="ka_b2"></div></div>
+              <div class="psiko-soru"><span>Olumsuz konuşmalar yapıyor ('Kazanamam' vb.).</span><div class="likert-group" data-field="ka_b3"></div></div>
+              <div class="psiko-soru"><span>Hata yaptığında uzun süre toparlanamıyor.</span><div class="likert-group" data-field="ka_b4"></div></div>
+              <div class="psiko-soru"><span>Rakip veya hakem hakkında aşırı endişeli konuşmalar yapıyor.</span><div class="likert-group" data-field="ka_b5"></div></div>
+              <div class="psiko-soru-baslik">Somatik Belirtiler</div>
+              <div class="psiko-soru"><span>Isınmada kaslar aşırı gergin görünüyor.</span><div class="likert-group" data-field="ka_s1"></div></div>
+              <div class="psiko-soru"><span>Solunum hızlanmış veya düzensiz.</span><div class="likert-group" data-field="ka_s2"></div></div>
+              <div class="psiko-soru"><span>Ellerde titreme, yüzde solukluk ya da kızarıklık.</span><div class="likert-group" data-field="ka_s3"></div></div>
+              <div class="psiko-soru"><span>Tuvalete sık gidiyor veya mide bulantısından bahsediyor.</span><div class="likert-group" data-field="ka_s4"></div></div>
+              <div class="psiko-soru"><span>Hareketler koordinasyonunu kaybetmiş, sertleşmiş.</span><div class="likert-group" data-field="ka_s5"></div></div>
+              <div class="psiko-soru-baslik">Davranış Belirtileri</div>
+              <div class="psiko-soru"><span>Antrenörden uzaklaşıyor, içe kapanıyor.</span><div class="likert-group" data-field="ka_d1"></div></div>
+              <div class="psiko-soru"><span>Aşırı konuşkan veya tam tersine sessiz / donuk.</span><div class="likert-group" data-field="ka_d2"></div></div>
+              <div class="psiko-soru"><span>Hazırlık rutinini aksatıyor veya aniden değiştiriyor.</span><div class="likert-group" data-field="ka_d3"></div></div>
+              <div class="psiko-soru"><span>Yarıştan kaçma davranışı veya erteleme eğilimi.</span><div class="likert-group" data-field="ka_d4"></div></div>
+              <div class="psiko-soru"><span>Teknik uyarılara normalden farklı tepki veriyor.</span><div class="likert-group" data-field="ka_d5"></div></div>
+            </div>
+          </div>
+
+          <!-- MOTİVASYON ANTRENÖRFormu -->
+          <div class="psiko-bolum">
+            <div class="psiko-bolum-baslik">🟣 Motivasyon — Antrenör Gözlemi</div>
+            <p class="psiko-bolum-alt">1: Hiçbir zaman · 2: Nadiren · 3: Bazen · 4: Sıklıkla · 5: Her Zaman</p>
+            <div class="psiko-sorular">
+              <div class="psiko-soru-baslik">Görev Yönelimi Belirtileri</div>
+              <div class="psiko-soru"><span>Antrenmanın içeriğini merak ederek sorar.</span><div class="likert-group" data-field="ma_g1" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Hata yaptığında tekrar dener, pes etmez.</span><div class="likert-group" data-field="ma_g2" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Rakipten bağımsız olarak kendi performansından memnuniyet duyar.</span><div class="likert-group" data-field="ma_g3" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Zorlu egzersizlerde çaba gösterir, kolayı tercih etmez.</span><div class="likert-group" data-field="ma_g4" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Gelişimini takip eder, geçmiş performansıyla karşılaştırır.</span><div class="likert-group" data-field="ma_g5" data-max="5"></div></div>
+              <div class="psiko-soru-baslik">Ego Yönelimi Belirtileri</div>
+              <div class="psiko-soru"><span>Yalnızca kazandığı anlarda motive görünür.</span><div class="likert-group" data-field="ma_e1" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Rakibiyle veya takım arkadaşıyla sürekli kıyaslar.</span><div class="likert-group" data-field="ma_e2" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Başarısızlıktan sonra bırakmak veya bahane üretmek eğiliminde.</span><div class="likert-group" data-field="ma_e3" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Zor egzersizlerden kaçar, güçlü göründüğü aktiviteleri tercih eder.</span><div class="likert-group" data-field="ma_e4" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Kaybettiğinde sinirlenme, suçlama veya ağlama tepkileri verir.</span><div class="likert-group" data-field="ma_e5" data-max="5"></div></div>
+            </div>
+          </div>
+
+          <!-- MENTAL DAYANIKLILIK ANTRENÖRFormu -->
+          <div class="psiko-bolum">
+            <div class="psiko-bolum-baslik">🟢 Mental Dayanıklılık — Antrenör Gözlemi</div>
+            <p class="psiko-bolum-alt">1: Hiçbir zaman · 2: Nadiren · 3: Bazen · 4: Sıklıkla · 5: Her Zaman</p>
+            <div class="psiko-sorular">
+              <div class="psiko-soru-baslik">Kontrol</div>
+              <div class="psiko-soru"><span>Duygusal tepkilerini uygun şekilde yönetiyor.</span><div class="likert-group" data-field="mda_kon1" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Ortam değişse de paniğe kapılmadan uyum sağlıyor.</span><div class="likert-group" data-field="mda_kon2" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Stresli durumlarda sakin ve odaklı kalabiliyor.</span><div class="likert-group" data-field="mda_kon3" data-max="5"></div></div>
+              <div class="psiko-soru-baslik">Bağlılık</div>
+              <div class="psiko-soru"><span>Zor antrenman seanslarında çabadan vazgeçmiyor.</span><div class="likert-group" data-field="mda_bag1" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Hedeflere bağlılığını uzun vadede sürdürüyor.</span><div class="likert-group" data-field="mda_bag2" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Olumsuz koşullarda bile kararlılığını koruyor.</span><div class="likert-group" data-field="mda_bag3" data-max="5"></div></div>
+              <div class="psiko-soru-baslik">Meydan Okuma</div>
+              <div class="psiko-soru"><span>Yeni ve zor egzersizleri istekle deniyor.</span><div class="likert-group" data-field="mda_mey1" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Yarışma baskısını fırsat olarak değerlendiriyor.</span><div class="likert-group" data-field="mda_mey2" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Başarısızlık veya yenilgiden sonra hızlı toparlanıyor.</span><div class="likert-group" data-field="mda_mey3" data-max="5"></div></div>
+              <div class="psiko-soru-baslik">Güven</div>
+              <div class="psiko-soru"><span>Antrenör veya rakip baskısı altında özgüveni korunuyor.</span><div class="likert-group" data-field="mda_guv1" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Kendi teknik kararlarına güvenebiliyor.</span><div class="likert-group" data-field="mda_guv2" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Zor anlarda kendi kapasitesine inancını yitirmiyor.</span><div class="likert-group" data-field="mda_guv3" data-max="5"></div></div>
+            </div>
+          </div>
+
+          <!-- KONSANTRASYON ANTRENÖRFormu -->
+          <div class="psiko-bolum">
+            <div class="psiko-bolum-baslik">🟠 Konsantrasyon — Antrenör Gözlemi</div>
+            <p class="psiko-bolum-alt">1: Hiçbir zaman · 2: Nadiren · 3: Bazen · 4: Sıklıkla · 5: Her Zaman</p>
+            <div class="psiko-sorular">
+              <div class="psiko-soru-baslik">Güçlü Dikkat Davranışları</div>
+              <div class="psiko-soru"><span>Antrenman açıklamalarını ilk seferinde anlıyor ve doğru uyguluyor.</span><div class="likert-group" data-field="ka2_g1" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Sahada birden fazla uyarıcıyı eş zamanlı takip edebiliyor.</span><div class="likert-group" data-field="ka2_g2" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Uzun seansların sonunda bile odak kaybı yaşamıyor.</span><div class="likert-group" data-field="ka2_g3" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Hata yaptıktan sonra hızla toparlanarak odaklı kalabiliyor.</span><div class="likert-group" data-field="ka2_g4" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Rakibinin stratejisini ve vücut dilini yarış içinde okuyabiliyor.</span><div class="likert-group" data-field="ka2_g5" data-max="5"></div></div>
+              <div class="psiko-soru-baslik">Dikkat Bozukluğu Belirtileri</div>
+              <div class="psiko-soru"><span>Uzun açıklamalar sırasında dikkati dağılıyor.</span><div class="likert-group" data-field="ka2_d1" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Seyirci, gürültü dikkatini kolayca bozuyor.</span><div class="likert-group" data-field="ka2_d2" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Hata sonrası aynı hatayı tekrarlıyor; öğrenme transferi zayıf.</span><div class="likert-group" data-field="ka2_d3" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Yorgunluk arttıkça teknik hatalar belirgin biçimde artıyor.</span><div class="likert-group" data-field="ka2_d4" data-max="5"></div></div>
+              <div class="psiko-soru"><span>Kritik anlarda odak kaybı gözlemleniyor.</span><div class="likert-group" data-field="ka2_d5" data-max="5"></div></div>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Antrenör Genel Notu</label>
+            <textarea id="psiko-antrenor-notu" rows="3" placeholder="Genel gözlemlerinizi yazın..."></textarea>
+          </div>
+
+          <div class="form-actions">
+            <button class="btn-primary btn-full" onclick="psikolojiAntrenorKaydet()">Kaydet & Onayla</button>
+            <p id="psiko-mesaj" class="success-text"></p>
+          </div>
+        </div>
       </div>
-      <div class="form-row" style="margin-bottom:16px;">
+
+      <!-- ÖDEVLER -->
+      <div id="sayfa-odevler" class="sayfa hidden">
+        <div class="sayfa-header">
+          <h2>Ev Ödevleri</h2>
+          <button class="btn-primary" onclick="modalAc('odev-modal')">+ Ekle</button>
+        </div>
         <div class="form-group">
-          <label>Sporcu Filtrele</label>
           <select id="odev-filtre-sporcu" onchange="odevleriYukle()">
             <option value="">Tüm Sporcular</option>
           </select>
         </div>
+        <div id="odev-listesi" class="liste"></div>
       </div>
-      <div id="odev-listesi" class="odev-liste"></div>
-    </div>
 
-    <!-- ÖDEV TAKİP SAYFASI -->
-    <div id="sayfa-odev-takip" class="sayfa hidden">
-      <div class="sayfa-header">
-        <h2>Ödev Takip</h2>
+      <!-- TAKİP -->
+      <div id="sayfa-takip" class="sayfa hidden">
+        <div class="sayfa-header"><h2>Ödev Takip</h2></div>
+        <div id="takip-listesi" class="liste"></div>
       </div>
-      <div id="takip-listesi" class="takip-liste"></div>
-    </div>
 
+    </div>
   </div>
 
   <!-- SPORCU EKLE MODAL -->
@@ -156,17 +288,15 @@
         <h3>Sporcu Ekle</h3>
         <span class="modal-kapat" onclick="modalKapat('sporcu-modal')">✕</span>
       </div>
+      <div class="form-group">
+        <label>Ad Soyad</label>
+        <input type="text" id="s-ad" placeholder="Ahmet Kaya" />
+      </div>
       <div class="form-row">
-        <div class="form-group">
-          <label>Ad Soyad</label>
-          <input type="text" id="s-ad" placeholder="Ahmet Kaya" />
-        </div>
         <div class="form-group">
           <label>Doğum Tarihi</label>
           <input type="date" id="s-dogum" />
         </div>
-      </div>
-      <div class="form-row">
         <div class="form-group">
           <label>Cinsiyet</label>
           <select id="s-cinsiyet">
@@ -174,9 +304,15 @@
             <option value="Kız">Kız</option>
           </select>
         </div>
+      </div>
+      <div class="form-row">
         <div class="form-group">
           <label>Dan / Kuşak</label>
           <input type="text" id="s-kusak" placeholder="Sarı Kuşak" />
+        </div>
+        <div class="form-group">
+          <label>Şifre</label>
+          <input type="text" id="s-sifre" placeholder="Sporcu şifresi" />
         </div>
       </div>
       <div class="form-row">
@@ -218,7 +354,7 @@
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label>Süre (dakika)</label>
+          <label>Süre (dk)</label>
           <input type="number" id="odev-sure" placeholder="30" />
         </div>
         <div class="form-group">
