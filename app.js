@@ -1,805 +1,1132 @@
-const SB_URL='https://jyqogzzklpwwixhoyunf.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp5cW9nenprbHB3d2l4aG95dW5mIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYyNzg3NjgsImV4cCI6MjA5MTg1NDc2OH0.dL82bDsnCIhLkxqflLzwDADsAwgwHwyTj2KawH639w0';
-const ADMIN_SIFRE='taekwondo2024';
-const sb=supabase.createClient(SB_URL,SB_KEY);
-const RENKLER=['#e63946','#2563eb','#16a34a','#9333ea','#ea580c','#0891b2','#db2777'];
+// app.js — Tekhan Sporcu Sistemi | Uygulama Mantığı
 
-const NORMLAR={
-  uzun_atlama:{ad:'Uzun Atlama',birim:'cm',E_1012:140,K_1012:130,E_1314:155,K_1314:143,E_1516:168,K_1516:152,dusuk_iyi:false,egz:'Box Jump, Squat Jump, Lunge Jump',sik:'Haftada 3x · 3x8-10 tekrar'},
-  saglik_topu:{ad:'Sağlık Topu',birim:'cm',E_1012:350,K_1012:290,E_1314:420,K_1314:340,E_1516:490,K_1516:380,dusuk_iyi:false,egz:'Med-Ball Fırlatma, Push Press',sik:'Haftada 3x · 3x8 tekrar'},
-  mekik_30sn:{ad:'30sn Mekik',birim:'tekrar',E_1012:18,K_1012:16,E_1314:22,K_1314:19,E_1516:26,K_1516:22,dusuk_iyi:false,egz:'Mekik, Plank, Russian Twist',sik:'Haftada 3x · 3x20-25'},
-  sprint_30m:{ad:'30m Sprint',birim:'sn',E_1012:5.4,K_1012:5.8,E_1314:5.0,K_1314:5.4,E_1516:4.7,K_1516:5.1,dusuk_iyi:true,egz:'Uçuş Sprintleri, Direnç Kayışı Sprint',sik:'Haftada 3x · 6-10x20-30m'},
-  illinois:{ad:'Illinois',birim:'sn',E_1012:18.5,K_1012:19.5,E_1314:17.2,K_1314:18.3,E_1516:16.2,K_1516:17.5,dusuk_iyi:true,egz:'T-Drill, 505 Çeviklik, Merdiven Drill',sik:'Haftada 3x · 5-8x10-15sn'},
-  flamingo:{ad:'Flamingo Denge',birim:'hata',E_1012:6,K_1012:8,E_1314:4,K_1314:6,E_1516:3,K_1516:5,dusuk_iyi:true,egz:'BOSU Squat, Tek Ayak Gözler Kapalı',sik:'Her antrenman · 3x30-60sn'},
-  otur_uzan:{ad:'Otur-Uzan',birim:'cm',E_1012:22,K_1012:26,E_1314:24,K_1314:28,E_1516:26,K_1516:30,dusuk_iyi:false,egz:'Statik Esneme (PNF), Bacak Sallamaları',sik:'Her gün · 3x30sn'},
-  beep_test:{ad:'Beep Test',birim:'seviye',E_1012:5.4,K_1012:4.8,E_1314:6.2,K_1314:5.6,E_1516:7.4,K_1516:6.8,dusuk_iyi:false,egz:'Tempo Koşu, Interval Koşu (1:1)',sik:'Haftada 3x · 20-40dk'},
-  cember_koordinasyon:{ad:'Çember Koord.',birim:'sn',E_1012:12.5,K_1012:13,E_1314:11.2,K_1314:11.8,E_1516:10,K_1516:10.8,dusuk_iyi:true,egz:'Çember Atlama, Koordinasyon Merdiveni',sik:'Haftada 3x · 4-6 set'},
-  cetvel_reaksiyon:{ad:'Cetvel Reaksiyon',birim:'cm',E_1012:22,K_1012:24,E_1314:19,K_1314:21,E_1516:16,K_1516:18,dusuk_iyi:true,egz:'Cetvel Düşürme, Işık Reaksiyon',sik:'Her antrenman · 5x5 tekrar'},
-  el_dinamometre:{ad:'El Dinamom.',birim:'kg',E_1012:20,K_1012:17,E_1314:28,K_1314:22,E_1516:36,K_1516:27,dusuk_iyi:false,egz:'Hand Grip Squeezes, Dead Hang',sik:'Haftada 3x · 3x30sn'},
-  wingate:{ad:'Wingate',birim:'W/kg',E_1012:7.5,K_1012:6.8,E_1314:8.2,K_1314:7.4,E_1516:9,K_1516:8.2,dusuk_iyi:false,egz:'30m All-Out Sprint x6, Tabata Squat Jump',sik:'Haftada 2x · 6-10x10-30sn'},
-};
+// ── STATE ──────────────────────────────────────────────────────────────────
+let aktifRol = 'antrenor';
+let oturumKullanici = null;
+let aktifSporcuId = null;
+let tumSporcular = [];
+let aktifAnketCevaplari = {};
+let grafikInstances = {};
 
-let tumSporcular=[];
-let aktifKullanici=null;
-let silinecekSporcuId=null;
-let aktifOdevId=null,odevBaslangic=null,timerInterval=null;
-
-// ===== OTURUM =====
-function oturumKaydet(k){localStorage.setItem('tk_oturum',JSON.stringify(k))}
-function oturumYukle(){try{return JSON.parse(localStorage.getItem('tk_oturum'))}catch{return null}}
-function oturumSil(){localStorage.removeItem('tk_oturum')}
-
-// ===== BAŞLANGIÇ =====
-window.onload=async function(){
-  await sporcularYukle();
-  const oturum=oturumYukle();
-  if(oturum){
-    aktifKullanici=oturum;
-    if(oturum.tip==='admin') adminPaneliGoster();
-    else sporcuSayfasiGoster(oturum.sporcu);
+// ── BAŞLANGIÇ ──────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  const kayitli = sessionStorage.getItem('oturum');
+  if (kayitli) {
+    const veri = JSON.parse(kayitli);
+    oturumKullanici = veri.kullanici;
+    aktifRol = veri.rol;
+    if (aktifRol === 'antrenor') antrenorPanelAc();
+    else sporcuPanelAc();
   }
-};
-
-async function sporcularYukle(){
-  const{data}=await sb.from('sporcular').select('*').order('ad_soyad');
-  tumSporcular=data||[];
-  document.getElementById('giris-yukleniyor').style.display='none';
-  const liste=document.getElementById('sporcu-giris-listesi');
-  liste.innerHTML='';
-  tumSporcular.forEach(s=>{
-    const ini=initials(s.ad_soyad);
-    const renk=RENKLER[s.ad_soyad.charCodeAt(0)%RENKLER.length];
-    const yas=s.dogum_tarihi?(new Date().getFullYear()-new Date(s.dogum_tarihi).getFullYear()):'';
-    liste.innerHTML+=`<div class="kullanici-item" onclick="kullaniciSec('sporcu','${s.id}')">
-      <div class="k-avatar" style="background:${renk}">${ini}</div>
-      <div class="k-bilgi">
-        <div class="k-ad">${s.ad_soyad}</div>
-        <div class="k-rol">${s.cinsiyet||''}${yas?' · '+yas+' yaş':''}${s.dan_kusak?' · '+s.dan_kusak:''}</div>
-      </div>
-      <div class="k-ok">›</div>
-    </div>`;
+  // Enter ile giriş
+  document.getElementById('loginSifre').addEventListener('keydown', e => {
+    if (e.key === 'Enter') girisYap();
   });
+});
+
+// ── YARDIMCI ──────────────────────────────────────────────────────────────
+function ekranGoster(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('aktif'));
+  document.getElementById(id).classList.add('aktif');
+  window.scrollTo(0, 0);
 }
 
-function initials(ad){return ad.split(' ').map(n=>n[0]).join('').substring(0,2).toUpperCase()}
+function bildirimGoster(mesaj, sure = 2500) {
+  const el = document.getElementById('bildirim');
+  el.textContent = mesaj;
+  el.classList.add('goster');
+  setTimeout(() => el.classList.remove('goster'), sure);
+}
 
-// ===== GİRİŞ =====
-let seciliK=null;
-function kullaniciSec(tip,id){
-  if(tip==='admin'){
-    seciliK={tip:'admin'};
-    document.getElementById('sifre-avatar').textContent='AD';
-    document.getElementById('sifre-avatar').style.background='linear-gradient(135deg,#1a1a2e,#e63946)';
-    document.getElementById('sifre-ad').textContent='Admin';
-  } else {
-    const s=tumSporcular.find(x=>x.id===id);
-    if(!s)return;
-    seciliK={tip:'sporcu',sporcu:s};
-    const renk=RENKLER[s.ad_soyad.charCodeAt(0)%RENKLER.length];
-    document.getElementById('sifre-avatar').textContent=initials(s.ad_soyad);
-    document.getElementById('sifre-avatar').style.background=renk;
-    document.getElementById('sifre-ad').textContent=s.ad_soyad;
+function modalAc(id) {
+  document.getElementById(id).classList.add('aktif');
+}
+
+function modalKapat(id) {
+  document.getElementById(id).classList.remove('aktif');
+}
+
+function hataGoster(elId, mesaj) {
+  const el = document.getElementById(elId);
+  el.textContent = mesaj;
+  el.style.display = 'block';
+}
+
+function hataGizle(elId) {
+  document.getElementById(elId).style.display = 'none';
+}
+
+function yukleniyor(elId, goster = true) {
+  const el = document.getElementById(elId);
+  if (!el) return;
+  el.innerHTML = goster ? '<div class="yukleniyor"><div class="spinner"></div> Yükleniyor...</div>' : '';
+}
+
+function tarihFormatla(tarih) {
+  if (!tarih) return '—';
+  const d = new Date(tarih);
+  return d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
+}
+
+function basTaHarfler(isim) {
+  if (!isim) return '?';
+  return isim.split(' ').map(k => k[0]).join('').substring(0, 2).toUpperCase();
+}
+
+function geriGit(ekranId) {
+  ekranGoster(ekranId);
+  if (ekranId === 'antrenorEkrani') {
+    sporcularYukle();
   }
-  document.getElementById('sifre-input').value='';
-  document.getElementById('sifre-hata').textContent='';
-  document.getElementById('sifre-ekrani').classList.remove('hidden');
-  setTimeout(()=>document.getElementById('sifre-input').focus(),100);
 }
-document.getElementById('sifre-input').addEventListener('keypress',e=>{if(e.key==='Enter')sifreDogrula()});
 
-function sifreDogrula(){
-  const sifre=document.getElementById('sifre-input').value;
-  if(!seciliK)return;
-  if(seciliK.tip==='admin'){
-    if(sifre===ADMIN_SIFRE){
-      aktifKullanici={tip:'admin'};
-      oturumKaydet(aktifKullanici);
-      sifreKapat();
-      adminPaneliGoster();
-    } else document.getElementById('sifre-hata').textContent='Şifre yanlış!';
-  } else {
-    const s=seciliK.sporcu;
-    if(!s.sifre||sifre===s.sifre){
-      aktifKullanici={tip:'sporcu',sporcu:s};
-      oturumKaydet(aktifKullanici);
-      sifreKapat();
-      sporcuSayfasiGoster(s);
-    } else document.getElementById('sifre-hata').textContent='Şifre yanlış!';
+// ── GİRİŞ ──────────────────────────────────────────────────────────────────
+function rolSec(rol) {
+  aktifRol = rol;
+  document.querySelectorAll('.rol-btn').forEach(b => b.classList.remove('aktif'));
+  event.target.classList.add('aktif');
+  hataGizle('loginHata');
+}
+
+async function girisYap() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const sifre = document.getElementById('loginSifre').value;
+  hataGizle('loginHata');
+
+  if (!email || !sifre) {
+    hataGoster('loginHata', 'E-posta ve şifre gerekli');
+    return;
+  }
+
+  try {
+    let kullanici;
+    if (aktifRol === 'antrenor') {
+      kullanici = await antrenorGiris(email, sifre);
+    } else {
+      kullanici = await sporcuGiris(email, sifre);
+    }
+    oturumKullanici = kullanici;
+    sessionStorage.setItem('oturum', JSON.stringify({ kullanici, rol: aktifRol }));
+
+    if (aktifRol === 'antrenor') antrenorPanelAc();
+    else sporcuPanelAc();
+  } catch (e) {
+    hataGoster('loginHata', e.message || 'Giriş hatası');
   }
 }
-function sifreKapat(){document.getElementById('sifre-ekrani').classList.add('hidden')}
 
-function cikisYap(){
-  oturumSil();aktifKullanici=null;
-  document.getElementById('admin-panel').classList.add('hidden');
-  document.getElementById('sporcu-sayfasi').classList.add('hidden');
-  document.getElementById('giris-ekrani').style.display='';
+function cikisYap() {
+  sessionStorage.removeItem('oturum');
+  oturumKullanici = null;
+  aktifSporcuId = null;
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginSifre').value = '';
+  ekranGoster('loginEkrani');
+}
+
+// ── ANTRENÖR PANELİ ────────────────────────────────────────────────────────
+function antrenorPanelAc() {
+  ekranGoster('antrenorEkrani');
+  document.getElementById('antrenorAdi').textContent = oturumKullanici.ad_soyad || '';
   sporcularYukle();
 }
 
-// ===== ADMİN =====
-function adminPaneliGoster(){
-  document.getElementById('giris-ekrani').style.display='none';
-  document.getElementById('admin-panel').classList.remove('hidden');
-  // Tüm sayfaları başta gizle
-  document.querySelectorAll('.a-sayfa').forEach(s=>s.style.display='none');
-  // İlk sayfayı göster
-  document.getElementById('a-sporcular').style.display='block';
-  adminSporcuListesiGoster();
-  selectleriDoldur();
-  antrenorAnketOlustur();
-}
-
-function adminSayfa(sayfa,el){
-  document.querySelectorAll('.a-sayfa').forEach(s=>s.style.display='none');
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('a-'+sayfa).style.display='block';
-  el.classList.add('active');
-  if(sayfa==='test') selectleriDoldur();
-  if(sayfa==='psikoloji'){selectleriDoldur();antrenorAnketOlustur();}
-  if(sayfa==='odev'){selectleriDoldur();adminOdevleriYukle();}
-  if(sayfa==='takip')takipYukle();
-}
-
-function adminSporcuListesiGoster(){
-  const kap=document.getElementById('sporcu-kart-listesi');
-  kap.innerHTML='';
-  if(!tumSporcular.length){kap.innerHTML='<p class="bos-mesaj">Henüz sporcu eklenmemiş.</p>';return}
-  tumSporcular.forEach(s=>{
-    const ini=initials(s.ad_soyad);
-    const renk=RENKLER[s.ad_soyad.charCodeAt(0)%RENKLER.length];
-    const yas=s.dogum_tarihi?(new Date().getFullYear()-new Date(s.dogum_tarihi).getFullYear()):'—';
-    kap.innerHTML+=`
-    <div class="sporcu-yonetim-kart">
-      <div class="sy-avatar" style="background:${renk}">${ini}</div>
-      <div class="sy-bilgi">
-        <div class="sy-ad">${s.ad_soyad}</div>
-        <div class="sy-alt">${s.cinsiyet||''} · ${yas} yaş · ${s.dan_kusak||''}</div>
-        <div class="sy-sifre">🔑 ${s.sifre||'Şifresiz'}</div>
-      </div>
-      <button class="btn-tehlike" onclick="sporcuSilSor('${s.id}','${s.ad_soyad}')">Sil</button>
-    </div>`;
-  });
-}
-
-function selectleriDoldur(){
-  ['t-sporcu','p-sporcu','odev-filtre','odev-sporcu-sec'].forEach(id=>{
-    const sel=document.getElementById(id);if(!sel)return;
-    const hepsi=id==='odev-filtre';
-    sel.innerHTML=hepsi?'<option value="">Tüm Sporcular</option>':'<option value="">Seçin...</option>';
-    tumSporcular.forEach(s=>sel.innerHTML+=`<option value="${s.id}">${s.ad_soyad}</option>`);
-  });
-}
-
-async function sporcuEkle(){
-  const ad=document.getElementById('s-ad').value.trim();
-  if(!ad){alert('Ad soyad gerekli!');return}
-  const slug=ad.toLowerCase().replace(/ğ/g,'g').replace(/ü/g,'u').replace(/ş/g,'s').replace(/ı/g,'i').replace(/ö/g,'o').replace(/ç/g,'c').replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')+'-'+Date.now().toString().slice(-4);
-  const{error}=await sb.from('sporcular').insert({
-    ad_soyad:ad,
-    dogum_tarihi:document.getElementById('s-dogum').value||null,
-    cinsiyet:document.getElementById('s-cinsiyet').value,
-    dan_kusak:document.getElementById('s-kusak').value||null,
-    sifre:document.getElementById('s-sifre').value||null,
-    boy:document.getElementById('s-boy').value||null,
-    kilo:document.getElementById('s-kilo').value||null,
-    slug
-  });
-  const m=document.getElementById('sporcu-ekle-mesaj');
-  if(error){m.style.color='#e63946';m.textContent='Hata: '+error.message}
-  else{
-    m.style.color='#16a34a';m.textContent='Sporcu eklendi!';
-    await sporcularYukle();
-    adminSporcuListesiGoster();
-    selectleriDoldur();
-    setTimeout(()=>{modalKapat('m-sporcu-ekle');m.textContent=''},1200);
+async function sporcularYukle() {
+  yukleniyor('sporcuListesiDiv');
+  try {
+    tumSporcular = await sporcuListesi();
+    sporcuFiltrele();
+    grafikSporcuSecenekleriDoldur();
+  } catch (e) {
+    document.getElementById('sporcuListesiDiv').innerHTML = `<div class="bos-durum"><span class="ikon">⚠️</span><p>${e.message}</p></div>`;
   }
 }
 
-function sporcuSilSor(id,ad){
-  silinecekSporcuId=id;
-  document.getElementById('sil-sporcu-ad').textContent=ad;
-  modalAc('m-sporcu-sil');
+function sporcuFiltrele() {
+  const q = (document.getElementById('sporcuArama').value || '').toLowerCase();
+  const filtreli = q ? tumSporcular.filter(s => s.ad_soyad.toLowerCase().includes(q)) : tumSporcular;
+  renderSporcuListesi(filtreli);
 }
 
-async function sporcuSilOnayla(){
-  if(!silinecekSporcuId)return;
-  const id=silinecekSporcuId;
-  await sb.from("test_sonuclari").delete().eq("sporcu_id",id);
-  await sb.from("psikoloji_sporcu").delete().eq("sporcu_id",id);
-  await sb.from("psikoloji_antrenor").delete().eq("sporcu_id",id);
-  await sb.from("odev_tamamlama").delete().eq("sporcu_id",id);
-  await sb.from("ev_odevleri").delete().eq("sporcu_id",id);
-  const r=await sb.from("sporcular").delete().eq("id",id);
-  if(r.error){alert("Silme hatasi: "+r.error.message);return;}
-  silinecekSporcuId=null;
-  modalKapat("m-sporcu-sil");
-  await sporcularYukle();
-  adminSporcuListesiGoster();
-  selectleriDoldur();
-}
-
-async function testKaydet(){
-  const sporcuId=document.getElementById('t-sporcu').value;
-  const tarih=document.getElementById('t-tarih').value;
-  if(!sporcuId||!tarih){alert('Sporcu ve tarih seçin!');return}
-  const{error}=await sb.from('test_sonuclari').insert({
-    sporcu_id:sporcuId,test_tarihi:tarih,
-    donem:document.getElementById('t-donem').value||null,
-    uzun_atlama:document.getElementById('ti-uzun-atlama').value||null,
-    saglik_topu:document.getElementById('ti-saglik-topu').value||null,
-    mekik_30sn:document.getElementById('ti-mekik').value||null,
-    sprint_30m:document.getElementById('ti-sprint').value||null,
-    illinois:document.getElementById('ti-illinois').value||null,
-    flamingo:document.getElementById('ti-flamingo').value||null,
-    otur_uzan:document.getElementById('ti-otur-uzan').value||null,
-    beep_test:document.getElementById('ti-beep').value||null,
-    cember_koordinasyon:document.getElementById('ti-cember').value||null,
-    cetvel_reaksiyon:document.getElementById('ti-cetvel').value||null,
-    el_dinamometre:document.getElementById('ti-dinamometre').value||null,
-    wingate:document.getElementById('ti-wingate').value||null,
-  });
-  const m=document.getElementById('test-mesaj');
-  if(error){m.style.color='#e63946';m.textContent='Hata: '+error.message}
-  else{m.style.color='#16a34a';m.textContent='Test kaydedildi!';setTimeout(()=>m.textContent='',3000)}
-}
-
-// ===== PSİKOLOJİ ANTRENÖRFormu =====
-const ANTRENOR_SORULAR=[
-  {baslik:'🔵 Kaygı — Antrenör Gözlemi',alt:'0: Gözlemlemedim · 1: Hiç · 2: Hafif · 3: Belirgin · 4: Çok Belirgin',max:4,start:0,
-   gruplar:[
-    {ad:'Bilişsel Belirtiler',sorular:[
-      {f:'ka_b1',s:"Yarış öncesi aşırı soru soruyor, onay arıyor."},
-      {f:'ka_b2',s:'Dikkatini toplamakta güçlük çekiyor.'},
-      {f:'ka_b3',s:"Olumsuz konuşmalar yapıyor ('Kazanamam' vb.)."},
-      {f:'ka_b4',s:'Hata yaptığında uzun süre toparlanamıyor.'},
-      {f:'ka_b5',s:'Rakip veya hakem hakkında aşırı endişeli.'},
-    ]},
-    {ad:'Somatik Belirtiler',sorular:[
-      {f:'ka_s1',s:'Isınmada kaslar aşırı gergin.'},
-      {f:'ka_s2',s:'Solunum hızlanmış veya düzensiz.'},
-      {f:'ka_s3',s:'Ellerde titreme, yüzde solukluk.'},
-      {f:'ka_s4',s:'Tuvalete sık gidiyor veya mide bulantısı.'},
-      {f:'ka_s5',s:'Hareketler sertleşmiş, koordinasyon kaybı.'},
-    ]},
-    {ad:'Davranış Belirtileri',sorular:[
-      {f:'ka_d1',s:'Antrenörden uzaklaşıyor, içe kapanıyor.'},
-      {f:'ka_d2',s:'Aşırı konuşkan veya tam tersine sessiz.'},
-      {f:'ka_d3',s:'Hazırlık rutinini aksatıyor.'},
-      {f:'ka_d4',s:'Yarıştan kaçma davranışı veya erteleme.'},
-      {f:'ka_d5',s:'Teknik uyarılara normalden farklı tepki.'},
-    ]},
-   ]
-  },
-  {baslik:'🟣 Motivasyon — Antrenör Gözlemi',alt:'1: Hiçbir zaman · 2: Nadiren · 3: Bazen · 4: Sıklıkla · 5: Her Zaman',max:5,start:1,
-   gruplar:[
-    {ad:'Görev Yönelimi Belirtileri',sorular:[
-      {f:'ma_g1',s:'Antrenmanı merak ederek sorar.'},
-      {f:'ma_g2',s:'Hata yaptığında tekrar dener.'},
-      {f:'ma_g3',s:'Rakipten bağımsız memnuniyet duyar.'},
-      {f:'ma_g4',s:'Zorlu egzersizlerde çaba gösterir.'},
-      {f:'ma_g5',s:'Geçmiş performansıyla karşılaştırır.'},
-    ]},
-    {ad:'Ego Yönelimi Belirtileri',sorular:[
-      {f:'ma_e1',s:'Yalnızca kazandığında motive görünür.'},
-      {f:'ma_e2',s:'Rakibiyle sürekli kıyaslar.'},
-      {f:'ma_e3',s:'Başarısızlıktan sonra bırakmak eğiliminde.'},
-      {f:'ma_e4',s:'Zor egzersizlerden kaçar.'},
-      {f:'ma_e5',s:'Kaybettiğinde sinirlenme veya ağlama.'},
-    ]},
-   ]
-  },
-  {baslik:'🟢 Mental Dayanıklılık — Antrenör Gözlemi',alt:'1: Hiçbir zaman · 5: Her Zaman',max:5,start:1,
-   gruplar:[
-    {ad:'Kontrol',sorular:[{f:'mda_kon1',s:'Duygusal tepkilerini uygun şekilde yönetiyor.'},{f:'mda_kon2',s:'Ortam değişse de uyum sağlıyor.'},{f:'mda_kon3',s:'Stresli durumlarda sakin kalabiliyor.'}]},
-    {ad:'Bağlılık',sorular:[{f:'mda_bag1',s:'Zor antrenman seanslarında vazgeçmiyor.'},{f:'mda_bag2',s:'Hedeflere bağlılığını sürdürüyor.'},{f:'mda_bag3',s:'Olumsuz koşullarda kararlılığını koruyor.'}]},
-    {ad:'Meydan Okuma',sorular:[{f:'mda_mey1',s:'Zor egzersizleri istekle deniyor.'},{f:'mda_mey2',s:'Yarışma baskısını fırsat olarak görüyor.'},{f:'mda_mey3',s:'Başarısızlıktan sonra hızlı toparlanıyor.'}]},
-    {ad:'Güven',sorular:[{f:'mda_guv1',s:'Baskı altında özgüveni korunuyor.'},{f:'mda_guv2',s:'Kendi teknik kararlarına güveniyor.'},{f:'mda_guv3',s:'Zor anlarda kapasitesine inancını yitirmiyor.'}]},
-   ]
-  },
-  {baslik:'🟠 Konsantrasyon — Antrenör Gözlemi',alt:'1: Hiçbir zaman · 5: Her Zaman',max:5,start:1,
-   gruplar:[
-    {ad:'Güçlü Dikkat Davranışları',sorular:[
-      {f:'ka2_g1',s:'Açıklamaları ilk seferinde anlıyor.'},
-      {f:'ka2_g2',s:'Birden fazla uyarıcıyı eş zamanlı takip ediyor.'},
-      {f:'ka2_g3',s:'Uzun seansların sonunda bile odak kaybı yok.'},
-      {f:'ka2_g4',s:'Hata sonrası hızla toparlanıyor.'},
-      {f:'ka2_g5',s:"Rakibinin stratejisini okuyabiliyor."},
-    ]},
-    {ad:'Dikkat Bozukluğu Belirtileri',sorular:[
-      {f:'ka2_d1',s:'Uzun açıklamalarda dikkati dağılıyor.'},
-      {f:'ka2_d2',s:'Seyirci ve gürültü dikkatini bozuyor.'},
-      {f:'ka2_d3',s:'Hata sonrası aynı hatayı tekrarlıyor.'},
-      {f:'ka2_d4',s:'Yorgunluk arttıkça teknik hatalar artıyor.'},
-      {f:'ka2_d5',s:'Kritik anlarda odak kaybı gözlemleniyor.'},
-    ]},
-   ]
-  },
-];
-
-const SPORCU_SORULAR=[
-  {baslik:'🔵 Rekabet Kaygısı',alt:'1: Hiç Değil · 2: Biraz · 3: Orta · 4: Çok Fazla',max:4,start:1,
-   gruplar:[
-    {ad:'Bilişsel Kaygı',sorular:[
-      {f:'bk1',s:'Yarışmada başarısız olacağım diye endişeleniyorum.'},
-      {f:'bk2',s:'Rakibimin daha iyi performans göstereceğinden korkuyorum.'},
-      {f:'bk3',s:'Hedeflerime ulaşıp ulaşamayacağımdan emin değilim.'},
-      {f:'bk4',s:'Daha önce yaptığım hataları aklımdan çıkaramıyorum.'},
-      {f:'bk5',s:'Yanlış hamle yaparsam ne olacağını düşünüyorum.'},
-      {f:'bk6',s:'Antrenörümün hayal kırıklığına uğrayacağından endişeleniyorum.'},
-      {f:'bk7',s:'Yarışma sırasında odaklanıp odaklanamayacağımı merak ediyorum.'},
-      {f:'bk8',s:'Bugün kötü bir günüm olmasından korkuyorum.'},
-      {f:'bk9',s:'Kendimden beklenenin altında kalacağımı düşünüyorum.'},
-    ]},
-    {ad:'Somatik Kaygı',sorular:[
-      {f:'sk1',s:'Vücudum gergin ve kaslarım sıkışmış hissediyorum.'},
-      {f:'sk2',s:'Kalbim normalden hızlı çarpıyor.'},
-      {f:'sk3',s:'Midem bulanıyor veya karın ağrısı hissediyorum.'},
-      {f:'sk4',s:'Ellerim titriyor veya terliyor.'},
-      {f:'sk5',s:'Ağzım kuruyor, yutkunmakta güçlük çekiyorum.'},
-      {f:'sk6',s:'Nefes almakta zorluk çekiyorum.'},
-      {f:'sk7',s:'Bacaklarım yorgun veya ağır hissediyor.'},
-      {f:'sk8',s:'Baş ağrım var ya da başım dönüyor.'},
-      {f:'sk9',s:'Yarışmadan önce çok sık tuvalete çıkma ihtiyacı duyuyorum.'},
-    ]},
-    {ad:'Özgüven',sorular:[
-      {f:'og1',s:'Bu yarışmada iyi bir performans göstereceğimden eminim.'},
-      {f:'og2',s:'Antrenmanlarda öğrendiklerimi sahaya yansıtabileceğime inanıyorum.'},
-      {f:'og3',s:'Baskı altında doğru kararlar verebileceğimi düşünüyorum.'},
-      {f:'og4',s:'Fiziksel olarak yarışmaya hazır olduğumu hissediyorum.'},
-      {f:'og5',s:'Rakibimle başa çıkabileceğime inanıyorum.'},
-      {f:'og6',s:'Zor bir durumda bile odağımı koruyabilirim.'},
-      {f:'og7',s:'Kendime olan güvenim yüksek.'},
-      {f:'og8',s:'Bu yarışmada başarılı olma kapasiteme inanıyorum.'},
-      {f:'og9',s:"Antrenörümün güvenine layık olduğumu hissediyorum."},
-    ]},
-   ]
-  },
-  {baslik:'🟣 Motivasyon',alt:"'Sporda en çok başarılı hissederim...' 1: Hiç · 5: Tamamen",max:5,start:1,
-   gruplar:[
-    {ad:'Görev Yönelimi',sorular:[
-      {f:'g1',s:'...Yeni bir beceriyi öğrendiğimde ve bu çok çalışmamı gerektirdiğinde.'},
-      {f:'g2',s:'...Kendim için belirlediğim bir hedefi gerçekleştirdiğimde.'},
-      {f:'g3',s:'...Antrenmanlarımda normalden daha iyi yaptığımda.'},
-      {f:'g4',s:'...Zor bir beceriyi çok çalışarak öğrendiğimde.'},
-      {f:'g5',s:'...İşlerin doğru yapılmasını öğrendiğimde.'},
-      {f:'g6',s:'...Diğer insanlar yapamasa da ben başardığımda.'},
-      {f:'g7',s:'...Elimden gelenin en iyisini yaptığımı hissettiğimde.'},
-    ]},
-    {ad:'Ego Yönelimi',sorular:[
-      {f:'e1',s:'...Diğerlerinden daha iyi olduğumu gösterdiğimde.'},
-      {f:'e2',s:'...Çok çalışmadan başkalarından daha iyi performans gösterdiğimde.'},
-      {f:'e3',s:'...Takımdaki en iyisi olduğumda.'},
-      {f:'e4',s:'...Başkalarının yapamadığını ben yapabildiğimde.'},
-      {f:'e5',s:'...Sınıftaki veya takımdaki en iyisi olduğumda.'},
-      {f:'e6',s:'...Diğerlerini yendiğimde.'},
-    ]},
-   ]
-  },
-  {baslik:'🟢 Psikolojik Dayanıklılık',alt:'1: Hiç Değil · 5: Her Zaman',max:5,start:1,
-   gruplar:[
-    {ad:'Kontrol',sorular:[{f:'kon1',s:'Zor anlarda duygularımı kontrol edebiliyorum.'},{f:'kon2',s:'Ne olursa olsun kendi kendimi sakinleştirebilirim.'},{f:'kon3',s:'Antrenman ve yarışın gidişatı üzerinde etkili olabileceğimi hissediyorum.'}]},
-    {ad:'Bağlılık',sorular:[{f:'bag1',s:'Zorlu bir antrenman seansında bırakmak istemesem de devam ederim.'},{f:'bag2',s:'Hedeflerim doğrultusunda kendimi antrenmanlarıma adarım.'},{f:'bag3',s:'Yorgun olsam bile antrenmanları atlamamaya çalışırım.'}]},
-    {ad:'Meydan Okuma',sorular:[{f:'mey1',s:'Yarışmalar ve zorluklar beni büyütür, korkutmaz.'},{f:'mey2',s:'Yeni ve zor durumları heyecanla karşılarım.'},{f:'mey3',s:'Başarısız olduğumda bunu bir öğrenme fırsatı olarak görürüm.'}]},
-    {ad:'Güven',sorular:[{f:'guv1',s:'Başkalarının baskısına rağmen kendi kararlarımda güvenle dururum.'},{f:'guv2',s:'Geçmişteki hatalar şu anki performansımı etkilemiyor.'},{f:'guv3',s:'Zor anlarda bile başarabileceğime inanıyorum.'}]},
-   ]
-  },
-  {baslik:'🟠 Konsantrasyon & Dikkat',alt:'1: Hiç Değil · 5: Her Zaman',max:5,start:1,
-   gruplar:[
-    {ad:'Geniş-Dışsal Dikkat',sorular:[
-      {f:'gd1',s:'Sahadaki birden fazla rakibi aynı anda takip edebiliyorum.'},
-      {f:'gd2',s:'Hakem, seyirci ve ortam değişikliklerini çabuk fark ediyorum.'},
-      {f:'gd3',s:"Rakibimin vücut dilini ve stratejisini yarış içinde okuyabiliyorum."},
-      {f:'gd4',s:'Sahada olup biteni geniş bir perspektifle görmeyi seviyorum.'},
-    ]},
-    {ad:'Dar-Dışsal Dikkat',sorular:[
-      {f:'dd1',s:'Rakibimle karşı karşıya geldiğimde tüm dikkatimi ona verebiliyorum.'},
-      {f:'dd2',s:'Kritik anlarda tek bir hedefe odaklanmakta zorlanmıyorum.'},
-      {f:'dd3',s:'Belirli bir tekmeyi yaparken odağım dağılmıyor.'},
-      {f:'dd4',s:'Önemli anlarda gereksiz şeyleri zihnimden uzaklaştırabilirim.'},
-    ]},
-    {ad:'Dikkat Hatası (düşük puan iyidir)',sorular:[
-      {f:'dh1',s:'Yarışma sırasında aklım dağılıyor ve dikkatim başka şeylere gidiyor.'},
-      {f:'dh2',s:'Öfke sonrası odağımı tekrar toplamakta güçlük çekiyorum.'},
-      {f:'dh3',s:'Seyirci, gürültü veya yorgunluk dikkatimi önemli ölçüde bozuyor.'},
-      {f:'dh4',s:'Bir hata yaptığımda o hatayı düşünmeye devam ederek sonraki hamlemi etkiliyorum.'},
-    ]},
-   ]
-  },
-];
-
-function anketFormOlustur(sorular,kapsayici){
-  const el=document.getElementById(kapsayici);if(!el)return;
-  let html='';
-  sorular.forEach(b=>{
-    html+=`<div class="psiko-bolum"><div class="psiko-bolum-baslik">${b.baslik}</div><div class="psiko-bolum-alt">${b.alt}</div>`;
-    b.gruplar.forEach(g=>{
-      html+=`<div class="psiko-grup-baslik">${g.ad}</div>`;
-      g.sorular.forEach(s=>{
-        html+=`<div class="psiko-soru"><div class="psiko-soru-metin">${s.s}</div><div class="likert-satir" data-field="${s.f}" data-kap="${kapsayici}">`;
-        for(let i=b.start;i<=b.max;i++) html+=`<button type="button" class="l-btn" data-val="${i}" onclick="lSec(this)">${i}</button>`;
-        html+=`</div></div>`;
-      });
-    });
-    html+=`</div>`;
-  });
-  el.innerHTML=html;
-}
-
-function antrenorAnketOlustur(){anketFormOlustur(ANTRENOR_SORULAR,'antrenor-anket-alani')}
-
-function lSec(btn){
-  const satir=btn.closest('.likert-satir');
-  satir.querySelectorAll('.l-btn').forEach(b=>b.classList.remove('secili'));
-  btn.classList.add('secili');
-}
-
-function lDeger(field,kapsayici){
-  const sel=document.querySelector(`#${kapsayici} .likert-satir[data-field="${field}"] .l-btn.secili`);
-  return sel?parseInt(sel.dataset.val):null;
-}
-
-async function antrenorPsikoKaydet(){
-  const sporcuId=document.getElementById('p-sporcu').value;
-  const tarih=document.getElementById('p-tarih').value;
-  if(!sporcuId||!tarih){alert('Sporcu ve tarih seçin!');return}
-  const fields=['ka_b1','ka_b2','ka_b3','ka_b4','ka_b5','ka_s1','ka_s2','ka_s3','ka_s4','ka_s5','ka_d1','ka_d2','ka_d3','ka_d4','ka_d5',
-    'ma_g1','ma_g2','ma_g3','ma_g4','ma_g5','ma_e1','ma_e2','ma_e3','ma_e4','ma_e5',
-    'mda_kon1','mda_kon2','mda_kon3','mda_bag1','mda_bag2','mda_bag3','mda_mey1','mda_mey2','mda_mey3','mda_guv1','mda_guv2','mda_guv3',
-    'ka2_g1','ka2_g2','ka2_g3','ka2_g4','ka2_g5','ka2_d1','ka2_d2','ka2_d3','ka2_d4','ka2_d5'];
-  const veri={sporcu_id:sporcuId,test_tarihi:tarih,donem:document.getElementById('p-donem').value||null,onaylandi:true};
-  fields.forEach(f=>{veri[f]=lDeger(f,'antrenor-anket-alani')});
-  const{error}=await sb.from('psikoloji_antrenor').insert(veri);
-  const m=document.getElementById('psiko-a-mesaj');
-  if(error){m.style.color='#e63946';m.textContent='Hata: '+error.message}
-  else{m.style.color='#16a34a';m.textContent='Kaydedildi ve onaylandı!';setTimeout(()=>m.textContent='',3000)}
-}
-
-async function adminOdevleriYukle(){
-  const filtre=document.getElementById('odev-filtre')?.value;
-  let q=sb.from('ev_odevleri').select('*, sporcular(ad_soyad)').order('tarih',{ascending:false});
-  if(filtre)q=q.eq('sporcu_id',filtre);
-  const{data}=await q;
-  const liste=document.getElementById('admin-odev-liste');
-  liste.innerHTML='';
-  if(!data||!data.length){liste.innerHTML='<p class="bos-mesaj">Henüz ödev eklenmemiş.</p>';return}
-  data.forEach(o=>{
-    liste.innerHTML+=`<div class="admin-liste-kart">
-      <div class="al-sol"><div class="al-baslik">${o.baslik}</div><div class="al-alt">${o.sporcular?.ad_soyad||''} · ${o.tarih||''} · ${o.sure_dakika||'—'} dk</div></div>
-      <button class="sil-btn" onclick="odevSil('${o.id}')">Sil</button>
+function renderSporcuListesi(liste) {
+  const div = document.getElementById('sporcuListesiDiv');
+  if (!liste || liste.length === 0) {
+    div.innerHTML = '<div class="bos-durum"><span class="ikon">👥</span><p>Henüz sporcu yok</p></div>';
+    return;
+  }
+  div.innerHTML = liste.map(s => {
+    const yas = yasHesapla(s.dogum_tarihi);
+    return `
+    <div class="sporcu-kart" onclick="sporcuProfilAc('${s.id}')">
+      <div class="sporcu-avatar">${basTaHarfler(s.ad_soyad)}</div>
+      <div class="sporcu-info">
+        <div class="sporcu-isim">${s.ad_soyad}</div>
+        <div class="sporcu-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || 'Kuşak yok'}</div>
+      </div>
+      <div class="sporcu-ok">›</div>
     </div>`;
-  });
+  }).join('');
 }
 
-async function odevEkle(){
-  const sporcuId=document.getElementById('odev-sporcu-sec').value;
-  const baslik=document.getElementById('odev-baslik').value.trim();
-  if(!sporcuId||!baslik){alert('Sporcu ve başlık gerekli!');return}
-  const{error}=await sb.from('ev_odevleri').insert({
-    sporcu_id:sporcuId,baslik,
-    aciklama:document.getElementById('odev-aciklama').value,
-    sure_dakika:document.getElementById('odev-sure').value||null,
-    tarih:document.getElementById('odev-tarih').value||null,
-  });
-  const m=document.getElementById('odev-ekle-mesaj');
-  if(error){m.style.color='#e63946';m.textContent='Hata: '+error.message}
-  else{m.style.color='#16a34a';m.textContent='Ödev eklendi!';setTimeout(()=>{modalKapat('m-odev-ekle');adminOdevleriYukle();m.textContent=''},1200)}
+// ── TAB KONTROLÜ ──────────────────────────────────────────────────────────
+function tabSec(tab) {
+  document.querySelectorAll('#antrenorEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
+  event.target.classList.add('aktif');
+  document.getElementById('tab-sporcular').style.display = 'none';
+  document.getElementById('tab-testler').style.display = 'none';
+  document.getElementById('tab-anketler').style.display = 'none';
+  document.getElementById('tab-grafikler').style.display = 'none';
+  document.getElementById(`tab-${tab}`).style.display = 'block';
+  document.getElementById('fabBtn').style.display = tab === 'sporcular' ? 'flex' : 'none';
+
+  if (tab === 'testler') testlerYukle();
+  if (tab === 'anketler') anketlerYukle();
+  if (tab === 'grafikler') grafikSporcuSecenekleriDoldur();
 }
 
-async function odevSil(id){
-  if(!confirm('Bu ödevi silmek istiyor musun?'))return;
-  await sb.from('ev_odevleri').delete().eq('id',id);
-  adminOdevleriYukle();
-}
-
-async function takipYukle(){
-  const{data}=await sb.from('odev_tamamlama').select('*, ev_odevleri(baslik,sure_dakika), sporcular(ad_soyad)').order('created_at',{ascending:false});
-  const liste=document.getElementById('takip-liste');
-  liste.innerHTML='';
-  if(!data||!data.length){liste.innerHTML='<p class="bos-mesaj">Henüz ödev başlatılmamış.</p>';return}
-  data.forEach(t=>{
-    const b=t.ev_odevleri?.sure_dakika||0;
-    let g=0;if(t.baslangic_zamani&&t.bitis_zamani)g=Math.round((new Date(t.bitis_zamani)-new Date(t.baslangic_zamani))/60000);
-    let dc='d-bekle',dt='Devam ediyor';
-    if(t.tamamlandi){
-      if(b>0&&g<b*.5){dc='d-eksik';dt=`Erken bitti (${g}dk)`}
-      else{dc='d-tamam';dt=`Tamamlandı (${g}dk)`}
+// ── TÜM TEST SONUÇLARI ────────────────────────────────────────────────────
+async function testlerYukle() {
+  yukleniyor('tumTestlerDiv');
+  try {
+    const testler = await tumMotorikTestler();
+    if (!testler || testler.length === 0) {
+      document.getElementById('tumTestlerDiv').innerHTML = '<div class="bos-durum"><span class="ikon">📊</span><p>Henüz test sonucu yok</p></div>';
+      return;
     }
-    const tarih=t.baslangic_zamani?new Date(t.baslangic_zamani).toLocaleString('tr-TR'):'—';
-    liste.innerHTML+=`<div class="admin-liste-kart">
-      <div class="al-sol"><div class="al-baslik">${t.sporcular?.ad_soyad||''}</div><div class="al-alt">${t.ev_odevleri?.baslik||''} · ${tarih}</div></div>
-      <span class="takip-durum ${dc}">${dt}</span>
+    const html = testler.map(t => {
+      const sporcu = t.sporcular || {};
+      return `
+      <div class="kart" onclick="sporcuProfilAc('${t.sporcu_id}')">
+        <div class="kart-baslik">👤 ${sporcu.ad_soyad || '?'} <span style="font-weight:400;color:var(--gray-500);font-size:12px">${tarihFormatla(t.test_tarihi)}</span></div>
+        ${renderTestOzet(t, sporcu)}
+      </div>`;
+    }).join('');
+    document.getElementById('tumTestlerDiv').innerHTML = html;
+  } catch (e) {
+    document.getElementById('tumTestlerDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
+  }
+}
+
+function renderTestOzet(test, sporcu) {
+  const yas = yasHesapla(sporcu.dogum_tarihi);
+  const cin = sporcu.cinsiyet || 'Erkek';
+  const alanlar = Object.keys(TEST_ETIKETLERI);
+  return `<div>${alanlar.map(alan => {
+    const val = test[alan];
+    if (val === null || val === undefined) return '';
+    const { durum } = testDurumu(alan, val, yas, cin);
+    const et = TEST_ETIKETLERI[alan];
+    return `<div class="test-satir">
+      <span class="test-ad">${et.ad}</span>
+      <span class="test-deger">${val} <span class="test-birim">${et.birim}</span></span>
+      <span class="test-durum">${durum}</span>
     </div>`;
+  }).join('')}</div>`;
+}
+
+// ── TÜM ANKETLER ──────────────────────────────────────────────────────────
+async function anketlerYukle() {
+  yukleniyor('tumAnketlerDiv');
+  try {
+    const anketler = await tumAnketler();
+    if (!anketler || anketler.length === 0) {
+      document.getElementById('tumAnketlerDiv').innerHTML = '<div class="bos-durum"><span class="ikon">🧠</span><p>Henüz anket yok</p></div>';
+      return;
+    }
+    const html = anketler.map(a => {
+      const puanlar = psikolojiPuanlari(a);
+      const sporcu = a.sporcular || {};
+      return `
+      <div class="kart" onclick="sporcuProfilAc('${a.sporcu_id}')">
+        <div class="kart-baslik">👤 ${sporcu.ad_soyad || '?'} <span style="font-weight:400;color:var(--gray-500);font-size:12px">${tarihFormatla(a.anket_tarihi)}</span></div>
+        ${renderPsikolojOzet(puanlar)}
+      </div>`;
+    }).join('');
+    document.getElementById('tumAnketlerDiv').innerHTML = html;
+  } catch (e) {
+    document.getElementById('tumAnketlerDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
+  }
+}
+
+function renderPsikolojOzet(p) {
+  if (!p) return '<p style="color:var(--gray-500);font-size:13px">Veri yok</p>';
+  const alanlar = [
+    { k: 'bilisselKaygi', ad: 'Bilişsel Kaygı', max: 36, ters: true },
+    { k: 'ozguven', ad: 'Özgüven', max: 36, ters: false },
+    { k: 'gorevYon', ad: 'Görev Yönelimi', max: 5, ters: false },
+    { k: 'kontrol', ad: 'Mental Kontrol', max: 5, ters: false }
+  ];
+  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${alanlar.map(a => {
+    const val = p[a.k];
+    if (!val) return '';
+    const { durum, renk } = psikolojiBoyutDurumu(a.k, val);
+    return `<div style="background:var(--gray-50);border-radius:8px;padding:8px 10px">
+      <div style="font-size:11px;color:var(--gray-500)">${a.ad}</div>
+      <div style="font-size:16px;font-weight:700">${typeof val === 'number' ? val.toFixed(1) : val}</div>
+      <span class="badge badge-${renk === 'green' ? 'green' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
+    </div>`;
+  }).join('')}</div>`;
+}
+
+// ── GRAFİKLER ─────────────────────────────────────────────────────────────
+function grafikSporcuSecenekleriDoldur() {
+  const sel = document.getElementById('grafikSporcuSec');
+  sel.innerHTML = '<option value="">— Sporcu seçin —</option>';
+  (tumSporcular || []).forEach(s => {
+    sel.innerHTML += `<option value="${s.id}">${s.ad_soyad}</option>`;
   });
 }
 
-// ===== SPORCU SAYFASI =====
-async function sporcuSayfasiGoster(sporcu){
-  document.getElementById('giris-ekrani').style.display='none';
-  document.getElementById('sporcu-sayfasi').classList.remove('hidden');
-  const ini=initials(sporcu.ad_soyad);
-  const renk=RENKLER[sporcu.ad_soyad.charCodeAt(0)%RENKLER.length];
-  document.getElementById('sh-av').textContent=ini;
-  document.getElementById('sh-av').style.background=renk;
-  document.getElementById('sh-ad').textContent=sporcu.ad_soyad;
-  const yas=sporcu.dogum_tarihi?(new Date().getFullYear()-new Date(sporcu.dogum_tarihi).getFullYear()):'';
-  document.getElementById('sh-alt').textContent=[sporcu.cinsiyet,yas?yas+' yaş':'',sporcu.dan_kusak].filter(Boolean).join(' · ');
-  document.title=sporcu.ad_soyad;
+async function grafikYukle() {
+  const id = document.getElementById('grafikSporcuSec').value;
+  if (!id) { document.getElementById('grafiklerDiv').innerHTML = ''; return; }
+  yukleniyor('grafiklerDiv');
+  try {
+    const [testler, anketler, sporcu] = await Promise.all([
+      motorikTestleriGetir(id),
+      anketleriGetir(id),
+      sporcuGetir(id)
+    ]);
+    renderGrafikler(testler, anketler, sporcu);
+  } catch (e) {
+    document.getElementById('grafiklerDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
+  }
+}
 
-  const icerik=document.getElementById('sporcu-icerik');
-  icerik.innerHTML='<div class="bos-mesaj">Yükleniyor...</div>';
+function renderGrafikler(testler, anketler, sporcu) {
+  // Mevcut grafikleri temizle
+  Object.values(grafikInstances).forEach(c => c.destroy());
+  grafikInstances = {};
 
-  const yas2=sporcu.dogum_tarihi?(new Date().getFullYear()-new Date(sporcu.dogum_tarihi).getFullYear()):14;
-  const cins=sporcu.cinsiyet==='Kız'?'K':'E';
-  const yg=yas2<=12?'1012':yas2<=14?'1314':'1516';
-  const nk=`${cins}_${yg}`;
+  if (!testler || testler.length === 0) {
+    document.getElementById('grafiklerDiv').innerHTML = '<div class="bos-durum"><span class="ikon">📈</span><p>Test verisi yok</p></div>';
+    return;
+  }
 
-  const[{data:testler},{data:aList},{data:sList},{data:odevler},{data:tamList},{data:psikoBekle}]=await Promise.all([
-    sb.from('test_sonuclari').select('*').eq('sporcu_id',sporcu.id).order('test_tarihi',{ascending:true}),
-    sb.from('psikoloji_antrenor').select('*').eq('sporcu_id',sporcu.id).eq('onaylandi',true).order('created_at',{ascending:false}),
-    sb.from('psikoloji_sporcu').select('*').eq('sporcu_id',sporcu.id).eq('onaylandi',true).order('created_at',{ascending:false}),
-    sb.from('ev_odevleri').select('*').eq('sporcu_id',sporcu.id).order('tarih',{ascending:false}),
-    sb.from('odev_tamamlama').select('odev_id').eq('sporcu_id',sporcu.id).eq('tamamlandi',true),
-    sb.from('psikoloji_sporcu').select('id').eq('sporcu_id',sporcu.id).eq('onaylandi',false).order('created_at',{ascending:false}).limit(1),
-  ]);
+  const sirali = [...testler].reverse();
+  const etiketler = sirali.map(t => tarihFormatla(t.test_tarihi));
 
-  const tamSet=new Set((tamList||[]).map(t=>t.odev_id));
-  let html='';
+  let html = '<div id="motorikGrafikKap" class="kart"><div class="kart-baslik">📊 Motorik Gelişim</div>';
+  const motorikAlanlar = ['uzun_atlama_cm', 'sprint_30m_sn', 'beep_test_seviye', 'otur_uzan_cm'];
+  motorikAlanlar.forEach((alan, i) => {
+    html += `<canvas id="chart_${alan}" height="180" style="margin-bottom:16px"></canvas>`;
+  });
+  html += '</div>';
 
-  // 1. MOTORİK BÖLÜM
-  html+=`<div class="bolum">
-    <div class="bolum-baslik-row">
-      <div class="bolum-ikon">💪</div>
-      <div><div class="bolum-baslik">Motorik Değerlendirme</div><div class="bolum-alt">Fiziksel performans analizi</div></div>
-    </div>`;
-  if(!testler||!testler.length){
-    html+=`<div class="bos-mesaj" style="padding:20px 0;">Henüz test sonucu girilmemiş.</div>`;
-  } else {
-    const test=testler[testler.length-1];
-    let ustun=0,normal=0,gelistir=0,zayif=0,satirlar='',zayiflar='';
-    for(const[key,n] of Object.entries(NORMLAR)){
-      const d=parseFloat(test[key]);if(isNaN(d))continue;
-      const norm=n[nk]||n['E_1314'];
-      const oran=n.dusuk_iyi?(norm/d):(d/norm);
-      let durum,rClass,barClass,barW;
-      if(oran>=1.10){durum='Üstün';rClass='rb-ustun';barClass='bar-ustun';barW=100;ustun++}
-      else if(oran>=0.90){durum='Normal';rClass='rb-normal';barClass='bar-normal';barW=75;normal++}
-      else if(oran>=0.80){durum='Geliştir';rClass='rb-gelistir';barClass='bar-gelistir';barW=50;gelistir++}
-      else{durum='Zayıf';rClass='rb-zayif';barClass='bar-zayif';barW=25;zayif++}
-      satirlar+=`<div class="test-satir">
-        <div class="ts-sol"><div class="ts-ad">${n.ad}</div><div class="ts-deger">${d} ${n.birim} · Norm: ${norm}</div></div>
-        <div class="ts-bar"><div class="ts-bar-ic ${barClass}" style="width:${barW}%"></div></div>
-        <span class="rozet-badge ${rClass}">${durum}</span>
-      </div>`;
-      if(durum==='Zayıf'||durum==='Geliştir'){
-        zayiflar+=`<div class="zayif-kart">
-          <div class="zayif-kart-ad">${n.ad} <span class="rozet-badge ${rClass}" style="font-size:10px;">${durum}</span></div>
-          <div class="zayif-kart-egz">${n.egz}</div>
-          <div class="zayif-kart-sik">${n.sik}</div>
-        </div>`;
+  if (anketler && anketler.length > 0) {
+    html += '<div class="kart"><div class="kart-baslik">🧠 Psikolojik Profil (Son Anket)</div><canvas id="chart_psiko" height="280"></canvas></div>';
+  }
+
+  document.getElementById('grafiklerDiv').innerHTML = html;
+
+  const renkler = ['#1a56db','#e65100','#057a55','#7e22ce'];
+  motorikAlanlar.forEach((alan, i) => {
+    const canvas = document.getElementById(`chart_${alan}`);
+    if (!canvas) return;
+    const veri = sirali.map(t => t[alan] ?? null);
+    grafikInstances[alan] = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels: etiketler,
+        datasets: [{
+          label: TEST_ETIKETLERI[alan]?.ad || alan,
+          data: veri,
+          borderColor: renkler[i],
+          backgroundColor: renkler[i] + '20',
+          tension: 0.3,
+          fill: true,
+          pointRadius: 5
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { display: true, position: 'top' } },
+        scales: { y: { beginAtZero: false } }
       }
-    }
-    html+=`<div class="rozet-satir">
-      <div class="rozet-kutu ustun"><div class="rozet-sayi">${ustun}</div><div class="rozet-etiket">Üstün</div></div>
-      <div class="rozet-kutu normal"><div class="rozet-sayi">${normal}</div><div class="rozet-etiket">Normal</div></div>
-      <div class="rozet-kutu zayif"><div class="rozet-sayi">${zayif+gelistir}</div><div class="rozet-etiket">Geliştirilecek</div></div>
-    </div>`;
-    html+=`<div class="alt-cizgi-baslik">Test Sonuçları</div>${satirlar}`;
-    if(zayiflar){html+=`<div class="alt-cizgi-baslik" style="margin-top:16px;">Geliştirilmesi Gereken Alanlar</div>${zayiflar}`}
-    if(testler.length>1){html+=`<div class="alt-cizgi-baslik" style="margin-top:16px;">Dönemsel Gelişim</div><div id="motorik-grafik-alani"></div>`}
-  }
-  html+=`</div>`;
-
-  // 2. PSİKOLOJİ BÖLÜM
-  html+=`<div class="bolum">
-    <div class="bolum-baslik-row">
-      <div class="bolum-ikon">🧠</div>
-      <div><div class="bolum-baslik">Psikolojik Değerlendirme</div><div class="bolum-alt">Antrenör değerlendirmesi</div></div>
-    </div>`;
-
-  const a=aList?.[0],s=sList?.[0];
-  if(!a&&!s){
-    html+=`<div class="psiko-bekliyor">Antrenörün değerlendirmesi henüz yapılmadı.</div>`;
-  } else {
-    const bolumler=[
-      {baslik:'🔵 Rekabet Kaygısı',altlar:[
-        {ad:'Bilişsel Kaygı',puan:s?ort([s.bk1,s.bk2,s.bk3,s.bk4,s.bk5,s.bk6,s.bk7,s.bk8,s.bk9]):null,max:4,dusukIyi:true},
-        {ad:'Somatik Kaygı',puan:s?ort([s.sk1,s.sk2,s.sk3,s.sk4,s.sk5,s.sk6,s.sk7,s.sk8,s.sk9]):null,max:4,dusukIyi:true},
-        {ad:'Özgüven',puan:s?ort([s.og1,s.og2,s.og3,s.og4,s.og5,s.og6,s.og7,s.og8,s.og9]):null,max:4,dusukIyi:false},
-      ]},
-      {baslik:'🟣 Motivasyon',altlar:[
-        {ad:'Görev Yönelimi',puan:s?ort([s.g1,s.g2,s.g3,s.g4,s.g5,s.g6,s.g7]):null,max:5,dusukIyi:false},
-        {ad:'Ego Yönelimi',puan:s?ort([s.e1,s.e2,s.e3,s.e4,s.e5,s.e6]):null,max:5,dusukIyi:true},
-      ]},
-      {baslik:'🟢 Mental Dayanıklılık',altlar:[
-        {ad:'Kontrol',puan:s?ort([s.kon1,s.kon2,s.kon3]):null,max:5,dusukIyi:false},
-        {ad:'Bağlılık',puan:s?ort([s.bag1,s.bag2,s.bag3]):null,max:5,dusukIyi:false},
-        {ad:'Meydan Okuma',puan:s?ort([s.mey1,s.mey2,s.mey3]):null,max:5,dusukIyi:false},
-        {ad:'Güven',puan:s?ort([s.guv1,s.guv2,s.guv3]):null,max:5,dusukIyi:false},
-      ]},
-      {baslik:'🟠 Konsantrasyon',altlar:[
-        {ad:'Geniş-Dışsal',puan:s?ort([s.gd1,s.gd2,s.gd3,s.gd4]):null,max:5,dusukIyi:false},
-        {ad:'Dar-Dışsal',puan:s?ort([s.dd1,s.dd2,s.dd3,s.dd4]):null,max:5,dusukIyi:false},
-        {ad:'Dikkat Hatası',puan:s?ort([s.dh1,s.dh2,s.dh3,s.dh4]):null,max:5,dusukIyi:true},
-      ]},
-    ];
-    bolumler.forEach(b=>{
-      html+=`<div class="alt-cizgi-baslik">${b.baslik}</div>`;
-      b.altlar.forEach(alt=>{
-        if(alt.puan===null)return;
-        const oran=(alt.puan/alt.max)*100;
-        const renk=alt.dusukIyi?(alt.puan<=alt.max*.5?'#16a34a':alt.puan<=alt.max*.75?'#ea580c':'#dc2626'):(alt.puan>=alt.max*.75?'#16a34a':alt.puan>=alt.max*.5?'#ea580c':'#dc2626');
-        html+=`<div class="psiko-sonuc-satir">
-          <div class="psiko-sonuc-ad">${alt.ad}</div>
-          <div class="psiko-bar-zemin"><div class="psiko-bar-ic" style="width:${oran}%;background:${renk}"></div></div>
-          <div class="psiko-puan" style="color:${renk}">${alt.puan.toFixed(1)}</div>
-        </div>`;
-      });
     });
-  }
+  });
 
-  // Sporcu testi gönderme
-  html+=`<div style="margin-top:14px;">`;
-  if(psikoBekle&&psikoBekle.length>0){
-    html+=`<div class="psiko-gonderildi">✓ Testini gönderdik! Antrenörün onaylamasını bekliyoruz.</div>`;
-  } else if(s){
-    html+=`<div class="psiko-gonderildi">✓ Bu döneme ait testini doldurdun.</div>`;
-  } else {
-    html+=`<button class="test-doldur-btn" onclick="psikTestFormAc()">🧪 Psikoloji Testimi Doldur</button>`;
+  // Psikoloji radar grafiği (son anket)
+  if (anketler && anketler.length > 0) {
+    const p = psikolojiPuanlari(anketler[0]);
+    const canvas = document.getElementById('chart_psiko');
+    if (canvas && p) {
+      const normalize = (val, max, ters) => ters ? ((max - val) / max) * 5 : (val / max) * 5;
+      grafikInstances['psiko'] = new Chart(canvas, {
+        type: 'radar',
+        data: {
+          labels: ['Özgüven', 'Görev Yon.', 'Mental Kontrol', 'Bağlılık', 'Meydan Ok.', 'Konsantrasyon'],
+          datasets: [{
+            label: 'Profil',
+            data: [
+              normalize(p.ozguven, 36, false),
+              p.gorevYon,
+              p.kontrol,
+              p.baglilik,
+              p.meydan,
+              p.genisDissal
+            ],
+            borderColor: '#1a56db',
+            backgroundColor: 'rgba(26,86,219,0.15)',
+            pointBackgroundColor: '#1a56db'
+          }]
+        },
+        options: {
+          responsive: true,
+          scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } }
+        }
+      });
+    }
   }
-  html+=`</div></div>`;
+}
 
-  // 3. EV ÖDEVİ BÖLÜM
-  html+=`<div class="bolum">
-    <div class="bolum-baslik-row">
-      <div class="bolum-ikon">📚</div>
-      <div><div class="bolum-baslik">Ev Ödevleri</div><div class="bolum-alt">Antrenörden gelen görevler</div></div>
-    </div>`;
-  if(!odevler||!odevler.length){
-    html+=`<div class="bos-mesaj" style="padding:20px 0;">Henüz ev ödevi atanmamış.</div>`;
-  } else {
-    odevler.forEach(o=>{
-      const tamam=tamSet.has(o.id);
-      html+=`<div class="odev-kart">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px;">
-          <div class="odev-kart-baslik">${o.baslik}</div>
-          ${tamam?'<span class="odev-tamam-rozet">Tamamlandı</span>':''}
+// ── SPORCU PROFİL (ANT. GÖRÜNÜM) ──────────────────────────────────────────
+async function sporcuProfilAc(id) {
+  aktifSporcuId = id;
+  ekranGoster('sporcuProfilEkrani');
+  yukleniyor('profilBilgilerDiv');
+  yukleniyor('profilTestlerDiv');
+  yukleniyor('profilPsikolojiDiv');
+
+  try {
+    const [sporcu, testler, anketler] = await Promise.all([
+      sporcuGetir(id),
+      motorikTestleriGetir(id),
+      anketleriGetir(id)
+    ]);
+
+    document.getElementById('profilBaslik').textContent = sporcu.ad_soyad;
+    renderProfilHeader(sporcu);
+    renderProfilBilgiler(sporcu);
+    renderProfilTestler(testler, sporcu);
+    renderProfilPsikoloji(anketler);
+    renderRecete(testler, anketler, sporcu);
+
+  } catch (e) {
+    bildirimGoster('Hata: ' + e.message);
+  }
+}
+
+function renderProfilHeader(s) {
+  const yas = yasHesapla(s.dogum_tarihi);
+  document.getElementById('profilHeaderDiv').innerHTML = `
+  <div class="profil-header">
+    <div class="profil-avatar-buyuk">${basTaHarfler(s.ad_soyad)}</div>
+    <div>
+      <div class="profil-isim">${s.ad_soyad}</div>
+      <div class="profil-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || '—'}</div>
+      <div class="profil-meta" style="margin-top:4px">${s.kulup_okul || ''}</div>
+    </div>
+    <button style="margin-left:auto;background:rgba(255,255,255,0.15);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer" onclick="sporcuDuzModalAc('${s.id}')">Düzenle</button>
+  </div>`;
+}
+
+function renderProfilBilgiler(s) {
+  const yas = yasHesapla(s.dogum_tarihi);
+  const bilgiler = [
+    { etiket: 'Ad Soyad', deger: s.ad_soyad },
+    { etiket: 'Doğum Tarihi', deger: tarihFormatla(s.dogum_tarihi) },
+    { etiket: 'Yaş', deger: yas + ' yaş' },
+    { etiket: 'Cinsiyet', deger: s.cinsiyet || '—' },
+    { etiket: 'Boy', deger: s.boy_cm ? s.boy_cm + ' cm' : '—' },
+    { etiket: 'Kilo', deger: s.kilo_kg ? s.kilo_kg + ' kg' : '—' },
+    { etiket: 'Dan / Kuşak', deger: s.dan_kusak || '—' },
+    { etiket: 'Kulüp / Okul', deger: s.kulup_okul || '—' },
+    { etiket: 'E-posta', deger: s.email }
+  ];
+  document.getElementById('profilBilgilerDiv').innerHTML = `
+  <div class="kart">
+    ${bilgiler.map(b => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)">
+      <span style="color:var(--gray-500);font-size:13px">${b.etiket}</span>
+      <span style="font-size:13px;font-weight:600">${b.deger}</span>
+    </div>`).join('')}
+  </div>`;
+}
+
+function renderProfilTestler(testler, sporcu) {
+  if (!testler || testler.length === 0) {
+    document.getElementById('profilTestlerDiv').innerHTML = `
+    <div class="bos-durum"><span class="ikon">📊</span><p>Henüz test sonucu yok</p></div>
+    <button class="btn btn-primary" onclick="testEkleModalAc()">+ Test Ekle</button>`;
+    return;
+  }
+  const enSon = testler[0];
+  const yas = yasHesapla(sporcu.dogum_tarihi);
+  const cin = sporcu.cinsiyet || 'Erkek';
+  const alanlar = Object.keys(TEST_ETIKETLERI);
+
+  let html = `
+  <button class="btn btn-outline" style="margin-bottom:12px" onclick="testEkleModalAc()">+ Yeni Test Ekle</button>
+  <div class="kart">
+    <div class="kart-baslik">📊 Son Test — ${tarihFormatla(enSon.test_tarihi)}</div>
+    ${alanlar.map((alan, i) => {
+      const val = enSon[alan];
+      if (val === null || val === undefined) return '';
+      const et = TEST_ETIKETLERI[alan];
+      const { durum, renk, norm } = testDurumu(alan, val, yas, cin);
+      return `<div class="test-satir">
+        <span class="test-no">${i+1}</span>
+        <div class="test-ad">
+          <div style="font-size:13px">${et.ad}</div>
+          <div style="font-size:11px;color:var(--gray-500)">Norm: ${norm} ${et.birim}</div>
         </div>
-        ${o.aciklama?`<div class="odev-kart-aciklama">${o.aciklama}</div>`:''}
-        <div class="odev-kart-alt">
-          <div class="odev-kart-bilgi">${o.tarih||''} · ${o.sure_dakika||'—'} dk</div>
-          ${!tamam?`<button class="odev-baslat-btn" onclick="odevModalAc('${o.id}','${o.baslik}','${(o.aciklama||'').replace(/'/g,"\\'")}',${o.sure_dakika||0})">Başlat</button>`:''}
+        <div style="text-align:right">
+          <div class="test-deger">${val} <span class="test-birim">${et.birim}</span></div>
+          <div class="test-durum">${durum}</div>
         </div>
       </div>`;
-    });
-  }
-  html+=`</div>`;
+    }).join('')}
+  </div>`;
 
-  // PSİKOLOJİ TEST FORMU (başta gizli)
-  html+=`<div id="psik-test-bolum" style="display:none;">
-    <div class="bolum">
-      <div class="bolum-baslik-row">
-        <div class="bolum-ikon">🧪</div>
-        <div><div class="bolum-baslik">Psikoloji Testim</div><div class="bolum-alt">Dürüstçe ve içten yanıtla</div></div>
+  if (testler.length > 1) {
+    html += `<div class="kart"><div class="kart-baslik">📋 Test Geçmişi</div>
+    ${testler.slice(1).map(t => `
+    <div class="gecmis-item">
+      <span class="gecmis-tarih">${tarihFormatla(t.test_tarihi)}</span>
+      <span class="gecmis-icerik">
+        ${Object.keys(TEST_ETIKETLERI).filter(k => t[k] != null).map(k => `${TEST_ETIKETLERI[k].ad}: ${t[k]}`).slice(0,3).join(' · ')}
+      </span>
+    </div>`).join('')}
+    </div>`;
+  }
+  document.getElementById('profilTestlerDiv').innerHTML = html;
+}
+
+function renderProfilPsikoloji(anketler) {
+  if (!anketler || anketler.length === 0) {
+    document.getElementById('profilPsikolojiDiv').innerHTML = '<div class="bos-durum"><span class="ikon">🧠</span><p>Henüz anket doldurulmamış</p></div>';
+    return;
+  }
+  const p = psikolojiPuanlari(anketler[0]);
+  const boyutlar = [
+    { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı', tip: 'kaygi' },
+    { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı',  tip: 'kaygi' },
+    { k: 'ozguven',       ad: '💪 Özgüven',         tip: 'ozguven' },
+    { k: 'gorevYon',      ad: '🎯 Görev Yönelimi',  tip: 'motivasyon' },
+    { k: 'egoYon',        ad: '🏆 Ego Yönelimi',    tip: 'motivasyon' },
+    { k: 'kontrol',       ad: '🧘 Mental Kontrol',  tip: 'mental' },
+    { k: 'baglilik',      ad: '🔗 Bağlılık',         tip: 'mental' },
+    { k: 'meydan',        ad: '⚡ Meydan Okuma',    tip: 'mental' },
+    { k: 'guven',         ad: '🛡 Güven',            tip: 'mental' },
+    { k: 'genisDissal',   ad: '👁 Geniş Dikkat',    tip: 'konsant' },
+    { k: 'darDissal',     ad: '🎯 Dar Dikkat',       tip: 'konsant' },
+    { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',   tip: 'konsant' }
+  ];
+
+  const html = `
+  <div class="kart">
+    <div class="kart-baslik">🧠 Psikolojik Profil — ${tarihFormatla(anketler[0].anket_tarihi)}</div>
+    <div class="psiko-ozet-grid">
+      ${boyutlar.map(b => {
+        const val = p[b.k];
+        if (!val) return '';
+        const { durum, renk } = psikolojiBoyutDurumu(b.k, val);
+        const renk2 = renk === 'green' ? 'success' : renk === 'orange' ? 'warning' : 'danger';
+        return `<div class="psiko-alan-kart">
+          <div class="psiko-alan-baslik">${b.ad}</div>
+          <div class="psiko-alan-puan" style="color:var(--${renk2})">${val.toFixed ? val.toFixed(1) : val}</div>
+          <div class="psiko-alan-durum">${durum}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+  ${anketler.length > 1 ? `<div class="kart"><div class="kart-baslik">📋 Anket Geçmişi</div>
+    ${anketler.slice(1).map(a => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span><span class="gecmis-icerik">Anket dolduruldu</span></div>`).join('')}
+  </div>` : ''}`;
+  document.getElementById('profilPsikolojiDiv').innerHTML = html;
+}
+
+function renderRecete(testler, anketler, sporcu) {
+  const yas = yasHesapla(sporcu?.dogum_tarihi);
+  const cin = sporcu?.cinsiyet || 'Erkek';
+  let html = '';
+
+  // Motorik reçete
+  if (testler && testler.length > 0) {
+    const test = testler[0];
+    const zayifAlanlar = Object.keys(TEST_ETIKETLERI).filter(alan => {
+      const val = test[alan];
+      if (!val) return false;
+      const { renk } = testDurumu(alan, val, yas, cin);
+      return renk === 'red' || renk === 'orange';
+    });
+
+    if (zayifAlanlar.length > 0) {
+      html += `<div class="kart"><div class="kart-baslik">💊 Motorik Antrenman Reçetesi</div>
+      ${zayifAlanlar.map(alan => {
+        const { durum } = testDurumu(alan, test[alan], yas, cin);
+        const et = TEST_ETIKETLERI[alan];
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:600">${et.ad}</span>
+            <span class="badge badge-${durum.includes('🔴') ? 'red' : 'orange'}">${durum}</span>
+          </div>
+          <div style="font-size:12px;color:var(--gray-500)">${reçeteMetniGetir(alan)}</div>
+        </div>`;
+      }).join('')}
+      </div>`;
+    } else {
+      html += '<div class="kart"><div class="kart-baslik">💊 Motorik Reçete</div><div style="color:var(--success);padding:12px 0;font-size:14px">✅ Tüm testler norm düzeyinde veya üzerinde!</div></div>';
+    }
+  }
+
+  // Psikolojik reçete
+  if (anketler && anketler.length > 0) {
+    const p = psikolojiPuanlari(anketler[0]);
+    const gelisimAlanlari = Object.keys(p || {}).filter(k => {
+      const { renk } = psikolojiBoyutDurumu(k, p[k]);
+      return renk === 'red' || renk === 'orange';
+    });
+
+    if (gelisimAlanlari.length > 0) {
+      html += `<div class="kart"><div class="kart-baslik">🧠 Psikolojik Reçete</div>
+      ${gelisimAlanlari.map(k => {
+        const { durum } = psikolojiBoyutDurumu(k, p[k]);
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <span style="font-size:13px;font-weight:600">${psikolojiAlanAdi(k)}</span>
+            <span class="badge badge-${durum.includes('🔴') ? 'red' : 'orange'}">${durum}</span>
+          </div>
+          <div style="font-size:12px;color:var(--gray-500)">${psikolojiReceteGetir(k)}</div>
+        </div>`;
+      }).join('')}
+      </div>`;
+    }
+  }
+
+  if (!html) html = '<div class="bos-durum"><span class="ikon">💊</span><p>Reçete için önce test ve anket verileri gerekli</p></div>';
+  document.getElementById('profilReceteDiv').innerHTML = html;
+}
+
+function reçeteMetniGetir(alan) {
+  const receteler = {
+    uzun_atlama_cm: 'Box Jump 3x8, Squat Jump 3x10, Lunge Jump 3x8. Haftada 3 kez.',
+    saglik_topu_cm: 'Med-Ball Fırlatma 3x8, Plyometrik Push-Up 3x10. Haftada 3 kez.',
+    mekik_tekrar: 'Plank 3x30sn, Russian Twist 3x20, Mekik 3x25. Her gün.',
+    sprint_30m_sn: 'Uçuş Sprintleri 6-10x20-30m, Merdiven Drill 4x. Tam dinlenme ile.',
+    illinois_sn: 'Illinois x5, T-Drill 5x, 505 Çeviklik 6x. Haftada 3 kez.',
+    flamingo_hata: 'Tek ayak denge 3x30sn, BOSU Squat, gözler kapalı denge. Haftada 4 kez.',
+    otur_uzan_cm: 'PNF Esneme 3x30sn, Bacak sallamaları, dinamik esneme. Her gün.',
+    beep_test_seviye: 'Tempo koşu 20-40dk, Interval koşu 1:1. %65-80 maks. KAH.',
+    cember_koord_sn: 'Çember atlama 4-6x set, koordinasyon merdiveni. Haftada 3 kez.',
+    cetvel_reaksiyon_cm: 'Cetvel düşürme 5x5, renk komutu sprint 8x. Haftada 3 kez.',
+    el_dinamometre_kg: 'Hand Grip 3x30sn, Wrist Curls 3x15, Dead Hang 3x. Haftada 3 kez.',
+    wingate_wkg: 'Tabata Squat Jump, 30m All-Out Sprint x6. Tam dinlenme ile.'
+  };
+  return receteler[alan] || 'Antrenman planına eklenecek.';
+}
+
+function psikolojiAlanAdi(k) {
+  const adlar = { bilisselKaygi: 'Bilişsel Kaygı', somatikKaygi: 'Somatik Kaygı', ozguven: 'Özgüven', gorevYon: 'Görev Yönelimi', egoYon: 'Ego Yönelimi', kontrol: 'Mental Kontrol', baglilik: 'Bağlılık', meydan: 'Meydan Okuma', guven: 'Güven', genisDissal: 'Geniş Dikkat', darDissal: 'Dar Dikkat', dikkatHatasi: 'Dikkat Hatası' };
+  return adlar[k] || k;
+}
+
+function psikolojiReceteGetir(k) {
+  const receteler = {
+    bilisselKaygi: 'Bilişsel yeniden yapılandırma: "DUR" komutu + olumlu iç ses antrenmanı. Günlük 5dk Düşünce Günlüğü.',
+    somatikKaygi: 'Kutu Nefesi (4-4-4-4) + Progresif Kas Gevşemesi. Isınma öncesi 3dk, uyku öncesi 10dk.',
+    ozguven: 'Başarı Envanteri: 3 güçlü an yaz. Her antrenman sonu "bugün iyi yaptığım 1 şey" sorusu.',
+    egoYon: 'Süreç Hedefleme: "Ben vs Geçen Hafta Ben" karşılaştırması. Antrenör geri bildirimini süreç odaklı yap.',
+    kontrol: 'Duygu düzenleme: 10sn reset protokolü (nefes→odak→devam). Mindfulness 5dk/gün.',
+    baglilik: 'Uzun vadeli hedef planı + anlam çalışması. Zor seansları tamamlamayı ödüllendir.',
+    meydan: 'Kademeli zorluk artışı. "Başarısız olduğumda ne öğrendim?" sorusu. Büyüme Anı günlüğü.',
+    guven: 'Yeterlilik geçmişi gözden geçirme. Kendilik etkinliği çalışması. Zor anlarda destekleyici iç ses.',
+    genisDissal: 'Çoklu uyarıcı takip drilleri. Saha okuma egzersizleri. Haftada 2x.',
+    darDissal: 'Odak nokta belirli drilleri. Pre-performance rutini oluştur.',
+    dikkatHatasi: 'Odak Kelimesi antrenmanı. Park Et & Git tekniği. Günlük 5dk dikkat meditasyonu.'
+  };
+  return receteler[k] || 'Antrenör ile birlikte çalışılacak.';
+}
+
+function profilTabSec(tab) {
+  document.querySelectorAll('#sporcuProfilEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
+  event.target.classList.add('aktif');
+  ['bilgiler','testler','psikoloji','recete'].forEach(t => {
+    document.getElementById(`ptab-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+}
+
+// ── SPORCU EKLE / DÜZENLE ─────────────────────────────────────────────────
+function sporcuEklePanelAc() {
+  document.getElementById('sporcuModalBaslik').textContent = 'Sporcu Ekle';
+  document.getElementById('sporcuDuzId').value = '';
+  ['sAd','sDogum','sCinsiyet','sBoy','sKilo','sDan','sKulup','sEmail','sSifre'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = el.tagName === 'SELECT' ? '' : '';
+  });
+  hataGizle('sporcuModalHata');
+  modalAc('sporcuModal');
+}
+
+async function sporcuDuzModalAc(id) {
+  const sporcu = await sporcuGetir(id);
+  if (!sporcu) return;
+  document.getElementById('sporcuModalBaslik').textContent = 'Sporcu Düzenle';
+  document.getElementById('sporcuDuzId').value = id;
+  document.getElementById('sAd').value = sporcu.ad_soyad || '';
+  document.getElementById('sDogum').value = sporcu.dogum_tarihi || '';
+  document.getElementById('sCinsiyet').value = sporcu.cinsiyet || '';
+  document.getElementById('sBoy').value = sporcu.boy_cm || '';
+  document.getElementById('sKilo').value = sporcu.kilo_kg || '';
+  document.getElementById('sDan').value = sporcu.dan_kusak || '';
+  document.getElementById('sKulup').value = sporcu.kulup_okul || '';
+  document.getElementById('sEmail').value = sporcu.email || '';
+  document.getElementById('sSifre').value = sporcu.sifre_hash || '';
+  hataGizle('sporcuModalHata');
+  modalAc('sporcuModal');
+}
+
+async function sporcuKaydet() {
+  const id = document.getElementById('sporcuDuzId').value;
+  const veri = {
+    ad_soyad: document.getElementById('sAd').value.trim(),
+    dogum_tarihi: document.getElementById('sDogum').value || null,
+    cinsiyet: document.getElementById('sCinsiyet').value || null,
+    boy_cm: parseFloat(document.getElementById('sBoy').value) || null,
+    kilo_kg: parseFloat(document.getElementById('sKilo').value) || null,
+    dan_kusak: document.getElementById('sDan').value.trim() || null,
+    kulup_okul: document.getElementById('sKulup').value.trim() || null,
+    email: document.getElementById('sEmail').value.trim(),
+    sifre_hash: document.getElementById('sSifre').value.trim()
+  };
+
+  if (!veri.ad_soyad) { hataGoster('sporcuModalHata', 'Ad soyad gerekli'); return; }
+  if (!veri.email)     { hataGoster('sporcuModalHata', 'E-posta gerekli'); return; }
+  if (!veri.sifre_hash){ hataGoster('sporcuModalHata', 'Şifre gerekli'); return; }
+
+  try {
+    if (id) await sporcuGuncelle(id, veri);
+    else    await sporcuEkle(veri);
+    modalKapat('sporcuModal');
+    bildirimGoster(id ? '✅ Sporcu güncellendi' : '✅ Sporcu eklendi');
+    sporcularYukle();
+    if (id && aktifSporcuId === id) sporcuProfilAc(id);
+  } catch (e) {
+    hataGoster('sporcuModalHata', e.message || 'Kayıt hatası');
+  }
+}
+
+// ── TEST EKLE MODALİ ──────────────────────────────────────────────────────
+function testEkleModalAc() {
+  document.getElementById('testSporcuId').value = aktifSporcuId || '';
+  document.getElementById('testDuzId').value = '';
+  document.getElementById('tTarih').value = new Date().toISOString().split('T')[0];
+  document.getElementById('tSonrakiTarih').value = '';
+  ['t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
+   't_flamingo','t_otur_uzan','t_beep','t_cember','t_cetvel','t_el_dina','t_wingate','t_notlar']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  hataGizle('testModalHata');
+  modalAc('testModal');
+}
+
+async function testKaydet() {
+  const sporcuId = document.getElementById('testSporcuId').value;
+  if (!sporcuId) { hataGoster('testModalHata', 'Sporcu ID eksik'); return; }
+  const tarih = document.getElementById('tTarih').value;
+  if (!tarih) { hataGoster('testModalHata', 'Test tarihi gerekli'); return; }
+
+  const veri = {
+    sporcu_id: sporcuId,
+    test_tarihi: tarih,
+    sonraki_test_tarihi: document.getElementById('tSonrakiTarih').value || null,
+    uzun_atlama_cm: parseFloat(document.getElementById('t_uzun_atlama').value) || null,
+    saglik_topu_cm: parseFloat(document.getElementById('t_saglik_topu').value) || null,
+    mekik_tekrar: parseInt(document.getElementById('t_mekik').value) || null,
+    sprint_30m_sn: parseFloat(document.getElementById('t_sprint').value) || null,
+    illinois_sn: parseFloat(document.getElementById('t_illinois').value) || null,
+    flamingo_hata: parseInt(document.getElementById('t_flamingo').value) || null,
+    otur_uzan_cm: parseFloat(document.getElementById('t_otur_uzan').value) || null,
+    beep_test_seviye: parseFloat(document.getElementById('t_beep').value) || null,
+    cember_koord_sn: parseFloat(document.getElementById('t_cember').value) || null,
+    cetvel_reaksiyon_cm: parseFloat(document.getElementById('t_cetvel').value) || null,
+    el_dinamometre_kg: parseFloat(document.getElementById('t_el_dina').value) || null,
+    wingate_wkg: parseFloat(document.getElementById('t_wingate').value) || null,
+    notlar: document.getElementById('t_notlar').value.trim() || null
+  };
+
+  try {
+    await motorikTestEkle(veri);
+    modalKapat('testModal');
+    bildirimGoster('✅ Test sonuçları kaydedildi');
+    sporcuProfilAc(sporcuId);
+  } catch (e) {
+    hataGoster('testModalHata', e.message || 'Kayıt hatası');
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════
+//  SPORCU EKRANI
+// ══════════════════════════════════════════════════════════════════════════
+async function sporcuPanelAc() {
+  ekranGoster('sporcuEkrani');
+  const s = oturumKullanici;
+  document.getElementById('sporcuKullaniciAdi').textContent = s.ad_soyad || 'Profilim';
+  document.getElementById('sporcuKusak').textContent = s.dan_kusak || '';
+  renderSporcuProfil(s);
+  sporcuTestleriniYukle();
+}
+
+function renderSporcuProfil(s) {
+  const yas = yasHesapla(s.dogum_tarihi);
+  document.getElementById('sporcuProfilDiv').innerHTML = `
+  <div class="profil-header" style="margin:-16px -16px 16px">
+    <div class="profil-avatar-buyuk">${basTaHarfler(s.ad_soyad)}</div>
+    <div>
+      <div class="profil-isim">${s.ad_soyad}</div>
+      <div class="profil-meta">${yas} yaş · ${s.cinsiyet || '—'}</div>
+      <div class="profil-meta">${s.dan_kusak || ''}</div>
+    </div>
+  </div>
+  <div class="istat-grid">
+    <div class="istat-kart"><div class="istat-sayi">${yas}</div><div class="istat-etiket">Yaş</div></div>
+    <div class="istat-kart"><div class="istat-sayi">${s.boy_cm || '—'}</div><div class="istat-etiket">Boy (cm)</div></div>
+    <div class="istat-kart"><div class="istat-sayi">${s.kilo_kg || '—'}</div><div class="istat-etiket">Kilo (kg)</div></div>
+    <div class="istat-kart"><div class="istat-sayi" style="font-size:18px">${s.dan_kusak || '—'}</div><div class="istat-etiket">Kuşak</div></div>
+  </div>`;
+}
+
+async function sporcuTestleriniYukle() {
+  const s = oturumKullanici;
+  try {
+    const testler = await motorikTestleriGetir(s.id);
+    renderSporcuTestler(testler, s);
+  } catch (e) {
+    document.getElementById('sporcuTestlerDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
+  }
+}
+
+function renderSporcuTestler(testler, sporcu) {
+  if (!testler || testler.length === 0) {
+    document.getElementById('sporcuTestlerDiv').innerHTML = '<div class="bos-durum"><span class="ikon">📊</span><p>Henüz test sonucunuz yok. Antrenörünüz ekleyecek.</p></div>';
+    return;
+  }
+  const enSon = testler[0];
+  const yas = yasHesapla(sporcu.dogum_tarihi);
+  const cin = sporcu.cinsiyet || 'Erkek';
+
+  document.getElementById('sporcuTestlerDiv').innerHTML = `
+  <div class="kart">
+    <div class="kart-baslik">📊 Son Test Sonuçlarınız — ${tarihFormatla(enSon.test_tarihi)}</div>
+    ${Object.keys(TEST_ETIKETLERI).map((alan, i) => {
+      const val = enSon[alan];
+      if (val === null || val === undefined) return '';
+      const et = TEST_ETIKETLERI[alan];
+      const { durum, norm, oran } = testDurumu(alan, val, yas, cin);
+      const renk = durum.includes('🟢') ? '#057a55' : durum.includes('🟡') ? '#b45309' : durum.includes('🟠') ? '#e65100' : '#c81e1e';
+      const yuzde = Math.min(oran || 80, 120);
+      return `<div class="test-satir">
+        <span class="test-no">${i+1}</span>
+        <div class="test-ad">
+          <div style="font-size:13px">${et.ad}</div>
+          <div class="ilerleme-kap" style="margin-top:4px">
+            <div class="ilerleme-bar" style="width:${Math.min(yuzde,100)}%;background:${renk}"></div>
+          </div>
+        </div>
+        <div style="text-align:right">
+          <div class="test-deger">${val} <span class="test-birim">${et.birim}</span></div>
+          <div style="font-size:11px;color:var(--gray-500)">Norm: ${norm}</div>
+        </div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+function sporcuTabSec(tab) {
+  document.querySelectorAll('#sporcuEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
+  event.target.classList.add('aktif');
+  ['profil','testlerim','anketim','sonuclarim'].forEach(t => {
+    document.getElementById(`stab-${t}`).style.display = t === tab ? 'block' : 'none';
+  });
+  if (tab === 'anketim') anketFormuHazirla();
+  if (tab === 'sonuclarim') sporcuSonuclariniYukle();
+}
+
+// ── ANKET FORMU (SPORCU) ──────────────────────────────────────────────────
+const ANKET_BOLUMLER = [
+  {
+    id: 'kaygi_sporcu',
+    renk: '#1a56db',
+    baslik: '🔵 Rekabet Kaygısı',
+    aciklama: 'Yarış öncesi nasıl hissettiğini işaretle. Doğru/yanlış cevap yok.',
+    alt: [
+      { id: 'biliskel', baslik: 'Bilişsel Kaygı (Olumsuz Düşünceler)', sorular: [
+        { k: 'bk1', metin: 'Yarışmada başarısız olacağım diye endişeleniyorum.' },
+        { k: 'bk2', metin: 'Rakibimin benden daha iyi performans göstereceğinden korkuyorum.' },
+        { k: 'bk3', metin: 'Hedeflerime ulaşıp ulaşamayacağımdan emin değilim.' },
+        { k: 'bk4', metin: 'Daha önce yaptığım hataları aklımdan çıkaramıyorum.' },
+        { k: 'bk5', metin: 'Yanlış bir hamle yaparsam ne olacağını düşünüyorum.' },
+        { k: 'bk6', metin: 'Antrenörümün veya ailelerimin hayal kırıklığına uğrayacağından endişeleniyorum.' },
+        { k: 'bk7', metin: 'Yarışma sırasında odaklanıp odaklanamayacağımı merak ediyorum.' },
+        { k: 'bk8', metin: 'Bugün kötü bir günüm olmasından korkuyorum.' },
+        { k: 'bk9', metin: 'Bu yarışmada kendimden beklenenin altında kalacağım diye düşünüyorum.' }
+      ], scale: 4, labels: ['Hiç Değil', 'Biraz', 'Orta', 'Çok Fazla'] },
+      { id: 'somatik', baslik: 'Somatik Kaygı (Bedensel Belirtiler)', sorular: [
+        { k: 'sk1', metin: 'Vücudum gergin ve kaslarım sıkışmış hissediyorum.' },
+        { k: 'sk2', metin: 'Kalbim normalden hızlı çarpıyor.' },
+        { k: 'sk3', metin: 'Midem bulanıyor veya karın ağrısı hissediyorum.' },
+        { k: 'sk4', metin: 'Ellerim titriyor veya terliyor.' },
+        { k: 'sk5', metin: 'Ağzım kuruyor, yutkunmakta güçlük çekiyorum.' },
+        { k: 'sk6', metin: 'Nefes almakta zorluk çektiğimi hissediyorum.' },
+        { k: 'sk7', metin: 'Bacaklarım yorgun veya ağır hissediyor.' },
+        { k: 'sk8', metin: 'Baş ağrım var ya da başım dönüyor.' },
+        { k: 'sk9', metin: 'Yarışmadan önce çok sık tuvalete çıkma ihtiyacı duyuyorum.' }
+      ], scale: 4, labels: ['Hiç Değil', 'Biraz', 'Orta', 'Çok Fazla'] },
+      { id: 'ozguven', baslik: 'Spor Özgüveni', sorular: [
+        { k: 'og1', metin: 'Bu yarışmada iyi bir performans göstereceğimden eminim.' },
+        { k: 'og2', metin: 'Antrenmanlarda öğrendiklerimi sahaya yansıtabileceğime inanıyorum.' },
+        { k: 'og3', metin: 'Baskı altında doğru kararlar verebileceğimi düşünüyorum.' },
+        { k: 'og4', metin: 'Fiziksel olarak yarışmaya hazır olduğumu hissediyorum.' },
+        { k: 'og5', metin: 'Rakibimle başa çıkabileceğime inanıyorum.' },
+        { k: 'og6', metin: 'Zor bir durumda bile odağımı koruyabilirim.' },
+        { k: 'og7', metin: 'Kendime olan güvenim yüksek.' },
+        { k: 'og8', metin: 'Bu yarışmada başarılı olma kapasiteme inanıyorum.' },
+        { k: 'og9', metin: 'Antrenörümün ve takım arkadaşlarımın güvenine layık olduğumu hissediyorum.' }
+      ], scale: 4, labels: ['Hiç Değil', 'Biraz', 'Orta', 'Çok Fazla'] }
+    ]
+  },
+  {
+    id: 'motivasyon',
+    renk: '#7e22ce',
+    baslik: '🟣 Motivasyon Yönelimi',
+    aciklama: '"Sporda en çok başarılı hissederim..." cümlesini tamamla.',
+    alt: [
+      { id: 'gorev', baslik: 'Görev Yönelimi (Kişisel Gelişim)', sorular: [
+        { k: 'g1', metin: '...yeni bir beceriyi öğrendiğimde ve bu benim çok çalışmamı gerektirdiğinde.' },
+        { k: 'g2', metin: '...kendim için belirlediğim bir hedefi gerçekleştirdiğimde.' },
+        { k: 'g3', metin: '...antrenmanlarımda normalden daha iyi yaptığımda.' },
+        { k: 'g4', metin: '...zor bir beceriyi çok çalışarak öğrendiğimde.' },
+        { k: 'g5', metin: '...işlerin doğru yapılmasını öğrendiğimde.' },
+        { k: 'g6', metin: '...diğer insanlar yapamasa da ben başardığımda.' },
+        { k: 'g7', metin: '...elimden gelenin en iyisini yaptığımı hissettiğimde.' }
+      ], scale: 5, labels: ['Hiç', 'Katılmıyorum', 'Kararsız', 'Katılıyorum', 'Kesinlikle'] },
+      { id: 'ego', baslik: 'Ego Yönelimi (Sosyal Karşılaştırma)', sorular: [
+        { k: 'e1', metin: '...diğerlerinden daha iyi olduğumu gösterdiğimde.' },
+        { k: 'e2', metin: '...çok çalışmadan başkalarından daha iyi performans gösterdiğimde.' },
+        { k: 'e3', metin: '...takımdaki en iyisi olduğumda.' },
+        { k: 'e4', metin: '...başkalarının yapamadığını ben yapabildiğimde.' },
+        { k: 'e5', metin: '...sınıftaki veya takımdaki en iyisi olduğumda.' },
+        { k: 'e6', metin: '...diğerlerini yendiğimde.' }
+      ], scale: 5, labels: ['Hiç', 'Katılmıyorum', 'Kararsız', 'Katılıyorum', 'Kesinlikle'] }
+    ]
+  },
+  {
+    id: 'mental',
+    renk: '#057a55',
+    baslik: '🟢 Mental Dayanıklılık',
+    aciklama: 'Spordaki deneyimlerini düşünerek yanıtla.',
+    alt: [
+      { id: 'kontrol', baslik: 'Kontrol (Duygu Yönetimi)', sorular: [
+        { k: 'kon1', metin: 'Zor anlarda duygularımı kontrol edebiliyorum.' },
+        { k: 'kon2', metin: 'Ne olursa olsun kendi kendimi sakinleştirebilirim.' },
+        { k: 'kon3', metin: 'Antrenman ve yarışın gidişatı üzerinde etkili olabileceğimi hissediyorum.' }
+      ], scale: 5, labels: ['Hiç Değil', 'Nadiren', 'Bazen', 'Sıklıkla', 'Her Zaman'] },
+      { id: 'baglilik', baslik: 'Bağlılık (Kararlılık)', sorular: [
+        { k: 'bag1', metin: 'Zorlu bir antrenman seansında bırakmak istemesem de devam ederim.' },
+        { k: 'bag2', metin: 'Hedeflerim doğrultusunda kendimi antrenmanlarıma adarım.' },
+        { k: 'bag3', metin: 'Yorgun veya isteksiz olsam bile antrenmanları atlamamaya çalışırım.' }
+      ], scale: 5, labels: ['Hiç Değil', 'Nadiren', 'Bazen', 'Sıklıkla', 'Her Zaman'] },
+      { id: 'meydan', baslik: 'Meydan Okuma (Zorlukları Fırsat Görme)', sorular: [
+        { k: 'mey1', metin: 'Yarışmalar ve zorluklar beni büyütür, korkutmaz.' },
+        { k: 'mey2', metin: 'Yeni ve zor durumları heyecanla karşılarım.' },
+        { k: 'mey3', metin: 'Başarısız olduğumda bunu bir öğrenme fırsatı olarak görürüm.' }
+      ], scale: 5, labels: ['Hiç Değil', 'Nadiren', 'Bazen', 'Sıklıkla', 'Her Zaman'] },
+      { id: 'guven', baslik: 'Güven (Kişisel Yeterlilik)', sorular: [
+        { k: 'guv1', metin: 'Başkalarının baskısına rağmen kendi kararlarımda güvenle dururum.' },
+        { k: 'guv2', metin: 'Geçmişte yaptığım hatalar şu anki performansımı etkilemiyor.' },
+        { k: 'guv3', metin: 'Zor anlarda bile başarabileceğime inanıyorum.' }
+      ], scale: 5, labels: ['Hiç Değil', 'Nadiren', 'Bazen', 'Sıklıkla', 'Her Zaman'] }
+    ]
+  },
+  {
+    id: 'konsantrasyon',
+    renk: '#e65100',
+    baslik: '🟠 Konsantrasyon & Dikkat',
+    aciklama: 'Spordaki dikkat alışkanlıklarını dürüstçe işaretle.',
+    alt: [
+      { id: 'genisDissal', baslik: 'Geniş-Dışsal Dikkat (Ortamı Okuma)', sorular: [
+        { k: 'gd1', metin: 'Yarışma esnasında sahadaki birden fazla rakibi veya durumu aynı anda takip edebiliyorum.' },
+        { k: 'gd2', metin: 'Hakem, seyirci ve ortam değişikliklerini çabuk fark ediyorum.' },
+        { k: 'gd3', metin: 'Rakibimin vücut dilini ve stratejisini yarış içinde okuyabiliyorum.' },
+        { k: 'gd4', metin: 'Sahada olup biteni geniş bir perspektifle görmeyi seviyorum.' }
+      ], scale: 5, labels: ['Hiç Değil', 'Nadiren', 'Bazen', 'Sıklıkla', 'Her Zaman'] },
+      { id: 'darDissal', baslik: 'Dar-Dışsal Dikkat (Hedefe Odaklanma)', sorular: [
+        { k: 'dd1', metin: 'Rakibimle karşı karşıya geldiğimde tüm dikkatimi ona verebiliyorum.' },
+        { k: 'dd2', metin: 'Kritik anlarda tek bir hedefe odaklanmakta zorlanmıyorum.' },
+        { k: 'dd3', metin: 'Belirli bir tekmeyi veya hareketi gerçekleştirirken odağım dağılmıyor.' },
+        { k: 'dd4', metin: 'Önemli anlarda gereksiz şeyleri zihnimden kolayca uzaklaştırabilirim.' }
+      ], scale: 5, labels: ['Hiç Değil', 'Nadiren', 'Bazen', 'Sıklıkla', 'Her Zaman'] },
+      { id: 'dikkatHatasi', baslik: '⚠️ Dikkat Hatası Eğilimleri (Düşük puan iyi)', sorular: [
+        { k: 'dh1', metin: 'Yarışma sırasında aklım dağılıyor ve dikkatim başka şeylere gidiyor.' },
+        { k: 'dh2', metin: 'Öfke veya hayal kırıklığı sonrası odağımı tekrar toplamakta güçlük çekiyorum.' },
+        { k: 'dh3', metin: 'Seyirci, gürültü veya yorgunluk dikkatimi önemli ölçüde bozuyor.' },
+        { k: 'dh4', metin: 'Bir hata yaptığımda o hatayı düşünmeye devam ederek sonraki hamlemi etkiliyorum.' }
+      ], scale: 5, labels: ['Hiç Değil', 'Nadiren', 'Bazen', 'Sıklıkla', 'Her Zaman'] }
+    ]
+  }
+];
+
+function anketFormuHazirla() {
+  aktifAnketCevaplari = {};
+  const div = document.getElementById('sporcuAnketDiv');
+  let html = `
+  <div style="margin-bottom:16px">
+    <div class="form-row">
+      <div class="form-grup">
+        <label class="form-etiket">Yaklaşan yarış/etkinlik</label>
+        <input type="text" id="anketYaris" class="form-input" placeholder="Bölge Şampiyonası...">
       </div>
-      <div id="sporcu-anket-alani"></div>
-      <button class="btn-tam-kirmizi" style="margin-top:8px;" onclick="sporcuPsikoGonder(this,'${sporcu.id}')">Testi Gönder</button>
-      <p id="sporcu-psiko-mesaj" class="basari-yazi"></p>
+      <div class="form-grup">
+        <label class="form-etiket">Kaç gün kaldı?</label>
+        <input type="number" id="anketGun" class="form-input" placeholder="7">
+      </div>
     </div>
   </div>`;
 
-  icerik.innerHTML=html;
-
-  // Motorik grafik
-  if(testler&&testler.length>1){
-    motorikGrafik(testler,nk);
-  }
-
-  // Sporcu anket formunu oluştur
-  anketFormOlustur(SPORCU_SORULAR,'sporcu-anket-alani');
-}
-
-function psikTestFormAc(){
-  const bolum=document.getElementById('psik-test-bolum');
-  if(bolum){
-    bolum.style.display='block';
-    bolum.scrollIntoView({behavior:'smooth'});
-  }
-}
-
-async function sporcuPsikoGonder(btn,sporcuId){
-  btn.disabled=true;btn.textContent='Gönderiliyor...';
-  const fields=['bk1','bk2','bk3','bk4','bk5','bk6','bk7','bk8','bk9',
-    'sk1','sk2','sk3','sk4','sk5','sk6','sk7','sk8','sk9',
-    'og1','og2','og3','og4','og5','og6','og7','og8','og9',
-    'g1','g2','g3','g4','g5','g6','g7','e1','e2','e3','e4','e5','e6',
-    'kon1','kon2','kon3','bag1','bag2','bag3','mey1','mey2','mey3','guv1','guv2','guv3',
-    'gd1','gd2','gd3','gd4','dd1','dd2','dd3','dd4','dh1','dh2','dh3','dh4'];
-  const bos=fields.filter(f=>lDeger(f,'sporcu-anket-alani')===null);
-  if(bos.length>8){btn.disabled=false;btn.textContent='Testi Gönder';alert('Lütfen daha fazla soruyu yanıtla!');return}
-  const veri={sporcu_id:sporcuId,test_tarihi:new Date().toISOString().split('T')[0],onaylandi:false};
-  fields.forEach(f=>{veri[f]=lDeger(f,'sporcu-anket-alani')});
-  const{error}=await sb.from('psikoloji_sporcu').insert(veri);
-  btn.disabled=false;btn.textContent='Testi Gönder';
-  if(error){alert('Hata: '+error.message)}
-  else{
-    document.getElementById('psik-test-bolum').style.display='none';
-    const m=document.getElementById('sporcu-psiko-mesaj');
-    // bilgi kutusunu bul ve güncelle
-    const birimler=document.querySelectorAll('.test-doldur-btn, .psiko-bekliyor, .psiko-gonderildi');
-    birimler.forEach(el=>{
-      if(el.closest('.bolum')&&!el.closest('#psik-test-bolum')){
-        el.outerHTML=`<div class="psiko-gonderildi">✓ Test gönderildi! Antrenörün onaylamasını bekle.</div>`;
-      }
-    });
-  }
-}
-
-// ===== MOTORİK GRAFİK =====
-function motorikGrafik(testler,nk){
-  const alani=document.getElementById('motorik-grafik-alani');
-  if(!alani)return;
-  const keys=['uzun_atlama','sprint_30m','illinois','beep_test'];
-  const renkler=['#e63946','#2563eb','#16a34a','#ea580c'];
-  keys.forEach((key,idx)=>{
-    const n=NORMLAR[key];
-    const norm=n[nk]||n['E_1314'];
-    const gecerli=testler.filter(t=>!isNaN(parseFloat(t[key])));
-    if(gecerli.length<2)return;
-    const degerler=gecerli.map(t=>parseFloat(t[key]));
-    const donemler=gecerli.map(t=>t.donem||(t.test_tarihi?.substring(0,7))||'');
-    const W=300,H=110,PL=6,PR=6,PT=14,PB=22;
-    const iW=W-PL-PR,iH=H-PT-PB;
-    const xS=iW/(degerler.length-1);
-    const toX=i=>PL+i*xS;
-    const mx=Math.max(...degerler,norm)*1.15,mn=Math.min(...degerler,norm)*.85;
-    const toY=v=>PT+iH-((v-mn)/(mx-mn))*iH;
-    const poly=degerler.map((v,i)=>`${toX(i)},${toY(v)}`).join(' ');
-    const pts=degerler.map((v,i)=>`<circle cx="${toX(i)}" cy="${toY(v)}" r="4" fill="${renkler[idx]}"/><text x="${toX(i)}" y="${toY(v)-7}" text-anchor="middle" font-size="9" fill="${renkler[idx]}">${v}</text>`).join('');
-    const xL=donemler.map((d,i)=>`<text x="${toX(i)}" y="${H-4}" text-anchor="middle" font-size="8" fill="#aaa">${d}</text>`).join('');
-    const nY=toY(norm);
-    alani.innerHTML+=`<div class="grafik-kutu"><div class="grafik-kutu-baslik">${n.ad}</div><svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;">
-      <line x1="${PL}" y1="${nY}" x2="${W-PR}" y2="${nY}" stroke="#eee" stroke-width="1" stroke-dasharray="4,3"/>
-      <polyline points="${poly}" fill="none" stroke="${renkler[idx]}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      ${pts}${xL}
-    </svg></div>`;
+  ANKET_BOLUMLER.forEach(bolum => {
+    html += `<div class="anket-alan">
+    <div class="anket-alan-baslik" onclick="anketBolumToggle(this)" style="border-left:4px solid ${bolum.renk}">
+      <span style="flex:1">${bolum.baslik}</span>
+      <span>▼</span>
+    </div>
+    <div class="anket-alan-icerik">
+      <p style="font-size:12px;color:var(--gray-500);margin-bottom:14px">${bolum.aciklama}</p>
+      ${bolum.alt.map(alt => `
+      <div style="margin-bottom:20px">
+        <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray-200)">${alt.baslik}</div>
+        ${alt.sorular.map(soru => `
+        <div class="soru" id="soru_${soru.k}">
+          <div class="soru-metin">${soru.metin}</div>
+          <div class="likert-secenekler">
+            ${Array.from({length: alt.scale}, (_, i) => i+1).map(n => `
+              <button type="button" class="likert-btn" data-key="${soru.k}" data-val="${n}" onclick="likertSec(this)">${n}</button>
+            `).join('')}
+          </div>
+          <div class="likert-etiketler">
+            <span>${alt.labels[0]}</span>
+            <span>${alt.labels[alt.labels.length-1]}</span>
+          </div>
+        </div>`).join('')}
+      </div>`).join('')}
+    </div>
+    </div>`;
   });
+
+  html += `
+  <div style="margin-top:16px">
+    <div class="form-grup">
+      <label class="form-etiket">Notun var mı?</label>
+      <textarea id="anketNot" class="form-input" rows="3" placeholder="Bu anketi doldururken aklından geçenler..."></textarea>
+    </div>
+    <div id="anketHata" class="hata-mesaji"></div>
+    <button class="btn btn-primary" onclick="anketGonder()">✅ Anketi Gönder</button>
+  </div>`;
+
+  div.innerHTML = html;
 }
 
-// ===== ÖDEV =====
-function odevModalAc(id,baslik,aciklama,sure){
-  aktifOdevId=id;
-  document.getElementById('ob-baslik').textContent=baslik;
-  document.getElementById('ob-aciklama').textContent=aciklama;
-  document.getElementById('ob-sure').textContent=sure+' dakika';
-  document.getElementById('timer-ekran').textContent='00:00';
-  document.getElementById('timer-durum').textContent='Hazır';
-  document.getElementById('ob-baslat-btn').classList.remove('hidden');
-  document.getElementById('ob-bitir-btn').classList.add('hidden');
-  modalAc('m-odev-baslat');
+function anketBolumToggle(el) {
+  const icerik = el.nextElementSibling;
+  const ok = el.querySelector('span:last-child');
+  if (icerik.style.display === 'none') {
+    icerik.style.display = 'block';
+    ok.textContent = '▼';
+  } else {
+    icerik.style.display = 'none';
+    ok.textContent = '▶';
+  }
 }
 
-async function odevBaslat(){
-  odevBaslangic=new Date();
-  await sb.from('odev_tamamlama').insert({odev_id:aktifOdevId,sporcu_id:aktifKullanici.sporcu.id,baslangic_zamani:odevBaslangic.toISOString(),tamamlandi:false});
-  document.getElementById('ob-baslat-btn').classList.add('hidden');
-  document.getElementById('ob-bitir-btn').classList.remove('hidden');
-  document.getElementById('timer-durum').textContent='Devam ediyor...';
-  timerInterval=setInterval(()=>{
-    const f=Math.floor((new Date()-odevBaslangic)/1000);
-    document.getElementById('timer-ekran').textContent=String(Math.floor(f/60)).padStart(2,'0')+':'+String(f%60).padStart(2,'0');
-  },1000);
+function likertSec(btn) {
+  const key = btn.dataset.key;
+  const val = parseInt(btn.dataset.val);
+  aktifAnketCevaplari[key] = val;
+  const soru = document.getElementById(`soru_${key}`);
+  if (soru) soru.querySelectorAll('.likert-btn').forEach(b => b.classList.toggle('secili', parseInt(b.dataset.val) === val));
 }
 
-async function odevBitir(){
-  clearInterval(timerInterval);
-  const bitis=new Date();
-  await sb.from('odev_tamamlama').update({bitis_zamani:bitis.toISOString(),tamamlandi:true}).eq('odev_id',aktifOdevId).eq('sporcu_id',aktifKullanici.sporcu.id).eq('tamamlandi',false);
-  document.getElementById('timer-durum').textContent='Tamamlandı!';
-  setTimeout(()=>{modalKapat('m-odev-baslat');sporcuSayfasiGoster(aktifKullanici.sporcu)},1500);
+async function anketGonder() {
+  // Zorunlu soru sayısını kontrol et
+  const tumSorular = ANKET_BOLUMLER.flatMap(b => b.alt.flatMap(a => a.sorular.map(s => s.k)));
+  const eksikler = tumSorular.filter(k => !aktifAnketCevaplari[k]);
+  if (eksikler.length > 10) {
+    hataGoster('anketHata', `Lütfen tüm soruları yanıtla (${eksikler.length} soru eksik)`);
+    return;
+  }
+
+  const veri = {
+    sporcu_id: oturumKullanici.id,
+    anket_tarihi: new Date().toISOString().split('T')[0],
+    yaklasan_yaris: document.getElementById('anketYaris').value.trim() || null,
+    yarisa_gun: parseInt(document.getElementById('anketGun').value) || null,
+    sporcu_notu: document.getElementById('anketNot').value.trim() || null,
+    ...aktifAnketCevaplari
+  };
+
+  try {
+    await anketEkle(veri);
+    const p = psikolojiPuanlari(veri);
+    document.getElementById('sporcuAnketDiv').innerHTML = `
+    <div class="tamamlandi-ekrani">
+      <span class="tamamlandi-ikon">🎉</span>
+      <div class="tamamlandi-baslik">Anket Tamamlandı!</div>
+      <div class="tamamlandi-metin">Yanıtların kaydedildi. Antrenörün sonuçlarını inceleyecek.</div>
+      ${p ? renderPsikolojOzetKucuk(p) : ''}
+    </div>`;
+  } catch (e) {
+    hataGoster('anketHata', e.message || 'Gönderme hatası');
+  }
 }
 
-// ===== YARDIMCI =====
-function ort(arr){const v=arr.filter(x=>x!=null);return v.length?v.reduce((a,b)=>a+b,0)/v.length:null}
-function modalAc(id){document.getElementById(id).classList.remove('hidden')}
-function modalKapat(id){document.getElementById(id).classList.add('hidden');if(timerInterval){clearInterval(timerInterval);timerInterval=null}}
+function renderPsikolojOzetKucuk(p) {
+  const items = [
+    { k: 'bilisselKaygi', ad: 'Bilişsel Kaygı', val: p.bilisselKaygi?.toFixed(0) },
+    { k: 'ozguven', ad: 'Özgüven', val: p.ozguven?.toFixed(0) },
+    { k: 'gorevYon', ad: 'Görev Yönelimi', val: p.gorevYon?.toFixed(1) },
+    { k: 'kontrol', ad: 'Mental Kontrol', val: p.kontrol?.toFixed(1) }
+  ];
+  return `<div class="psiko-ozet-grid" style="margin-top:20px">
+    ${items.map(i => {
+      const { durum, renk } = psikolojiBoyutDurumu(i.k, parseFloat(i.val));
+      return `<div class="psiko-alan-kart">
+        <div class="psiko-alan-baslik">${i.ad}</div>
+        <div class="psiko-alan-puan" style="color:var(--${renk === 'green' ? 'success' : renk === 'orange' ? 'warning' : 'danger'})">${i.val}</div>
+        <div class="psiko-alan-durum">${durum}</div>
+      </div>`;
+    }).join('')}
+  </div>`;
+}
+
+async function sporcuSonuclariniYukle() {
+  const s = oturumKullanici;
+  yukleniyor('sporcuSonuclarDiv');
+  try {
+    const [testler, anketler] = await Promise.all([
+      motorikTestleriGetir(s.id),
+      anketleriGetir(s.id)
+    ]);
+    let html = '';
+    if (testler && testler.length > 0) {
+      html += `<div class="kart"><div class="kart-baslik">📊 Test Geçmişim</div>
+        ${testler.map(t => `<div class="gecmis-item">
+          <span class="gecmis-tarih">${tarihFormatla(t.test_tarihi)}</span>
+          <span class="gecmis-icerik">${Object.keys(TEST_ETIKETLERI).filter(k=>t[k]!=null).length} test sonucu</span>
+        </div>`).join('')}
+      </div>`;
+    }
+    if (anketler && anketler.length > 0) {
+      html += `<div class="kart"><div class="kart-baslik">🧠 Anket Geçmişim</div>
+        ${anketler.map(a => {
+          const p = psikolojiPuanlari(a);
+          return `<div class="gecmis-item">
+            <span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span>
+            <span class="gecmis-icerik">${p ? `Özgüven: ${p.ozguven?.toFixed(0)} · Kaygı: ${p.bilisselKaygi?.toFixed(0)}` : 'Anket'}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    }
+    if (!html) html = '<div class="bos-durum"><span class="ikon">📋</span><p>Henüz sonuç yok</p></div>';
+    document.getElementById('sporcuSonuclarDiv').innerHTML = html;
+  } catch (e) {
+    document.getElementById('sporcuSonuclarDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
+  }
+}
