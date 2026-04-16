@@ -1,0 +1,221 @@
+// data.js — Supabase bağlantısı & veri katmanı
+
+const SUPABASE_URL = 'https://knxkamonilmpfvgxstbb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtueGthbW9uaWxtcGZ2Z3hzdGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NTU4NzAsImV4cCI6MjA5MTQzMTg3MH0.X8vJTYYfToZcGCdBztguz4uxO52u994mutC5euvq630';
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...options.headers
+    },
+    ...options
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${res.status}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// ── ANTRENÖR ──────────────────────────────────────────────────────────────
+async function antrenorGiris(email, sifre) {
+  const rows = await sbFetch(`antrenor?email=eq.${encodeURIComponent(email)}&select=*`);
+  if (!rows || rows.length === 0) throw new Error('E-posta bulunamadı');
+  const antrenor = rows[0];
+  if (antrenor.sifre_hash !== sifre) throw new Error('Şifre hatalı');
+  return antrenor;
+}
+
+// ── SPORCU ────────────────────────────────────────────────────────────────
+async function sporcuListesi() {
+  return await sbFetch('sporcular?aktif=eq.true&order=ad_soyad.asc&select=*');
+}
+
+async function sporcuGetir(id) {
+  const rows = await sbFetch(`sporcular?id=eq.${id}&select=*`);
+  return rows?.[0] || null;
+}
+
+async function sporcuEkle(data) {
+  return await sbFetch('sporcular', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+async function sporcuGuncelle(id, data) {
+  return await sbFetch(`sporcular?id=eq.${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+async function sporcuGiris(email, sifre) {
+  const rows = await sbFetch(`sporcular?email=eq.${encodeURIComponent(email)}&aktif=eq.true&select=*`);
+  if (!rows || rows.length === 0) throw new Error('E-posta bulunamadı');
+  const sporcu = rows[0];
+  if (sporcu.sifre_hash !== sifre) throw new Error('Şifre hatalı');
+  return sporcu;
+}
+
+// ── MOTORİK TESTLER ───────────────────────────────────────────────────────
+async function motorikTestleriGetir(sporcuId) {
+  return await sbFetch(`motorik_testler?sporcu_id=eq.${sporcuId}&order=test_tarihi.desc&select=*`);
+}
+
+async function motorikTestEkle(data) {
+  return await sbFetch('motorik_testler', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+async function motorikTestGuncelle(id, data) {
+  return await sbFetch(`motorik_testler?id=eq.${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
+  });
+}
+
+async function tumMotorikTestler() {
+  return await sbFetch('motorik_testler?order=test_tarihi.desc&select=*,sporcular(ad_soyad,cinsiyet,dogum_tarihi)');
+}
+
+// ── PSİKOLOJİK ANKETLER ──────────────────────────────────────────────────
+async function anketleriGetir(sporcuId) {
+  return await sbFetch(`psikoloji_anketler?sporcu_id=eq.${sporcuId}&order=anket_tarihi.desc&select=*`);
+}
+
+async function anketEkle(data) {
+  return await sbFetch('psikoloji_anketler', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+async function tumAnketler() {
+  return await sbFetch('psikoloji_anketler?order=anket_tarihi.desc&select=*,sporcular(ad_soyad)');
+}
+
+// ── NORM & HESAPLAMA ──────────────────────────────────────────────────────
+const NORMLAR = {
+  // [E10-12, K10-12, E13-14, K13-14, E15-16, K15-16]
+  uzun_atlama_cm:      { normlar: [140,130,155,143,168,152], yuksek_iyi: true  },
+  saglik_topu_cm:      { normlar: [350,290,420,340,490,380], yuksek_iyi: true  },
+  mekik_tekrar:        { normlar: [18,16,22,19,26,22],       yuksek_iyi: true  },
+  sprint_30m_sn:       { normlar: [5.4,5.8,5.0,5.4,4.7,5.1], yuksek_iyi: false },
+  illinois_sn:         { normlar: [18.5,19.5,17.2,18.3,16.2,17.5], yuksek_iyi: false },
+  flamingo_hata:       { normlar: [6,8,4,6,3,5],             yuksek_iyi: false },
+  otur_uzan_cm:        { normlar: [22,26,24,28,26,30],       yuksek_iyi: true  },
+  beep_test_seviye:    { normlar: [5.4,4.8,6.2,5.6,7.4,6.8], yuksek_iyi: true  },
+  cember_koord_sn:     { normlar: [12.5,13,11.2,11.8,10,10.8], yuksek_iyi: false },
+  cetvel_reaksiyon_cm: { normlar: [22,24,19,21,16,18],       yuksek_iyi: false },
+  el_dinamometre_kg:   { normlar: [20,17,28,22,36,27],       yuksek_iyi: true  },
+  wingate_wkg:         { normlar: [7.5,6.8,8.2,7.4,9,8.2],  yuksek_iyi: true  }
+};
+
+function normIndeksiHesapla(yas, cinsiyet) {
+  const e = cinsiyet === 'Erkek';
+  if (yas <= 12) return e ? 0 : 1;
+  if (yas <= 14) return e ? 2 : 3;
+  return e ? 4 : 5;
+}
+
+function yasHesapla(dogumTarihi) {
+  if (!dogumTarihi) return 13;
+  const bugun = new Date();
+  const dogum = new Date(dogumTarihi);
+  let yas = bugun.getFullYear() - dogum.getFullYear();
+  const m = bugun.getMonth() - dogum.getMonth();
+  if (m < 0 || (m === 0 && bugun.getDate() < dogum.getDate())) yas--;
+  return yas;
+}
+
+function testDurumu(alan, deger, yas, cinsiyet) {
+  if (deger === null || deger === undefined || deger === '') return { durum: '—', renk: 'gray' };
+  const conf = NORMLAR[alan];
+  if (!conf) return { durum: '—', renk: 'gray' };
+  const idx = normIndeksiHesapla(yas, cinsiyet);
+  const norm = conf.normlar[idx];
+  const oran = conf.yuksek_iyi ? (deger / norm) : (norm / deger);
+  let durum, renk;
+  if (oran >= 1.10)     { durum = '🟢 Üstün';    renk = 'green'; }
+  else if (oran >= 0.90) { durum = '🟡 Normal';   renk = 'yellow'; }
+  else if (oran >= 0.80) { durum = '🟠 Geliştir'; renk = 'orange'; }
+  else                   { durum = '🔴 Zayıf';    renk = 'red'; }
+  return { durum, renk, norm, oran: Math.round(oran * 100) };
+}
+
+// Psikoloji puan hesaplama
+function psikolojiPuanlari(anket) {
+  if (!anket) return null;
+  const s = (keys) => keys.reduce((t, k) => t + (parseInt(anket[k]) || 0), 0);
+  const avg = (keys) => {
+    const vals = keys.map(k => parseInt(anket[k])).filter(v => v > 0);
+    return vals.length ? (vals.reduce((a,b) => a+b, 0) / vals.length) : 0;
+  };
+
+  const bilisselKaygi = s(['bk1','bk2','bk3','bk4','bk5','bk6','bk7','bk8','bk9']);
+  const somatikKaygi  = s(['sk1','sk2','sk3','sk4','sk5','sk6','sk7','sk8','sk9']);
+  const ozguven       = s(['og1','og2','og3','og4','og5','og6','og7','og8','og9']);
+  const gorevYon      = avg(['g1','g2','g3','g4','g5','g6','g7']);
+  const egoYon        = avg(['e1','e2','e3','e4','e5','e6']);
+  const kontrol       = avg(['kon1','kon2','kon3']);
+  const baglilik      = avg(['bag1','bag2','bag3']);
+  const meydan        = avg(['mey1','mey2','mey3']);
+  const guven         = avg(['guv1','guv2','guv3']);
+  const genisDissal   = avg(['gd1','gd2','gd3','gd4']);
+  const darDissal     = avg(['dd1','dd2','dd3','dd4']);
+  const dikkatHatasi  = avg(['dh1','dh2','dh3','dh4']);
+
+  return {
+    bilisselKaygi, somatikKaygi, ozguven,
+    gorevYon, egoYon,
+    kontrol, baglilik, meydan, guven,
+    genisDissal, darDissal, dikkatHatasi
+  };
+}
+
+function psikolojiBoyutDurumu(alan, puan) {
+  const kurallar = {
+    bilisselKaygi: { esik: [18, 27], ters: true },
+    somatikKaygi:  { esik: [18, 27], ters: true },
+    ozguven:       { esik: [20, 28], ters: false },
+    gorevYon:      { esik: [3.0, 4.0], ters: false },
+    egoYon:        { esik: [2.5, 3.5], ters: true },
+    kontrol:       { esik: [3.0, 4.0], ters: false },
+    baglilik:      { esik: [3.0, 4.0], ters: false },
+    meydan:        { esik: [2.5, 3.5], ters: false },
+    guven:         { esik: [3.0, 4.0], ters: false },
+    genisDissal:   { esik: [3.0, 3.5], ters: false },
+    darDissal:     { esik: [3.0, 3.5], ters: false },
+    dikkatHatasi:  { esik: [2.0, 3.0], ters: true }
+  };
+  const k = kurallar[alan];
+  if (!k || !puan) return { durum: '—', renk: 'gray' };
+  const iyi = !k.ters ? puan >= k.esik[1] : puan <= k.esik[0];
+  const orta = !k.ters ? (puan >= k.esik[0]) : (puan <= k.esik[1]);
+  if (iyi)   return { durum: '✅ İyi',    renk: 'green' };
+  if (orta)  return { durum: '⚠️ Orta',  renk: 'orange' };
+  return       { durum: '🔴 Gelişim', renk: 'red' };
+}
+
+const TEST_ETIKETLERI = {
+  uzun_atlama_cm:      { ad: 'Durarak Uzun Atlama', birim: 'cm' },
+  saglik_topu_cm:      { ad: '2kg Top Fırlatma',    birim: 'cm' },
+  mekik_tekrar:        { ad: '30sn Mekik',           birim: 'tekrar' },
+  sprint_30m_sn:       { ad: '30m Sprint',           birim: 'sn' },
+  illinois_sn:         { ad: 'Illinois Çeviklik',    birim: 'sn' },
+  flamingo_hata:       { ad: 'Flamingo Denge',       birim: 'hata' },
+  otur_uzan_cm:        { ad: 'Otur-Uzan',            birim: 'cm' },
+  beep_test_seviye:    { ad: 'Beep Test',             birim: 'seviye' },
+  cember_koord_sn:     { ad: 'Çember Koordinasyon',  birim: 'sn' },
+  cetvel_reaksiyon_cm: { ad: 'Cetvel Reaksiyon',     birim: 'cm' },
+  el_dinamometre_kg:   { ad: 'El Dinamometresi',     birim: 'kg' },
+  wingate_wkg:         { ad: 'Wingate 30sn',         birim: 'W/kg' }
+};
