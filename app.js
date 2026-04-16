@@ -121,19 +121,24 @@ function cikisYap(){
 function adminPaneliGoster(){
   document.getElementById('giris-ekrani').style.display='none';
   document.getElementById('admin-panel').classList.remove('hidden');
+  // Tüm sayfaları başta gizle
+  document.querySelectorAll('.a-sayfa').forEach(s=>s.style.display='none');
+  // İlk sayfayı göster
+  document.getElementById('a-sporcular').style.display='block';
   adminSporcuListesiGoster();
   selectleriDoldur();
   antrenorAnketOlustur();
 }
 
 function adminSayfa(sayfa,el){
-  document.querySelectorAll('.a-sayfa').forEach(s=>{s.style.display='none'});
+  document.querySelectorAll('.a-sayfa').forEach(s=>s.style.display='none');
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('a-'+sayfa).style.display='block';
   el.classList.add('active');
-  if(sayfa==='odev')adminOdevleriYukle();
+  if(sayfa==='test') selectleriDoldur();
+  if(sayfa==='psikoloji'){selectleriDoldur();antrenorAnketOlustur();}
+  if(sayfa==='odev'){selectleriDoldur();adminOdevleriYukle();}
   if(sayfa==='takip')takipYukle();
-  localStorage.setItem('tk_admin_sayfa',sayfa);
 }
 
 function adminSporcuListesiGoster(){
@@ -199,14 +204,16 @@ function sporcuSilSor(id,ad){
 
 async function sporcuSilOnayla(){
   if(!silinecekSporcuId)return;
-  await sb.from('test_sonuclari').delete().eq('sporcu_id',silinecekSporcuId);
-  await sb.from('psikoloji_sporcu').delete().eq('sporcu_id',silinecekSporcuId);
-  await sb.from('psikoloji_antrenor').delete().eq('sporcu_id',silinecekSporcuId);
-  await sb.from('odev_tamamlama').delete().eq('sporcu_id',silinecekSporcuId);
-  await sb.from('ev_odevleri').delete().eq('sporcu_id',silinecekSporcuId);
-  await sb.from('sporcular').delete().eq('id',silinecekSporcuId);
+  const id=silinecekSporcuId;
+  await sb.from("test_sonuclari").delete().eq("sporcu_id",id);
+  await sb.from("psikoloji_sporcu").delete().eq("sporcu_id",id);
+  await sb.from("psikoloji_antrenor").delete().eq("sporcu_id",id);
+  await sb.from("odev_tamamlama").delete().eq("sporcu_id",id);
+  await sb.from("ev_odevleri").delete().eq("sporcu_id",id);
+  const r=await sb.from("sporcular").delete().eq("id",id);
+  if(r.error){alert("Silme hatasi: "+r.error.message);return;}
   silinecekSporcuId=null;
-  modalKapat('m-sporcu-sil');
+  modalKapat("m-sporcu-sil");
   await sporcularYukle();
   adminSporcuListesiGoster();
   selectleriDoldur();
