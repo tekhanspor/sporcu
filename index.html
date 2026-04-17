@@ -10,12 +10,9 @@
 </head>
 <body>
 
-<!-- BİLDİRİM -->
 <div id="bildirim" class="bildirim"></div>
 
-<!-- ══════════════════════════════════════════════════ -->
-<!--  LOGİN EKRANI                                     -->
-<!-- ══════════════════════════════════════════════════ -->
+<!-- ══ LOGİN ══ -->
 <div id="loginEkrani" class="screen aktif">
   <div class="login-kart">
     <div class="login-logo">
@@ -32,20 +29,20 @@
     <div id="loginHata" class="hata-mesaji"></div>
 
     <div class="form-grup">
-      <label class="form-etiket">E-posta</label>
-      <input type="email" id="loginEmail" class="form-input" placeholder="email@adres.com" autocomplete="email" inputmode="email">
+      <label class="form-etiket">Kullanıcı Adı</label>
+      <input type="text" id="loginKullanici" class="form-input" placeholder="kullanici_adi"
+        autocomplete="username" autocapitalize="none" autocorrect="off">
     </div>
     <div class="form-grup">
       <label class="form-etiket">Şifre</label>
-      <input type="password" id="loginSifre" class="form-input" placeholder="••••••••" autocomplete="current-password">
+      <input type="password" id="loginSifre" class="form-input" placeholder="••••••••"
+        autocomplete="current-password">
     </div>
     <button class="btn btn-primary" onclick="girisYap()">Giriş Yap</button>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════ -->
-<!--  ANTRENÖR PANEL                                   -->
-<!-- ══════════════════════════════════════════════════ -->
+<!-- ══ ANTRENÖR PANELİ ══ -->
 <div id="antrenorEkrani" class="screen">
   <div class="header">
     <div style="flex:1">
@@ -57,29 +54,18 @@
 
   <div class="tab-nav">
     <button class="tab-btn aktif" onclick="tabSec('sporcular')">👥 Sporcular</button>
-    <button class="tab-btn" onclick="tabSec('testler')">📊 Test Sonuçları</button>
+    <button class="tab-btn" onclick="tabSec('testler')">📊 Testler</button>
     <button class="tab-btn" onclick="tabSec('anketler')">🧠 Anketler</button>
     <button class="tab-btn" onclick="tabSec('grafikler')">📈 Grafikler</button>
   </div>
 
   <div class="icerik">
-    <!-- SPORCULAR SEKMESİ -->
     <div id="tab-sporcular">
       <input type="text" class="arama-input" placeholder="Sporcu ara..." id="sporcuArama" oninput="sporcuFiltrele()">
       <div id="sporcuListesiDiv"></div>
     </div>
-
-    <!-- TEST SONUÇLARI SEKMESİ -->
-    <div id="tab-testler" style="display:none">
-      <div id="tumTestlerDiv"></div>
-    </div>
-
-    <!-- ANKETLER SEKMESİ -->
-    <div id="tab-anketler" style="display:none">
-      <div id="tumAnketlerDiv"></div>
-    </div>
-
-    <!-- GRAFİKLER SEKMESİ -->
+    <div id="tab-testler" style="display:none"><div id="tumTestlerDiv"></div></div>
+    <div id="tab-anketler" style="display:none"><div id="tumAnketlerDiv"></div></div>
     <div id="tab-grafikler" style="display:none">
       <div class="form-grup">
         <label class="form-etiket">Sporcu seç</label>
@@ -91,48 +77,32 @@
     </div>
   </div>
 
-  <!-- FAB: Sporcu Ekle -->
   <button class="btn-fab" id="fabBtn" onclick="sporcuEklePanelAc()">+</button>
 </div>
 
-<!-- ══════════════════════════════════════════════════ -->
-<!--  SPORCU PROFİL (ANT. GÖRÜNÜM)                     -->
-<!-- ══════════════════════════════════════════════════ -->
+<!-- ══ SPORCU PROFİL (ANT. GÖRÜNÜM) ══ -->
 <div id="sporcuProfilEkrani" class="screen">
   <div class="header">
     <button class="header-geri" onclick="geriGit('antrenorEkrani')">←</button>
     <div class="header-baslik" id="profilBaslik">Sporcu Profili</div>
     <button class="btn-icon btn-sm" onclick="testEkleModalAc()" title="Test Ekle">📊</button>
   </div>
-
   <div id="profilHeaderDiv"></div>
-
   <div class="tab-nav">
     <button class="tab-btn aktif" onclick="profilTabSec('bilgiler')">Bilgiler</button>
     <button class="tab-btn" onclick="profilTabSec('testler')">Motorik</button>
     <button class="tab-btn" onclick="profilTabSec('psikoloji')">Psikoloji</button>
     <button class="tab-btn" onclick="profilTabSec('recete')">Reçete</button>
   </div>
-
   <div class="icerik">
-    <div id="ptab-bilgiler">
-      <div id="profilBilgilerDiv"></div>
-    </div>
-    <div id="ptab-testler" style="display:none">
-      <div id="profilTestlerDiv"></div>
-    </div>
-    <div id="ptab-psikoloji" style="display:none">
-      <div id="profilPsikolojiDiv"></div>
-    </div>
-    <div id="ptab-recete" style="display:none">
-      <div id="profilReceteDiv"></div>
-    </div>
+    <div id="ptab-bilgiler"><div id="profilBilgilerDiv"></div></div>
+    <div id="ptab-testler" style="display:none"><div id="profilTestlerDiv"></div></div>
+    <div id="ptab-psikoloji" style="display:none"><div id="profilPsikolojiDiv"></div></div>
+    <div id="ptab-recete" style="display:none"><div id="profilReceteDiv"></div></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════ -->
-<!--  SPORCU EKRANI (KENDİ PROFİLİ)                    -->
-<!-- ══════════════════════════════════════════════════ -->
+<!-- ══ SPORCU KENDİ EKRANI ══ -->
 <div id="sporcuEkrani" class="screen">
   <div class="header">
     <div style="flex:1">
@@ -141,35 +111,21 @@
     </div>
     <button class="btn-icon" onclick="cikisYap()">⏏</button>
   </div>
-
   <div class="tab-nav">
     <button class="tab-btn aktif" onclick="sporcuTabSec('profil')">👤 Profilim</button>
     <button class="tab-btn" onclick="sporcuTabSec('testlerim')">📊 Testlerim</button>
     <button class="tab-btn" onclick="sporcuTabSec('anketim')">🧠 Anket</button>
     <button class="tab-btn" onclick="sporcuTabSec('sonuclarim')">📋 Sonuçlarım</button>
   </div>
-
   <div class="icerik">
-    <div id="stab-profil">
-      <div id="sporcuProfilDiv"></div>
-    </div>
-    <div id="stab-testlerim" style="display:none">
-      <div id="sporcuTestlerDiv"></div>
-    </div>
-    <div id="stab-anketim" style="display:none">
-      <div id="sporcuAnketDiv"></div>
-    </div>
-    <div id="stab-sonuclarim" style="display:none">
-      <div id="sporcuSonuclarDiv"></div>
-    </div>
+    <div id="stab-profil"><div id="sporcuProfilDiv"></div></div>
+    <div id="stab-testlerim" style="display:none"><div id="sporcuTestlerDiv"></div></div>
+    <div id="stab-anketim" style="display:none"><div id="sporcuAnketDiv"></div></div>
+    <div id="stab-sonuclarim" style="display:none"><div id="sporcuSonuclarDiv"></div></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════ -->
-<!--  MODALLER                                         -->
-<!-- ══════════════════════════════════════════════════ -->
-
-<!-- Sporcu Ekle/Düzenle Modalı -->
+<!-- ══ SPORCU EKLE/DÜZENLE MODALI ══ -->
 <div id="sporcuModal" class="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -179,6 +135,16 @@
     <div class="form-grup">
       <label class="form-etiket">Ad Soyad *</label>
       <input type="text" id="sAd" class="form-input" placeholder="Ahmet Yılmaz">
+    </div>
+    <div class="form-row">
+      <div class="form-grup">
+        <label class="form-etiket">Kullanıcı Adı *</label>
+        <input type="text" id="sKullaniciAdi" class="form-input" placeholder="ahmet123" autocapitalize="none" autocorrect="off">
+      </div>
+      <div class="form-grup">
+        <label class="form-etiket">Şifre *</label>
+        <input type="text" id="sSifre" class="form-input" placeholder="şifre123">
+      </div>
     </div>
     <div class="form-row">
       <div class="form-grup">
@@ -212,14 +178,6 @@
       <label class="form-etiket">Kulüp / Okul</label>
       <input type="text" id="sKulup" class="form-input" placeholder="Tekhan Spor Kulübü">
     </div>
-    <div class="form-grup">
-      <label class="form-etiket">E-posta (giriş için) *</label>
-      <input type="email" id="sEmail" class="form-input" placeholder="sporcu@mail.com">
-    </div>
-    <div class="form-grup">
-      <label class="form-etiket">Şifre *</label>
-      <input type="text" id="sSifre" class="form-input" placeholder="Şifre belirle">
-    </div>
 
     <div id="sporcuModalHata" class="hata-mesaji"></div>
     <button class="btn btn-primary" onclick="sporcuKaydet()">Kaydet</button>
@@ -227,13 +185,12 @@
   </div>
 </div>
 
-<!-- Test Ekle Modalı -->
+<!-- ══ TEST EKLE MODALI ══ -->
 <div id="testModal" class="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-baslik">📊 Motorik Test Sonuçları</div>
     <input type="hidden" id="testSporcuId">
-    <input type="hidden" id="testDuzId">
 
     <div class="form-row">
       <div class="form-grup">
@@ -309,7 +266,7 @@
     </div>
     <div class="form-grup">
       <label class="form-etiket">Notlar</label>
-      <input type="text" id="t_notlar" class="form-input" placeholder="Varsa not ekle...">
+      <input type="text" id="t_notlar" class="form-input" placeholder="Varsa not...">
     </div>
 
     <div id="testModalHata" class="hata-mesaji"></div>
@@ -318,7 +275,6 @@
   </div>
 </div>
 
-<!-- CDN: Chart.js -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <script src="data.js"></script>
 <script src="app.js"></script>
