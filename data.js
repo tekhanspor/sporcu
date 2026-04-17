@@ -204,3 +204,34 @@ const TEST_ETIKETLERI = {
   el_dinamometre_kg:   { ad: 'El Dinamometresi',     birim: 'kg' },
   wingate_wkg:         { ad: 'Wingate 30sn',         birim: 'W/kg' }
 };
+
+// ── ANTRENÖR PSİKOLOJİ GÖZLEM ────────────────────────────────────────────
+async function antrenorPsikolojiGetir(sporcuId) {
+  return await sbFetch(`antrenor_psikoloji?sporcu_id=eq.${sporcuId}&order=gozlem_tarihi.desc&select=*`);
+}
+
+async function antrenorPsikolojiEkle(data) {
+  return await sbFetch('antrenor_psikoloji', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+function antrenorPsikolojiPuanlari(g) {
+  if (!g) return null;
+  const avg = (keys) => {
+    const vals = keys.map(k => parseInt(g[k])).filter(v => v > 0);
+    return vals.length ? +(vals.reduce((a,b) => a+b,0) / vals.length).toFixed(2) : 0;
+  };
+  return {
+    kaygiGozlem: avg(['kb1','kb2','kb3','kb4','kb5','ks1','ks2','ks3','ks4','ks5','kd1','kd2','kd3','kd4','kd5']),
+    gorevYonAnt: avg(['mg1','mg2','mg3','mg4','mg5']),
+    egoYonAnt:   avg(['me1','me2','me3','me4','me5']),
+    kontrolAnt:  avg(['mk1','mk2','mk3']),
+    baglilikAnt: avg(['mb1','mb2','mb3']),
+    meyданAnt:   avg(['mm1','mm2','mm3']),
+    guvenAnt:    avg(['mgu1','mgu2','mgu3']),
+    dikkatAnt:   avg(['kg1','kg2','kg3','kg4','kg5']),
+    dikkatBozAnt:avg(['kboz1','kboz2','kboz3','kboz4','kboz5'])
+  };
+}
