@@ -18,10 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (aktifRol === 'antrenor') antrenorPanelAc();
     else sporcuPanelAc();
   }
-  // Enter ile giriş
-  document.getElementById('loginSifre').addEventListener('keydown', e => {
-    if (e.key === 'Enter') girisYap();
-  });
+  document.getElementById('loginKullanici').addEventListener('keydown', e => { if (e.key === 'Enter') girisYap(); });
+  document.getElementById('loginSifre').addEventListener('keydown', e => { if (e.key === 'Enter') girisYap(); });
 });
 
 // ── YARDIMCI ──────────────────────────────────────────────────────────────
@@ -89,21 +87,21 @@ function rolSec(rol) {
 }
 
 async function girisYap() {
-  const email = document.getElementById('loginEmail').value.trim();
+  const kullaniciAdi = document.getElementById('loginKullanici').value.trim();
   const sifre = document.getElementById('loginSifre').value;
   hataGizle('loginHata');
 
-  if (!email || !sifre) {
-    hataGoster('loginHata', 'E-posta ve şifre gerekli');
+  if (!kullaniciAdi || !sifre) {
+    hataGoster('loginHata', 'Kullanıcı adı ve şifre gerekli');
     return;
   }
 
   try {
     let kullanici;
     if (aktifRol === 'antrenor') {
-      kullanici = await antrenorGiris(email, sifre);
+      kullanici = await antrenorGiris(kullaniciAdi, sifre);
     } else {
-      kullanici = await sporcuGiris(email, sifre);
+      kullanici = await sporcuGiris(kullaniciAdi, sifre);
     }
     oturumKullanici = kullanici;
     sessionStorage.setItem('oturum', JSON.stringify({ kullanici, rol: aktifRol }));
@@ -119,7 +117,7 @@ function cikisYap() {
   sessionStorage.removeItem('oturum');
   oturumKullanici = null;
   aktifSporcuId = null;
-  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginKullanici').value = '';
   document.getElementById('loginSifre').value = '';
   ekranGoster('loginEkrani');
 }
@@ -650,7 +648,7 @@ function profilTabSec(tab) {
 function sporcuEklePanelAc() {
   document.getElementById('sporcuModalBaslik').textContent = 'Sporcu Ekle';
   document.getElementById('sporcuDuzId').value = '';
-  ['sAd','sDogum','sCinsiyet','sBoy','sKilo','sDan','sKulup','sEmail','sSifre'].forEach(id => {
+  ['sAd','sKullaniciAdi','sSifre','sDogum','sCinsiyet','sBoy','sKilo','sDan','sKulup'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = el.tagName === 'SELECT' ? '' : '';
   });
@@ -664,6 +662,8 @@ async function sporcuDuzModalAc(id) {
   document.getElementById('sporcuModalBaslik').textContent = 'Sporcu Düzenle';
   document.getElementById('sporcuDuzId').value = id;
   document.getElementById('sAd').value = sporcu.ad_soyad || '';
+  document.getElementById('sKullaniciAdi').value = sporcu.kullanici_adi || '';
+  document.getElementById('sSifre').value = sporcu.sifre_hash || '';
   document.getElementById('sDogum').value = sporcu.dogum_tarihi || '';
   document.getElementById('sCinsiyet').value = sporcu.cinsiyet || '';
   document.getElementById('sBoy').value = sporcu.boy_cm || '';
@@ -680,19 +680,19 @@ async function sporcuKaydet() {
   const id = document.getElementById('sporcuDuzId').value;
   const veri = {
     ad_soyad: document.getElementById('sAd').value.trim(),
+    kullanici_adi: document.getElementById('sKullaniciAdi').value.trim(),
+    sifre_hash: document.getElementById('sSifre').value.trim(),
     dogum_tarihi: document.getElementById('sDogum').value || null,
     cinsiyet: document.getElementById('sCinsiyet').value || null,
     boy_cm: parseFloat(document.getElementById('sBoy').value) || null,
     kilo_kg: parseFloat(document.getElementById('sKilo').value) || null,
     dan_kusak: document.getElementById('sDan').value.trim() || null,
-    kulup_okul: document.getElementById('sKulup').value.trim() || null,
-    email: document.getElementById('sEmail').value.trim(),
-    sifre_hash: document.getElementById('sSifre').value.trim()
+    kulup_okul: document.getElementById('sKulup').value.trim() || null
   };
 
-  if (!veri.ad_soyad) { hataGoster('sporcuModalHata', 'Ad soyad gerekli'); return; }
-  if (!veri.email)     { hataGoster('sporcuModalHata', 'E-posta gerekli'); return; }
-  if (!veri.sifre_hash){ hataGoster('sporcuModalHata', 'Şifre gerekli'); return; }
+  if (!veri.ad_soyad)      { hataGoster('sporcuModalHata', 'Ad soyad gerekli'); return; }
+  if (!veri.kullanici_adi) { hataGoster('sporcuModalHata', 'Kullanıcı adı gerekli'); return; }
+  if (!veri.sifre_hash)    { hataGoster('sporcuModalHata', 'Şifre gerekli'); return; }
 
   try {
     if (id) await sporcuGuncelle(id, veri);
