@@ -339,14 +339,14 @@ async function sporcuProfilAc(id) {
   yukleniyor('profilPsikolojiDiv');
   yukleniyor('profilReceteDiv');
   try {
-    const [sporcu, testler, anketler] = await Promise.all([
-      sporcuGetir(id), motorikTestleriGetir(id), anketleriGetir(id)
+    const [sporcu, testler, anketler, antPsiko] = await Promise.all([
+      sporcuGetir(id), motorikTestleriGetir(id), anketleriGetir(id), antrenorPsikolojiGetir(id)
     ]);
     document.getElementById('profilBaslik').textContent = sporcu.ad_soyad;
     renderProfilHeader(sporcu);
     renderProfilBilgiler(sporcu);
     renderProfilTestler(testler, sporcu);
-    renderProfilPsikoloji(anketler);
+    renderProfilPsikoloji(anketler, antPsiko);
     renderRecete(testler, anketler, sporcu);
   } catch (e) {
     bildirimGoster('Hata: ' + e.message);
@@ -481,46 +481,295 @@ function renderProfilTestler(testler, sporcu) {
   div.innerHTML = html;
 }
 
-function renderProfilPsikoloji(anketler) {
-  if (!anketler || anketler.length === 0) {
-    document.getElementById('profilPsikolojiDiv').innerHTML = '<div class="bos-durum"><span class="ikon">🧠</span><p>Henüz anket doldurulmamış</p></div>';
-    return;
+function renderProfilPsikoloji(anketler, antPsiko) {
+  const div = document.getElementById('profilPsikolojiDiv');
+  const ekleBtn = `<button class="btn btn-primary" style="margin-bottom:12px" onclick="antrenorGozlemFormuAc()">+ Gözlem Formu Doldur</button>`;
+
+  let html = ekleBtn;
+
+  // SPORCU ANKETİ
+  if (anketler && anketler.length > 0) {
+    const p = psikolojiPuanlari(anketler[0]);
+    const boyutlar = [
+      { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı' },
+      { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı' },
+      { k: 'ozguven',       ad: '💪 Özgüven' },
+      { k: 'gorevYon',      ad: '🎯 Görev Yönelimi' },
+      { k: 'egoYon',        ad: '🏆 Ego Yönelimi' },
+      { k: 'kontrol',       ad: '🧘 Mental Kontrol' },
+      { k: 'baglilik',      ad: '🔗 Bağlılık' },
+      { k: 'meydan',        ad: '⚡ Meydan Okuma' },
+      { k: 'guven',         ad: '🛡 Güven' },
+      { k: 'genisDissal',   ad: '👁 Geniş Dikkat' },
+      { k: 'darDissal',     ad: '🎯 Dar Dikkat' },
+      { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası' }
+    ];
+    html += `<div class="kart">
+      <div class="kart-baslik">👤 Sporcu Öz-Bildirimi — ${tarihFormatla(anketler[0].anket_tarihi)}</div>
+      <div class="psiko-ozet-grid">
+        ${boyutlar.map(b => {
+          const val = p[b.k];
+          if (!val) return '';
+          const { durum, renk } = psikolojiBoyutDurumu(b.k, val);
+          const color = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
+          return `<div class="psiko-alan-kart">
+            <div class="psiko-alan-baslik">${b.ad}</div>
+            <div class="psiko-alan-puan" style="color:${color}">${val.toFixed ? val.toFixed(1) : val}</div>
+            <div class="psiko-alan-durum">${durum}</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+    if (anketler.length > 1) {
+      html += `<div class="kart"><div class="kart-baslik">📋 Sporcu Anket Geçmişi</div>
+        ${anketler.slice(1).map(a => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span><span class="gecmis-icerik">Anket dolduruldu</span></div>`).join('')}
+      </div>`;
+    }
+  } else {
+    html += '<div class="kart"><div class="kart-baslik">👤 Sporcu Öz-Bildirimi</div><div class="bos-durum" style="padding:20px 0"><span class="ikon" style="font-size:32px">📋</span><p>Sporcu henüz anket doldurmamış</p></div></div>';
   }
-  const p = psikolojiPuanlari(anketler[0]);
-  const boyutlar = [
-    { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı' },
-    { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı' },
-    { k: 'ozguven',       ad: '💪 Özgüven' },
-    { k: 'gorevYon',      ad: '🎯 Görev Yönelimi' },
-    { k: 'egoYon',        ad: '🏆 Ego Yönelimi' },
-    { k: 'kontrol',       ad: '🧘 Mental Kontrol' },
-    { k: 'baglilik',      ad: '🔗 Bağlılık' },
-    { k: 'meydan',        ad: '⚡ Meydan Okuma' },
-    { k: 'guven',         ad: '🛡 Güven' },
-    { k: 'genisDissal',   ad: '👁 Geniş Dikkat' },
-    { k: 'darDissal',     ad: '🎯 Dar Dikkat' },
-    { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası' }
+
+  // ANTRENÖR GÖZLEM FORMU SONUÇLARI
+  if (antPsiko && antPsiko.length > 0) {
+    const g = antPsiko[0];
+    const ag = antrenorPsikolojiPuanlari(g);
+    const gozlemBoyutlar = [
+      { k: 'kaygiGozlem',  ad: '😰 Kaygı Gözlemi', ters: true, max: 4 },
+      { k: 'gorevYonAnt',  ad: '🎯 Görev Yönelimi', ters: false, max: 5 },
+      { k: 'egoYonAnt',    ad: '🏆 Ego Yönelimi', ters: true, max: 5 },
+      { k: 'kontrolAnt',   ad: '🧘 Mental Kontrol', ters: false, max: 5 },
+      { k: 'baglilikAnt',  ad: '🔗 Bağlılık', ters: false, max: 5 },
+      { k: 'meyдanAnt',    ad: '⚡ Meydan Okuma', ters: false, max: 5 },
+      { k: 'guvenAnt',     ad: '🛡 Güven', ters: false, max: 5 },
+      { k: 'dikkatAnt',    ad: '👁 Güçlü Dikkat', ters: false, max: 5 },
+      { k: 'dikkatBozAnt', ad: '⚠️ Dikkat Bozukluğu', ters: true, max: 5 }
+    ];
+    html += `<div class="kart">
+      <div class="kart-baslik">🏆 Antrenör Gözlemi — ${tarihFormatla(g.gozlem_tarihi)}</div>
+      <div class="psiko-ozet-grid">
+        ${gozlemBoyutlar.map(b => {
+          const val = ag[b.k];
+          if (!val) return '';
+          const iyi = b.ters ? val <= (b.max * 0.4) : val >= (b.max * 0.7);
+          const orta = b.ters ? val <= (b.max * 0.6) : val >= (b.max * 0.5);
+          const renk = iyi ? 'green' : orta ? 'orange' : 'red';
+          const durum = iyi ? '✅ İyi' : orta ? '⚠️ Orta' : '🔴 Gelişim';
+          const color = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
+          return `<div class="psiko-alan-kart">
+            <div class="psiko-alan-baslik">${b.ad}</div>
+            <div class="psiko-alan-puan" style="color:${color}">${val}</div>
+            <div class="psiko-alan-durum">${durum}</div>
+          </div>`;
+        }).join('')}
+      </div>
+      ${g.antrenor_notu ? `<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-700)">📝 ${g.antrenor_notu}</div>` : ''}
+    </div>`;
+    if (antPsiko.length > 1) {
+      html += `<div class="kart"><div class="kart-baslik">📋 Antrenör Gözlem Geçmişi</div>
+        ${antPsiko.slice(1).map(g2 => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(g2.gozlem_tarihi)}</span><span class="gecmis-icerik">Gözlem formu dolduruldu</span></div>`).join('')}
+      </div>`;
+    }
+  } else {
+    html += '<div class="kart"><div class="kart-baslik">🏆 Antrenör Gözlemi</div><div class="bos-durum" style="padding:20px 0"><span class="ikon" style="font-size:32px">👀</span><p>Henüz gözlem formu doldurulmamış</p></div></div>';
+  }
+
+  div.innerHTML = html;
+}
+
+// ── ANTRENÖR GÖZLEM FORMU ─────────────────────────────────────────────────
+function antrenorGozlemFormuAc() {
+  if (!aktifSporcuId) return;
+  const modal = document.getElementById('gozlemModal');
+  if (!modal) { antrenorGozlemModalOlustur(); return; }
+  document.getElementById('gozlemSporcuId').value = aktifSporcuId;
+  document.getElementById('gozlemTarih').value = new Date().toISOString().split('T')[0];
+  hataGizle('gozlemHata');
+  // Tüm butonları sıfırla
+  document.querySelectorAll('#gozlemModal .gozlem-btn').forEach(b => b.classList.remove('secili'));
+  document.getElementById('gozlemNot').value = '';
+  modalAc('gozlemModal');
+}
+
+function antrenorGozlemModalOlustur() {
+  // Kaygı soruları 0-4, diğerleri 1-5
+  const bolumler = [
+    { baslik: '🔵 Kaygı — Bilişsel Belirtiler', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlem-
+lemedim','Hiç','Hafif','Belirgin','Çok
+Belirgin'], sorular: [
+      { k: 'kb1', metin: 'Yarış öncesi aşırı soru soruyor, onay arıyor.' },
+      { k: 'kb2', metin: 'Dikkatini toplamakta güçlük çekiyor, dağınık görünüyor.' },
+      { k: 'kb3', metin: 'Olumsuz konuşmalar yapıyor ("Kazanamam" vb.).' },
+      { k: 'kb4', metin: 'Hata yaptığında uzun süre toparlanamıyor.' },
+      { k: 'kb5', metin: 'Rakip/hakem hakkında aşırı endişeli konuşuyor.' }
+    ]},
+    { baslik: '🔵 Kaygı — Somatik Belirtiler', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlem-
+lemedim','Hiç','Hafif','Belirgin','Çok
+Belirgin'], sorular: [
+      { k: 'ks1', metin: 'Isınmada kaslar aşırı gergin görünüyor.' },
+      { k: 'ks2', metin: 'Solunum hızlanmış veya düzensiz.' },
+      { k: 'ks3', metin: 'Ellerde titreme, yüzde solukluk/kızarıklık.' },
+      { k: 'ks4', metin: 'Sık tuvalete gidiyor veya mide bulantısı.' },
+      { k: 'ks5', metin: 'Hareketler koordinasyonunu kaybetmiş, sertleşmiş.' }
+    ]},
+    { baslik: '🔵 Kaygı — Davranış Belirtileri', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlem-
+lemedim','Hiç','Hafif','Belirgin','Çok
+Belirgin'], sorular: [
+      { k: 'kd1', metin: 'Antrenörden veya takımdan uzaklaşıyor.' },
+      { k: 'kd2', metin: 'Aşırı konuşkan veya tam tersine sessiz/donuk.' },
+      { k: 'kd3', metin: 'Hazırlık rutinini aksatıyor veya değiştiriyor.' },
+      { k: 'kd4', metin: 'Yarıştan kaçma davranışı gösteriyor.' },
+      { k: 'kd5', metin: 'Teknik uyarılara normalden farklı tepki veriyor.' }
+    ]},
+    { baslik: '🟣 Motivasyon — Görev Yönelimi', renk: '#7e22ce', scale: [1,2,3,4,5], labels: ['Hiçbir
+Zaman','Nadiren','Bazen','Sıklıkla','Her
+Zaman'], sorular: [
+      { k: 'mg1', metin: 'Antrenman içeriğini merak ederek sorar.' },
+      { k: 'mg2', metin: 'Hata yapınca tekrar dener, pes etmez.' },
+      { k: 'mg3', metin: 'Kendi performansından memnuniyet duyar.' },
+      { k: 'mg4', metin: 'Zorlu egzersizlerde çaba gösterir.' },
+      { k: 'mg5', metin: 'Gelişimini takip eder, geçmişiyle karşılaştırır.' }
+    ]},
+    { baslik: '🟣 Motivasyon — Ego Yönelimi', renk: '#7e22ce', scale: [1,2,3,4,5], labels: ['Hiçbir
+Zaman','Nadiren','Bazen','Sıklıkla','Her
+Zaman'], sorular: [
+      { k: 'me1', metin: 'Yalnızca kazandığında motive görünür.' },
+      { k: 'me2', metin: 'Sürekli başkalarıyla kıyaslar.' },
+      { k: 'me3', metin: 'Başarısızlıkta bahane üretir veya bırakmak ister.' },
+      { k: 'me4', metin: 'Zor egzersizlerden kaçar.' },
+      { k: 'me5', metin: 'Kaybedince sinirlenme, suçlama, ağlama tepkileri.' }
+    ]},
+    { baslik: '🟢 Mental Dayanıklılık — Kontrol', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir
+Zaman','Nadiren','Bazen','Sıklıkla','Her
+Zaman'], sorular: [
+      { k: 'mk1', metin: 'Duygusal tepkileri uygun şekilde yönetiyor.' },
+      { k: 'mk2', metin: 'Ortam değişince paniğe kapılmadan uyum sağlıyor.' },
+      { k: 'mk3', metin: 'Stresli durumda sakin ve odaklı kalabiliyor.' }
+    ]},
+    { baslik: '🟢 Mental Dayanıklılık — Bağlılık & Meydan Okuma', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir
+Zaman','Nadiren','Bazen','Sıklıkla','Her
+Zaman'], sorular: [
+      { k: 'mb1', metin: 'Zor antrenmanlarda çabadan vazgeçmiyor.' },
+      { k: 'mb2', metin: 'Uzun vadeli hedeflere bağlılığını koruyor.' },
+      { k: 'mb3', metin: 'Olumsuz koşullarda kararlılığını sürdürüyor.' },
+      { k: 'mm1', metin: 'Yeni ve zor egzersizleri istekle deniyor.' },
+      { k: 'mm2', metin: 'Yarışma baskısını fırsat olarak değerlendiriyor.' },
+      { k: 'mm3', metin: 'Başarısızlıktan sonra hızlı toparlanıyor.' }
+    ]},
+    { baslik: '🟢 Mental Dayanıklılık — Güven', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir
+Zaman','Nadiren','Bazen','Sıklıkla','Her
+Zaman'], sorular: [
+      { k: 'mgu1', metin: 'Baskı altında özgüveni korunuyor.' },
+      { k: 'mgu2', metin: 'Kendi teknik kararlarına güvenebiliyor.' },
+      { k: 'mgu3', metin: 'Zor anlarda kendi kapasitesine inancını yitirmiyor.' }
+    ]},
+    { baslik: '🟠 Konsantrasyon — Güçlü Dikkat', renk: '#e65100', scale: [1,2,3,4,5], labels: ['Hiçbir
+Zaman','Nadiren','Bazen','Sıklıkla','Her
+Zaman'], sorular: [
+      { k: 'kg1', metin: 'Açıklamaları ilk seferinde anlıyor ve uygulayabiliyor.' },
+      { k: 'kg2', metin: 'Çoklu uyarıcıyı eş zamanlı takip edebiliyor.' },
+      { k: 'kg3', metin: 'Uzun seansların sonunda bile odak kaybı yaşamıyor.' },
+      { k: 'kg4', metin: 'Hata sonrası hızlıca toparlanarak odaklı kalıyor.' },
+      { k: 'kg5', metin: 'Rakibin stratejisini ve vücut dilini okuyabiliyor.' }
+    ]},
+    { baslik: '🟠 Konsantrasyon — Dikkat Bozukluğu', renk: '#e65100', scale: [1,2,3,4,5], labels: ['Hiçbir
+Zaman','Nadiren','Bazen','Sıklıkla','Her
+Zaman'], sorular: [
+      { k: 'kboz1', metin: 'Uzun açıklamalarda dikkati dağılıyor.' },
+      { k: 'kboz2', metin: 'Seyirci/gürültü dikkatini kolayca bozuyor.' },
+      { k: 'kboz3', metin: 'Hata sonrası aynı hatayı tekrarlıyor.' },
+      { k: 'kboz4', metin: 'Yorgunlukta teknik hatalar belirgin artıyor.' },
+      { k: 'kboz5', metin: 'Kritik anlarda odak kaybı gözlemleniyor.' }
+    ]}
   ];
-  document.getElementById('profilPsikolojiDiv').innerHTML = `
-  <div class="kart">
-    <div class="kart-baslik">🧠 Psikolojik Profil — ${tarihFormatla(anketler[0].anket_tarihi)}</div>
-    <div class="psiko-ozet-grid">
-      ${boyutlar.map(b => {
-        const val = p[b.k];
-        if (!val) return '';
-        const { durum, renk } = psikolojiBoyutDurumu(b.k, val);
-        const color = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
-        return `<div class="psiko-alan-kart">
-          <div class="psiko-alan-baslik">${b.ad}</div>
-          <div class="psiko-alan-puan" style="color:${color}">${val.toFixed ? val.toFixed(1) : val}</div>
-          <div class="psiko-alan-durum">${durum}</div>
-        </div>`;
-      }).join('')}
+
+  let formHtml = `
+  <div id="gozlemModal" class="modal-overlay">
+    <div class="modal">
+      <div class="modal-handle"></div>
+      <div class="modal-baslik">👁 Antrenör Psikoloji Gözlem Formu</div>
+      <input type="hidden" id="gozlemSporcuId">
+      <div class="form-row">
+        <div class="form-grup">
+          <label class="form-etiket">Gözlem Tarihi *</label>
+          <input type="date" id="gozlemTarih" class="form-input">
+        </div>
+        <div class="form-grup">
+          <label class="form-etiket">Yaklaşan Yarış</label>
+          <input type="text" id="gozlemYaris" class="form-input" placeholder="Opsiyonel">
+        </div>
+      </div>`;
+
+  bolumler.forEach(bolum => {
+    formHtml += `
+    <div class="anket-alan" style="margin-bottom:10px">
+      <div class="anket-alan-baslik" onclick="anketBolumToggle(this)" style="border-left:4px solid ${bolum.renk}">
+        <span style="flex:1">${bolum.baslik}</span><span>▼</span>
+      </div>
+      <div class="anket-alan-icerik">
+        ${bolum.sorular.map(soru => `
+        <div class="soru" id="gsoru_${soru.k}">
+          <div class="soru-metin">${soru.metin}</div>
+          <div class="likert-secenekler">
+            ${bolum.scale.map((n, i) => `<button type="button" class="likert-btn gozlem-btn" data-key="${soru.k}" data-val="${n}" onclick="gozlemSec(this)" title="${bolum.labels[i].replace('\n',' ')}">${n}</button>`).join('')}
+          </div>
+          <div class="likert-etiketler">
+            <span>${bolum.labels[0].replace('\n',' ')}</span>
+            <span>${bolum.labels[bolum.labels.length-1].replace('\n',' ')}</span>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  });
+
+  formHtml += `
+      <div class="form-grup" style="margin-top:12px">
+        <label class="form-etiket">Genel Gözlem Notu</label>
+        <textarea id="gozlemNot" class="form-input" rows="3" placeholder="Gözlemlerinizi yazın..."></textarea>
+      </div>
+      <div id="gozlemHata" class="hata-mesaji"></div>
+      <button class="btn btn-primary" onclick="gozlemKaydet()">Kaydet</button>
+      <button class="btn btn-outline" style="margin-top:8px" onclick="modalKapat('gozlemModal')">İptal</button>
     </div>
-  </div>
-  ${anketler.length > 1 ? `<div class="kart"><div class="kart-baslik">📋 Anket Geçmişi</div>
-    ${anketler.slice(1).map(a => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span><span class="gecmis-icerik">Anket dolduruldu</span></div>`).join('')}
-  </div>` : ''}`;
+  </div>`;
+
+  document.body.insertAdjacentHTML('beforeend', formHtml);
+  document.getElementById('gozlemSporcuId').value = aktifSporcuId;
+  document.getElementById('gozlemTarih').value = new Date().toISOString().split('T')[0];
+  modalAc('gozlemModal');
+}
+
+let gozlemCevaplari = {};
+
+function gozlemSec(btn) {
+  const key = btn.dataset.key;
+  const val = parseInt(btn.dataset.val);
+  gozlemCevaplari[key] = val;
+  const soru = document.getElementById(`gsoru_${key}`);
+  if (soru) soru.querySelectorAll('.gozlem-btn').forEach(b => b.classList.toggle('secili', parseInt(b.dataset.val) === val));
+}
+
+async function gozlemKaydet() {
+  const sporcuId = document.getElementById('gozlemSporcuId').value;
+  const tarih = document.getElementById('gozlemTarih').value;
+  if (!tarih) { hataGoster('gozlemHata', 'Tarih gerekli'); return; }
+
+  const veri = {
+    sporcu_id: sporcuId,
+    gozlem_tarihi: tarih,
+    yaklasan_yaris: document.getElementById('gozlemYaris')?.value?.trim() || null,
+    antrenor_notu: document.getElementById('gozlemNot').value.trim() || null,
+    ...gozlemCevaplari
+  };
+
+  try {
+    await antrenorPsikolojiEkle(veri);
+    gozlemCevaplari = {};
+    modalKapat('gozlemModal');
+    bildirimGoster('✅ Gözlem formu kaydedildi');
+    sporcuProfilAc(sporcuId);
+  } catch (e) {
+    hataGoster('gozlemHata', e.message || 'Kayıt hatası');
+  }
 }
 
 function renderRecete(testler, anketler, sporcu) {
