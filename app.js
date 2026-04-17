@@ -378,12 +378,23 @@ function renderProfilBilgiler(s) {
     { etiket: 'Kulüp / Okul', deger: s.kulup_okul || '—' },
     { etiket: 'Kullanıcı Adı', deger: s.kullanici_adi }
   ];
+  const izinDurum = s.anket_izin;
   document.getElementById('profilBilgilerDiv').innerHTML = `
   <div class="kart">
     ${bilgiler.map(b => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)">
       <span style="color:var(--gray-500);font-size:13px">${b.etiket}</span>
       <span style="font-size:13px;font-weight:600">${b.deger || '—'}</span>
     </div>`).join('')}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0">
+      <div>
+        <div style="font-size:13px;font-weight:600">🧠 Anket İzni</div>
+        <div style="font-size:11px;color:var(--gray-500)">Sporcu psikoloji anketi doldurabilsin mi?</div>
+      </div>
+      <button onclick="anketIzniToggle('${s.id}', ${izinDurum})"
+        style="padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:${izinDurum ? '#def7ec' : '#fde8e8'};color:${izinDurum ? '#057a55' : '#c81e1e'}">
+        ${izinDurum ? '✅ Açık' : '🔒 Kapalı'}
+      </button>
+    </div>
   </div>`;
 }
 
@@ -1040,13 +1051,31 @@ function renderSporcuTestler(testler, sporcu) {
 function sporcuTabSec(tab, btn) {
   document.querySelectorAll('#sporcuEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
   if (btn) btn.classList.add('aktif');
-  ['profil','testlerim','anketim','sonuclarim'].forEach(t => {
+  ['profil','anketim','sonuclarim'].forEach(t => {
     document.getElementById(`stab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
-  if (tab === 'anketim') anketFormuHazirla();
+  if (tab === 'anketim') anketIzinKontrol();
   if (tab === 'sonuclarim') sporcuSonuclariniYukle();
 }
 
+
+
+// ── ANKET İZİN KONTROLÜ ───────────────────────────────────────────────────
+async function anketIzinKontrol() {
+  var div = document.getElementById('sporcuAnketDiv');
+  div.innerHTML = '<div class="yukleniyor"><div class="spinner"></div> Kontrol ediliyor...</div>';
+  try {
+    var rows = await sbFetch('sporcular?id=eq.' + oturumKullanici.id + '&select=anket_izin');
+    var izin = rows && rows[0] && rows[0].anket_izin;
+    if (izin) {
+      anketFormuHazirla();
+    } else {
+      div.innerHTML = '<div class="bos-durum"><span class="ikon">🔒</span><p>Anket şu an kapalı.</p><p style="font-size:12px;margin-top:8px;color:var(--gray-500)">Antrenörünüz anketi açtığında doldurabilirsiniz.</p></div>';
+    }
+  } catch(e) {
+    div.innerHTML = '<div class="bos-durum"><span class="ikon">🔒</span><p>Anket şu an kapalı.</p></div>';
+  }
+}
 
 // ── ANKET VERİSİ ──────────────────────────────────────────────────────────
 const ANKET_BOLUMLER = [
@@ -1322,42 +1351,74 @@ async function sporcuSonuclariniYukle() {
       html += '</div>';
     }
 
-    // PSİKOLOJİ SONUÇLARI
+    // PSİKOLOJİ SONUÇLARI — sporcu + antrenör ortalaması
     if (anketler && anketler.length > 0) {
-      var p = psikolojiPuanlari(anketler[0]);
+      var sp = psikolojiPuanlari(anketler[0]);
+      // Antrenör gözlem verisi de çek
+      var antData = null;
+      try { var antRows = await antrenorPsikolojiGetir(oturumKullanici.id); antData = antRows && antRows[0] ? antrenorPsikolojiPuanlari(antRows[0]) : null; } catch(e2) {}
+
+      // Sporcu boyutları — antrenörden eşleşen boyut varsa ortalamasını al
       var boyutlar = [
-        { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı' },
-        { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı' },
-        { k: 'ozguven',       ad: '💪 Özgüven' },
-        { k: 'gorevYon',      ad: '🎯 Görev Yönelimi' },
-        { k: 'egoYon',        ad: '🏆 Ego Yönelimi' },
-        { k: 'kontrol',       ad: '🧘 Mental Kontrol' },
-        { k: 'baglilik',      ad: '🔗 Bağlılık' },
-        { k: 'meydan',        ad: '⚡ Meydan Okuma' },
-        { k: 'guven',         ad: '🛡 Güven' },
-        { k: 'genisDissal',   ad: '👁 Geniş Dikkat' },
-        { k: 'darDissal',     ad: '🎯 Dar Dikkat' },
-        { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası' }
+        { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı', antK: 'kaygiGozlem', max: 36, ters: true },
+        { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı',  antK: null,           max: 36, ters: true },
+        { k: 'ozguven',       ad: '💪 Özgüven',         antK: null,           max: 36, ters: false },
+        { k: 'gorevYon',      ad: '🎯 Görev Yönelimi',  antK: 'gorevYonAnt', max: 5,  ters: false },
+        { k: 'egoYon',        ad: '🏆 Ego Yönelimi',    antK: 'egoYonAnt',   max: 5,  ters: true },
+        { k: 'kontrol',       ad: '🧘 Mental Kontrol',  antK: 'kontrolAnt',  max: 5,  ters: false },
+        { k: 'baglilik',      ad: '🔗 Bağlılık',        antK: 'baglilikAnt', max: 5,  ters: false },
+        { k: 'meydan',        ad: '⚡ Meydan Okuma',    antK: null,           max: 5,  ters: false },
+        { k: 'guven',         ad: '🛡 Güven',           antK: 'guvenAnt',    max: 5,  ters: false },
+        { k: 'genisDissal',   ad: '👁 Geniş Dikkat',    antK: 'dikkatAnt',   max: 5,  ters: false },
+        { k: 'darDissal',     ad: '🎯 Dar Dikkat',      antK: null,           max: 5,  ters: false },
+        { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',  antK: 'dikkatBozAnt',max: 5,  ters: true }
       ];
+
       html += '<div class="kart"><div class="kart-baslik">🧠 Psikolojik Profilim — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
-      html += '<div class="psiko-ozet-grid">';
       boyutlar.forEach(function(b) {
-        var val = p[b.k];
-        if (!val) return;
-        var r = psikolojiBoyutDurumu(b.k, val);
-        var color = r.renk === 'green' ? '#057a55' : r.renk === 'orange' ? '#e65100' : '#c81e1e';
-        html += '<div class="psiko-alan-kart">';
-        html += '<div class="psiko-alan-baslik">' + b.ad + '</div>';
-        html += '<div class="psiko-alan-puan" style="color:' + color + '">' + (val.toFixed ? val.toFixed(1) : val) + '</div>';
-        html += '<div class="psiko-alan-durum">' + r.durum + '</div>';
+        var spVal = sp[b.k];
+        if (!spVal) return;
+        // Antrenör puanını normalize et (aynı 0-max skalaya çek) ve ortalamasını al
+        var finalVal = spVal;
+        var kaynak = 'Öz-bildirim';
+        if (antData && b.antK && antData[b.antK]) {
+          var antVal = antData[b.antK];
+          // Antrenör puanını sporcu skalasına normalize et
+          var antNorm = (antVal / (b.ters ? 4 : 5)) * b.max;
+          finalVal = (spVal + antNorm) / 2;
+          kaynak = 'Ortalama';
+        }
+        var r = psikolojiBoyutDurumu(b.k, finalVal);
+        var barRenk = r.renk === 'green' ? '#057a55' : r.renk === 'orange' ? '#e65100' : '#c81e1e';
+        var yuzde = b.ters ? Math.max(0, Math.min(100, (1 - finalVal/b.max)*100)) : Math.min(100, (finalVal/b.max)*100);
+        html += '<div class="test-satir">';
+        html += '<div style="flex:1">';
+        html += '<div style="font-size:13px;font-weight:500">' + b.ad + '</div>';
+        html += '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + yuzde + '%;background:' + barRenk + '"></div></div>';
+        html += '<div style="font-size:10px;color:var(--gray-500)">' + kaynak + '</div>';
         html += '</div>';
+        html += '<div style="text-align:right;flex-shrink:0;min-width:90px">';
+        html += '<div style="font-size:14px;font-weight:700">' + (finalVal.toFixed ? finalVal.toFixed(1) : finalVal) + '</div>';
+        html += '<span class="badge badge-' + (r.renk === 'green' ? 'green' : r.renk === 'orange' ? 'orange' : 'red') + '">' + r.durum + '</span>';
+        html += '</div></div>';
       });
-      html += '</div></div>';
+      html += '</div>';
     }
 
     if (!html) html = '<div class="bos-durum"><span class="ikon">📋</span><p>Henüz sonuç yok</p></div>';
     document.getElementById('sporcuSonuclarDiv').innerHTML = html;
   } catch (e) {
     document.getElementById('sporcuSonuclarDiv').innerHTML = '<p style="color:red">' + e.message + '</p>';
+  }
+}
+
+// ── ANKET İZNİ TOGGLE ─────────────────────────────────────────────────────
+async function anketIzniToggle(sporcuId, mevcutDurum) {
+  try {
+    await sporcuGuncelle(sporcuId, { anket_izin: !mevcutDurum });
+    bildirimGoster(mevcutDurum ? '🔒 Anket kapatıldı' : '✅ Anket açıldı');
+    sporcuProfilAc(sporcuId);
+  } catch(e) {
+    bildirimGoster('Hata: ' + e.message);
   }
 }
