@@ -593,61 +593,47 @@ function antrenorGozlemFormuAc() {
 function antrenorGozlemModalOlustur() {
   // Kaygı soruları 0-4, diğerleri 1-5
   const bolumler = [
-    { baslik: '🔵 Kaygı — Bilişsel Belirtiler', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlem-
-lemedim','Hiç','Hafif','Belirgin','Çok
-Belirgin'], sorular: [
+    { baslik: '🔵 Kaygı — Bilişsel Belirtiler', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlemlemedim','Hiç','Hafif','Belirgin','Çok Belirgin'], sorular: [
       { k: 'kb1', metin: 'Yarış öncesi aşırı soru soruyor, onay arıyor.' },
       { k: 'kb2', metin: 'Dikkatini toplamakta güçlük çekiyor, dağınık görünüyor.' },
       { k: 'kb3', metin: 'Olumsuz konuşmalar yapıyor ("Kazanamam" vb.).' },
       { k: 'kb4', metin: 'Hata yaptığında uzun süre toparlanamıyor.' },
       { k: 'kb5', metin: 'Rakip/hakem hakkında aşırı endişeli konuşuyor.' }
     ]},
-    { baslik: '🔵 Kaygı — Somatik Belirtiler', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlem-
-lemedim','Hiç','Hafif','Belirgin','Çok
-Belirgin'], sorular: [
+    { baslik: '🔵 Kaygı — Somatik Belirtiler', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlemlemedim','Hiç','Hafif','Belirgin','Çok Belirgin'], sorular: [
       { k: 'ks1', metin: 'Isınmada kaslar aşırı gergin görünüyor.' },
       { k: 'ks2', metin: 'Solunum hızlanmış veya düzensiz.' },
       { k: 'ks3', metin: 'Ellerde titreme, yüzde solukluk/kızarıklık.' },
       { k: 'ks4', metin: 'Sık tuvalete gidiyor veya mide bulantısı.' },
       { k: 'ks5', metin: 'Hareketler koordinasyonunu kaybetmiş, sertleşmiş.' }
     ]},
-    { baslik: '🔵 Kaygı — Davranış Belirtileri', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlem-
-lemedim','Hiç','Hafif','Belirgin','Çok
-Belirgin'], sorular: [
+    { baslik: '🔵 Kaygı — Davranış Belirtileri', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlemlemedim','Hiç','Hafif','Belirgin','Çok Belirgin'], sorular: [
       { k: 'kd1', metin: 'Antrenörden veya takımdan uzaklaşıyor.' },
       { k: 'kd2', metin: 'Aşırı konuşkan veya tam tersine sessiz/donuk.' },
       { k: 'kd3', metin: 'Hazırlık rutinini aksatıyor veya değiştiriyor.' },
       { k: 'kd4', metin: 'Yarıştan kaçma davranışı gösteriyor.' },
       { k: 'kd5', metin: 'Teknik uyarılara normalden farklı tepki veriyor.' }
     ]},
-    { baslik: '🟣 Motivasyon — Görev Yönelimi', renk: '#7e22ce', scale: [1,2,3,4,5], labels: ['Hiçbir
-Zaman','Nadiren','Bazen','Sıklıkla','Her
-Zaman'], sorular: [
+    { baslik: '🟣 Motivasyon — Görev Yönelimi', renk: '#7e22ce', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
       { k: 'mg1', metin: 'Antrenman içeriğini merak ederek sorar.' },
       { k: 'mg2', metin: 'Hata yapınca tekrar dener, pes etmez.' },
       { k: 'mg3', metin: 'Kendi performansından memnuniyet duyar.' },
       { k: 'mg4', metin: 'Zorlu egzersizlerde çaba gösterir.' },
       { k: 'mg5', metin: 'Gelişimini takip eder, geçmişiyle karşılaştırır.' }
     ]},
-    { baslik: '🟣 Motivasyon — Ego Yönelimi', renk: '#7e22ce', scale: [1,2,3,4,5], labels: ['Hiçbir
-Zaman','Nadiren','Bazen','Sıklıkla','Her
-Zaman'], sorular: [
+    { baslik: '🟣 Motivasyon — Ego Yönelimi', renk: '#7e22ce', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
       { k: 'me1', metin: 'Yalnızca kazandığında motive görünür.' },
       { k: 'me2', metin: 'Sürekli başkalarıyla kıyaslar.' },
       { k: 'me3', metin: 'Başarısızlıkta bahane üretir veya bırakmak ister.' },
       { k: 'me4', metin: 'Zor egzersizlerden kaçar.' },
       { k: 'me5', metin: 'Kaybedince sinirlenme, suçlama, ağlama tepkileri.' }
     ]},
-    { baslik: '🟢 Mental Dayanıklılık — Kontrol', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir
-Zaman','Nadiren','Bazen','Sıklıkla','Her
-Zaman'], sorular: [
+    { baslik: '🟢 Mental Dayanıklılık — Kontrol', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
       { k: 'mk1', metin: 'Duygusal tepkileri uygun şekilde yönetiyor.' },
       { k: 'mk2', metin: 'Ortam değişince paniğe kapılmadan uyum sağlıyor.' },
       { k: 'mk3', metin: 'Stresli durumda sakin ve odaklı kalabiliyor.' }
     ]},
-    { baslik: '🟢 Mental Dayanıklılık — Bağlılık & Meydan Okuma', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir
-Zaman','Nadiren','Bazen','Sıklıkla','Her
-Zaman'], sorular: [
+    { baslik: '🟢 Mental Dayanıklılık — Bağlılık & Meydan Okuma', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
       { k: 'mb1', metin: 'Zor antrenmanlarda çabadan vazgeçmiyor.' },
       { k: 'mb2', metin: 'Uzun vadeli hedeflere bağlılığını koruyor.' },
       { k: 'mb3', metin: 'Olumsuz koşullarda kararlılığını sürdürüyor.' },
@@ -655,25 +641,19 @@ Zaman'], sorular: [
       { k: 'mm2', metin: 'Yarışma baskısını fırsat olarak değerlendiriyor.' },
       { k: 'mm3', metin: 'Başarısızlıktan sonra hızlı toparlanıyor.' }
     ]},
-    { baslik: '🟢 Mental Dayanıklılık — Güven', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir
-Zaman','Nadiren','Bazen','Sıklıkla','Her
-Zaman'], sorular: [
+    { baslik: '🟢 Mental Dayanıklılık — Güven', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
       { k: 'mgu1', metin: 'Baskı altında özgüveni korunuyor.' },
       { k: 'mgu2', metin: 'Kendi teknik kararlarına güvenebiliyor.' },
       { k: 'mgu3', metin: 'Zor anlarda kendi kapasitesine inancını yitirmiyor.' }
     ]},
-    { baslik: '🟠 Konsantrasyon — Güçlü Dikkat', renk: '#e65100', scale: [1,2,3,4,5], labels: ['Hiçbir
-Zaman','Nadiren','Bazen','Sıklıkla','Her
-Zaman'], sorular: [
+    { baslik: '🟠 Konsantrasyon — Güçlü Dikkat', renk: '#e65100', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
       { k: 'kg1', metin: 'Açıklamaları ilk seferinde anlıyor ve uygulayabiliyor.' },
       { k: 'kg2', metin: 'Çoklu uyarıcıyı eş zamanlı takip edebiliyor.' },
       { k: 'kg3', metin: 'Uzun seansların sonunda bile odak kaybı yaşamıyor.' },
       { k: 'kg4', metin: 'Hata sonrası hızlıca toparlanarak odaklı kalıyor.' },
       { k: 'kg5', metin: 'Rakibin stratejisini ve vücut dilini okuyabiliyor.' }
     ]},
-    { baslik: '🟠 Konsantrasyon — Dikkat Bozukluğu', renk: '#e65100', scale: [1,2,3,4,5], labels: ['Hiçbir
-Zaman','Nadiren','Bazen','Sıklıkla','Her
-Zaman'], sorular: [
+    { baslik: '🟠 Konsantrasyon — Dikkat Bozukluğu', renk: '#e65100', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
       { k: 'kboz1', metin: 'Uzun açıklamalarda dikkati dağılıyor.' },
       { k: 'kboz2', metin: 'Seyirci/gürültü dikkatini kolayca bozuyor.' },
       { k: 'kboz3', metin: 'Hata sonrası aynı hatayı tekrarlıyor.' },
@@ -1067,249 +1047,4 @@ function sporcuTabSec(tab, btn) {
   if (tab === 'sonuclarim') sporcuSonuclariniYukle();
 }
 
-// ── ANKET FORMU (5'Lİ LİKERT) ────────────────────────────────────────────
-const ANKET_BOLUMLER = [
-  {
-    id: 'kaygi', renk: '#1a56db', baslik: '🔵 Rekabet Kaygısı',
-    aciklama: 'Yarış öncesi nasıl hissettiğini 1-5 arasında işaretle.',
-    alt: [
-      { id: 'biliskel', baslik: 'Bilişsel Kaygı', sorular: [
-        { k: 'bk1', metin: 'Yarışmada başarısız olacağım diye endişeleniyorum.' },
-        { k: 'bk2', metin: 'Rakibimin benden daha iyi performans göstereceğinden korkuyorum.' },
-        { k: 'bk3', metin: 'Hedeflerime ulaşıp ulaşamayacağımdan emin değilim.' },
-        { k: 'bk4', metin: 'Daha önce yaptığım hataları aklımdan çıkaramıyorum.' },
-        { k: 'bk5', metin: 'Yanlış bir hamle yaparsam ne olacağını düşünüyorum.' },
-        { k: 'bk6', metin: 'Antrenörümün hayal kırıklığına uğrayacağından endişeleniyorum.' },
-        { k: 'bk7', metin: 'Yarışma sırasında odaklanıp odaklanamayacağımı merak ediyorum.' },
-        { k: 'bk8', metin: 'Bugün kötü bir günüm olmasından korkuyorum.' },
-        { k: 'bk9', metin: 'Kendimden beklenenin altında kalacağım diye düşünüyorum.' }
-      ], labels: ['Hiç','Az','Orta','Çok','Fazla'] },
-      { id: 'somatik', baslik: 'Somatik Kaygı', sorular: [
-        { k: 'sk1', metin: 'Vücudum gergin ve kaslarım sıkışmış hissediyorum.' },
-        { k: 'sk2', metin: 'Kalbim normalden hızlı çarpıyor.' },
-        { k: 'sk3', metin: 'Midem bulanıyor veya karın ağrısı hissediyorum.' },
-        { k: 'sk4', metin: 'Ellerim titriyor veya terliyor.' },
-        { k: 'sk5', metin: 'Ağzım kuruyor, yutkunmakta güçlük çekiyorum.' },
-        { k: 'sk6', metin: 'Nefes almakta zorluk çektiğimi hissediyorum.' },
-        { k: 'sk7', metin: 'Bacaklarım yorgun veya ağır hissediyor.' },
-        { k: 'sk8', metin: 'Baş ağrım var ya da başım dönüyor.' },
-        { k: 'sk9', metin: 'Yarışmadan önce çok sık tuvalete çıkma ihtiyacı duyuyorum.' }
-      ], labels: ['Hiç','Az','Orta','Çok','Fazla'] },
-      { id: 'ozguven', baslik: 'Özgüven', sorular: [
-        { k: 'og1', metin: 'Bu yarışmada iyi bir performans göstereceğimden eminim.' },
-        { k: 'og2', metin: 'Antrenmanlarda öğrendiklerimi sahaya yansıtabileceğime inanıyorum.' },
-        { k: 'og3', metin: 'Baskı altında doğru kararlar verebileceğimi düşünüyorum.' },
-        { k: 'og4', metin: 'Fiziksel olarak yarışmaya hazır olduğumu hissediyorum.' },
-        { k: 'og5', metin: 'Rakibimle başa çıkabileceğime inanıyorum.' },
-        { k: 'og6', metin: 'Zor bir durumda bile odağımı koruyabilirim.' },
-        { k: 'og7', metin: 'Kendime olan güvenim yüksek.' },
-        { k: 'og8', metin: 'Bu yarışmada başarılı olma kapasiteme inanıyorum.' },
-        { k: 'og9', metin: 'Takım arkadaşlarımın güvenine layık olduğumu hissediyorum.' }
-      ], labels: ['Hiç','Az','Orta','Çok','Tam'] }
-    ]
-  },
-  {
-    id: 'motivasyon', renk: '#7e22ce', baslik: '🟣 Motivasyon Yönelimi',
-    aciklama: '"Sporda en çok başarılı hissederim..." cümlesini tamamla.',
-    alt: [
-      { id: 'gorev', baslik: 'Görev Yönelimi', sorular: [
-        { k: 'g1', metin: '...yeni bir beceriyi öğrendiğimde ve bu çok çalışmamı gerektirdiğinde.' },
-        { k: 'g2', metin: '...kendim için belirlediğim bir hedefi gerçekleştirdiğimde.' },
-        { k: 'g3', metin: '...antrenmanlarımda normalden daha iyi yaptığımda.' },
-        { k: 'g4', metin: '...zor bir beceriyi çok çalışarak öğrendiğimde.' },
-        { k: 'g5', metin: '...işlerin doğru yapılmasını öğrendiğimde.' },
-        { k: 'g6', metin: '...diğer insanlar yapamasa da ben başardığımda.' },
-        { k: 'g7', metin: '...elimden gelenin en iyisini yaptığımı hissettiğimde.' }
-      ], labels: ['Hiç','Hayır','Kararsız','Evet','Kesinlikle'] },
-      { id: 'ego', baslik: 'Ego Yönelimi', sorular: [
-        { k: 'e1', metin: '...diğerlerinden daha iyi olduğumu gösterdiğimde.' },
-        { k: 'e2', metin: '...az çalışarak başkalarından daha iyi performans gösterdiğimde.' },
-        { k: 'e3', metin: '...takımdaki en iyisi olduğumda.' },
-        { k: 'e4', metin: '...başkalarının yapamadığını ben yapabildiğimde.' },
-        { k: 'e5', metin: '...sınıftaki veya takımdaki en iyisi olduğumda.' },
-        { k: 'e6', metin: '...diğerlerini yendiğimde.' }
-      ], labels: ['Hiç','Hayır','Kararsız','Evet','Kesinlikle'] }
-    ]
-  },
-  {
-    id: 'mental', renk: '#057a55', baslik: '🟢 Mental Dayanıklılık',
-    aciklama: 'Spordaki deneyimlerini düşünerek yanıtla.',
-    alt: [
-      { id: 'kontrol', baslik: 'Kontrol', sorular: [
-        { k: 'kon1', metin: 'Zor anlarda duygularımı kontrol edebiliyorum.' },
-        { k: 'kon2', metin: 'Ne olursa olsun kendi kendimi sakinleştirebilirim.' },
-        { k: 'kon3', metin: 'Antrenman ve yarışın gidişatı üzerinde etkili olabileceğimi hissediyorum.' }
-      ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] },
-      { id: 'baglilik', baslik: 'Bağlılık', sorular: [
-        { k: 'bag1', metin: 'Zorlu antrenmanlarda bırakmak istemesem de devam ederim.' },
-        { k: 'bag2', metin: 'Hedeflerim doğrultusunda antrenmanlarıma adarım.' },
-        { k: 'bag3', metin: 'Yorgun olsam bile antrenmanları atlamamaya çalışırım.' }
-      ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] },
-      { id: 'meydan', baslik: 'Meydan Okuma', sorular: [
-        { k: 'mey1', metin: 'Yarışmalar ve zorluklar beni büyütür, korkutmaz.' },
-        { k: 'mey2', metin: 'Yeni ve zor durumları heyecanla karşılarım.' },
-        { k: 'mey3', metin: 'Başarısız olduğumda bunu bir öğrenme fırsatı olarak görürüm.' }
-      ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] },
-      { id: 'guven', baslik: 'Güven', sorular: [
-        { k: 'guv1', metin: 'Başkalarının baskısına rağmen kendi kararlarımda duruyorum.' },
-        { k: 'guv2', metin: 'Geçmişteki hatalar şu anki performansımı etkilemiyor.' },
-        { k: 'guv3', metin: 'Zor anlarda bile başarabileceğime inanıyorum.' }
-      ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] }
-    ]
-  },
-  {
-    id: 'konsantrasyon', renk: '#e65100', baslik: '🟠 Konsantrasyon & Dikkat',
-    aciklama: 'Spordaki dikkat alışkanlıklarını dürüstçe işaretle.',
-    alt: [
-      { id: 'genisDissal', baslik: 'Geniş Dikkat', sorular: [
-        { k: 'gd1', metin: 'Sahadaki birden fazla rakibi veya durumu aynı anda takip edebiliyorum.' },
-        { k: 'gd2', metin: 'Hakem ve ortam değişikliklerini çabuk fark ediyorum.' },
-        { k: 'gd3', metin: 'Rakibimin vücut dilini yarış içinde okuyabiliyorum.' },
-        { k: 'gd4', metin: 'Sahada olup biteni geniş perspektifle görmeyi seviyorum.' }
-      ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] },
-      { id: 'darDissal', baslik: 'Dar Dikkat', sorular: [
-        { k: 'dd1', metin: 'Rakibimle karşılaştığımda tüm dikkatimi ona verebiliyorum.' },
-        { k: 'dd2', metin: 'Kritik anlarda tek bir hedefe odaklanmakta zorlanmıyorum.' },
-        { k: 'dd3', metin: 'Belirli bir tekmeyi yaparken odağım dağılmıyor.' },
-        { k: 'dd4', metin: 'Önemli anlarda gereksiz şeyleri zihnimden uzaklaştırabiliyorum.' }
-      ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] },
-      { id: 'dikkatHatasi', baslik: '⚠️ Dikkat Hatası (Düşük puan iyi)', sorular: [
-        { k: 'dh1', metin: 'Yarışma sırasında aklım dağılıyor ve dikkatim başka yerlere gidiyor.' },
-        { k: 'dh2', metin: 'Öfke sonrası odağımı tekrar toplamakta güçlük çekiyorum.' },
-        { k: 'dh3', metin: 'Seyirci veya gürültü dikkatimi önemli ölçüde bozuyor.' },
-        { k: 'dh4', metin: 'Hata yaptığımda o hatayı düşünmeye devam ederek sonraki hamlemi etkiliyorum.' }
-      ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] }
-    ]
-  }
-];
-
-function anketFormuHazirla() {
-  aktifAnketCevaplari = {};
-  let html = `
-  <div style="margin-bottom:16px">
-    <div class="form-row">
-      <div class="form-grup">
-        <label class="form-etiket">Yaklaşan yarış</label>
-        <input type="text" id="anketYaris" class="form-input" placeholder="Bölge Şampiyonası...">
-      </div>
-      <div class="form-grup">
-        <label class="form-etiket">Kaç gün kaldı?</label>
-        <input type="number" id="anketGun" class="form-input" placeholder="7">
-      </div>
-    </div>
-  </div>`;
-
-  ANKET_BOLUMLER.forEach(bolum => {
-    html += `<div class="anket-alan">
-    <div class="anket-alan-baslik" onclick="anketBolumToggle(this)" style="border-left:4px solid ${bolum.renk}">
-      <span style="flex:1">${bolum.baslik}</span><span>▼</span>
-    </div>
-    <div class="anket-alan-icerik">
-      <p style="font-size:12px;color:var(--gray-500);margin-bottom:14px">${bolum.aciklama}</p>
-      ${bolum.alt.map(alt => `
-      <div style="margin-bottom:20px">
-        <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray-200)">${alt.baslik}</div>
-        ${alt.sorular.map(soru => `
-        <div class="soru" id="soru_${soru.k}">
-          <div class="soru-metin">${soru.metin}</div>
-          <div class="likert-secenekler">
-            ${[1,2,3,4,5].map(n => `<button type="button" class="likert-btn" data-key="${soru.k}" data-val="${n}" onclick="likertSec(this)">${n}</button>`).join('')}
-          </div>
-          <div class="likert-etiketler">
-            <span>${alt.labels[0]}</span><span>${alt.labels[4]}</span>
-          </div>
-        </div>`).join('')}
-      </div>`).join('')}
-    </div></div>`;
-  });
-
-  html += `
-  <div style="margin-top:16px">
-    <div class="form-grup">
-      <label class="form-etiket">Notun var mı?</label>
-      <textarea id="anketNot" class="form-input" rows="3" placeholder="Aklından geçenler..."></textarea>
-    </div>
-    <div id="anketHata" class="hata-mesaji"></div>
-    <button class="btn btn-primary" onclick="anketGonder()">✅ Anketi Gönder</button>
-  </div>`;
-
-  document.getElementById('sporcuAnketDiv').innerHTML = html;
-}
-
-function anketBolumToggle(el) {
-  const icerik = el.nextElementSibling;
-  const ok = el.querySelector('span:last-child');
-  const gizli = icerik.style.display === 'none';
-  icerik.style.display = gizli ? 'block' : 'none';
-  ok.textContent = gizli ? '▼' : '▶';
-}
-
-function likertSec(btn) {
-  const key = btn.dataset.key;
-  const val = parseInt(btn.dataset.val);
-  aktifAnketCevaplari[key] = val;
-  const soru = document.getElementById(`soru_${key}`);
-  if (soru) soru.querySelectorAll('.likert-btn').forEach(b => b.classList.toggle('secili', parseInt(b.dataset.val) === val));
-}
-
-async function anketGonder() {
-  const tumSorular = ANKET_BOLUMLER.flatMap(b => b.alt.flatMap(a => a.sorular.map(s => s.k)));
-  const eksikler = tumSorular.filter(k => !aktifAnketCevaplari[k]);
-  if (eksikler.length > 8) {
-    hataGoster('anketHata', `${eksikler.length} soru yanıtsız. Lütfen tüm soruları yanıtla.`);
-    return;
-  }
-  const veri = {
-    sporcu_id: oturumKullanici.id,
-    anket_tarihi: new Date().toISOString().split('T')[0],
-    yaklasan_yaris: document.getElementById('anketYaris').value.trim() || null,
-    yarisa_gun: parseInt(document.getElementById('anketGun').value) || null,
-    sporcu_notu: document.getElementById('anketNot').value.trim() || null,
-    ...aktifAnketCevaplari
-  };
-  try {
-    await anketEkle(veri);
-    const p = psikolojiPuanlari(veri);
-    document.getElementById('sporcuAnketDiv').innerHTML = `
-    <div class="tamamlandi-ekrani">
-      <span class="tamamlandi-ikon">🎉</span>
-      <div class="tamamlandi-baslik">Anket Tamamlandı!</div>
-      <div class="tamamlandi-metin">Yanıtların kaydedildi. Antrenörün sonuçları inceleyecek.</div>
-      ${p ? renderPsikolojOzet(p) : ''}
-    </div>`;
-  } catch (e) {
-    hataGoster('anketHata', e.message || 'Gönderme hatası');
-  }
-}
-
-async function sporcuSonuclariniYukle() {
-  yukleniyor('sporcuSonuclarDiv');
-  try {
-    const [testler, anketler] = await Promise.all([
-      motorikTestleriGetir(oturumKullanici.id),
-      anketleriGetir(oturumKullanici.id)
-    ]);
-    let html = '';
-    if (testler && testler.length > 0) {
-      html += `<div class="kart"><div class="kart-baslik">📊 Test Geçmişim</div>
-        ${testler.map(t => `<div class="gecmis-item">
-          <span class="gecmis-tarih">${tarihFormatla(t.test_tarihi)}</span>
-          <span class="gecmis-icerik">${Object.keys(TEST_ETIKETLERI).filter(k=>t[k]!=null).length} test sonucu</span>
-        </div>`).join('')}</div>`;
-    }
-    if (anketler && anketler.length > 0) {
-      html += `<div class="kart"><div class="kart-baslik">🧠 Anket Geçmişim</div>
-        ${anketler.map(a => {
-          const p = psikolojiPuanlari(a);
-          return `<div class="gecmis-item">
-            <span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span>
-            <span class="gecmis-icerik">${p ? `Özgüven: ${p.ozguven?.toFixed(0)} · Kaygı: ${p.bilisselKaygi?.toFixed(0)}` : 'Anket'}</span>
-          </div>`;
-        }).join('')}</div>`;
-    }
-    if (!html) html = '<div class="bos-durum"><span class="ikon">📋</span><p>Henüz sonuç yok</p></div>';
-    document.getElementById('sporcuSonuclarDiv').innerHTML = html;
-  } catch (e) {
-    document.getElementById('sporcuSonuclarDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
-  }
-}
+// ── ANKET FORMU (5'Lİ LİKERT) ──────────────────────────────────────────── const ANKET_BOLUMLER = [ { id: 'kaygi', renk: '#1a56db', baslik: '🔵 Rekabet Kaygısı', aciklama: 'Yarış öncesi nasıl hissettiğini 1-5 arasında işaretle.', alt: [ { id: 'biliskel', baslik: 'Bilişsel Kaygı', sorular: [ { k: 'bk1', metin: 'Yarışmada başarısız olacağım diye endişeleniyorum.' }, { k: 'bk2', metin: 'Rakibimin benden daha iyi performans göstereceğinden korkuyorum.' }, { k: 'bk3', metin: 'Hedeflerime ulaşıp ulaşamayacağımdan emin değilim.' }, { k: 'bk4', metin: 'Daha önce yaptığım hataları aklımdan çıkaramıyorum.' }, { k: 'bk5', metin: 'Yanlış bir hamle yaparsam ne olacağını düşünüyorum.' }, { k: 'bk6', metin: 'Antrenörümün hayal kırıklığına uğrayacağından endişeleniyorum.' }, { k: 'bk7', metin: 'Yarışma sırasında odaklanıp odaklanamayacağımı merak ediyorum.' }, { k: 'bk8', metin: 'Bugün kötü bir günüm olmasından korkuyorum.' }, { k: 'bk9', metin: 'Kendimden beklenenin altında kalacağım diye düşünüyorum.' } ], labels: ['Hiç','Az','Orta','Çok','Fazla'] }, { id: 'somatik', baslik: 'Somatik Kaygı', sorular: [ { k: 'sk1', metin: 'Vücudum gergin ve kaslarım sıkışmış hissediyorum.' }, { k: 'sk2', metin: 'Kalbim normalden hızlı çarpıyor.' }, { k: 'sk3', metin: 'Midem bulanıyor veya karın ağrısı hissediyorum.' }, { k: 'sk4', metin: 'Ellerim titriyor veya terliyor.' }, { k: 'sk5', metin: 'Ağzım kuruyor, yutkunmakta güçlük çekiyorum.' }, { k: 'sk6', metin: 'Nefes almakta zorluk çektiğimi hissediyorum.' }, { k: 'sk7', metin: 'Bacaklarım yorgun veya ağır hissediyor.' }, { k: 'sk8', metin: 'Baş ağrım var ya da başım dönüyor.' }, { k: 'sk9', metin: 'Yarışmadan önce çok sık tuvalete çıkma ihtiyacı duyuyorum.' } ], labels: ['Hiç','Az','Orta','Çok','Fazla'] }, { id: 'ozguven', baslik: 'Özgüven', sorular: [ { k: 'og1', metin: 'Bu yarışmada iyi bir performans göstereceğimden eminim.' }, { k: 'og2', metin: 'Antrenmanlarda öğrendiklerimi sahaya yansıtabileceğime inanıyorum.' }, { k: 'og3', metin: 'Baskı altında doğru kararlar verebileceğimi düşünüyorum.' }, { k: 'og4', metin: 'Fiziksel olarak yarışmaya hazır olduğumu hissediyorum.' }, { k: 'og5', metin: 'Rakibimle başa çıkabileceğime inanıyorum.' }, { k: 'og6', metin: 'Zor bir durumda bile odağımı koruyabilirim.' }, { k: 'og7', metin: 'Kendime olan güvenim yüksek.' }, { k: 'og8', metin: 'Bu yarışmada başarılı olma kapasiteme inanıyorum.' }, { k: 'og9', metin: 'Takım arkadaşlarımın güvenine layık olduğumu hissediyorum.' } ], labels: ['Hiç','Az','Orta','Çok','Tam'] } ] }, { id: 'motivasyon', renk: '#7e22ce', baslik: '🟣 Motivasyon Yönelimi', aciklama: '"Sporda en çok başarılı hissederim..." cümlesini tamamla.', alt: [ { id: 'gorev', baslik: 'Görev Yönelimi', sorular: [ { k: 'g1', metin: '...yeni bir beceriyi öğrendiğimde ve bu çok çalışmamı gerektirdiğinde.' }, { k: 'g2', metin: '...kendim için belirlediğim bir hedefi gerçekleştirdiğimde.' }, { k: 'g3', metin: '...antrenmanlarımda normalden daha iyi yaptığımda.' }, { k: 'g4', metin: '...zor bir beceriyi çok çalışarak öğrendiğimde.' }, { k: 'g5', metin: '...işlerin doğru yapılmasını öğrendiğimde.' }, { k: 'g6', metin: '...diğer insanlar yapamasa da ben başardığımda.' }, { k: 'g7', metin: '...elimden gelenin en iyisini yaptığımı hissettiğimde.' } ], labels: ['Hiç','Hayır','Kararsız','Evet','Kesinlikle'] }, { id: 'ego', baslik: 'Ego Yönelimi', sorular: [ { k: 'e1', metin: '...diğerlerinden daha iyi olduğumu gösterdiğimde.' }, { k: 'e2', metin: '...az çalışarak başkalarından daha iyi performans gösterdiğimde.' }, { k: 'e3', metin: '...takımdaki en iyisi olduğumda.' }, { k: 'e4', metin: '...başkalarının yapamadığını ben yapabildiğimde.' }, { k: 'e5', metin: '...sınıftaki veya takımdaki en iyisi olduğumda.' }, { k: 'e6', metin: '...diğerlerini yendiğimde.' } ], labels: ['Hiç','Hayır','Kararsız','Evet','Kesinlikle'] } ] }, { id: 'mental', renk: '#057a55', baslik: '🟢 Mental Dayanıklılık', aciklama: 'Spordaki deneyimlerini düşünerek yanıtla.', alt: [ { id: 'kontrol', baslik: 'Kontrol', sorular: [ { k: 'kon1', metin: 'Zor anlarda duygularımı kontrol edebiliyorum.' }, { k: 'kon2', metin: 'Ne olursa olsun kendi kendimi sakinleştirebilirim.' }, { k: 'kon3', metin: 'Antrenman ve yarışın gidişatı üzerinde etkili olabileceğimi hissediyorum.' } ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] }, { id: 'baglilik', baslik: 'Bağlılık', sorular: [ { k: 'bag1', metin: 'Zorlu antrenmanlarda bırakmak istemesem de devam ederim.' }, { k: 'bag2', metin: 'Hedeflerim doğrultusunda antrenmanlarıma adarım.' }, { k: 'bag3', metin: 'Yorgun olsam bile antrenmanları atlamamaya çalışırım.' } ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] }, { id: 'meydan', baslik: 'Meydan Okuma', sorular: [ { k: 'mey1', metin: 'Yarışmalar ve zorluklar beni büyütür, korkutmaz.' }, { k: 'mey2', metin: 'Yeni ve zor durumları heyecanla karşılarım.' }, { k: 'mey3', metin: 'Başarısız olduğumda bunu bir öğrenme fırsatı olarak görürüm.' } ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] }, { id: 'guven', baslik: 'Güven', sorular: [ { k: 'guv1', metin: 'Başkalarının baskısına rağmen kendi kararlarımda duruyorum.' }, { k: 'guv2', metin: 'Geçmişteki hatalar şu anki performansımı etkilemiyor.' }, { k: 'guv3', metin: 'Zor anlarda bile başarabileceğime inanıyorum.' } ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] } ] }, { id: 'konsantrasyon', renk: '#e65100', baslik: '🟠 Konsantrasyon & Dikkat', aciklama: 'Spordaki dikkat alışkanlıklarını dürüstçe işaretle.', alt: [ { id: 'genisDissal', baslik: 'Geniş Dikkat', sorular: [ { k: 'gd1', metin: 'Sahadaki birden fazla rakibi veya durumu aynı anda takip edebiliyorum.' }, { k: 'gd2', metin: 'Hakem ve ortam değişikliklerini çabuk fark ediyorum.' }, { k: 'gd3', metin: 'Rakibimin vücut dilini yarış içinde okuyabiliyorum.' }, { k: 'gd4', metin: 'Sahada olup biteni geniş perspektifle görmeyi seviyorum.' } ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] }, { id: 'darDissal', baslik: 'Dar Dikkat', sorular: [ { k: 'dd1', metin: 'Rakibimle karşılaştığımda tüm dikkatimi ona verebiliyorum.' }, { k: 'dd2', metin: 'Kritik anlarda tek bir hedefe odaklanmakta zorlanmıyorum.' }, { k: 'dd3', metin: 'Belirli bir tekmeyi yaparken odağım dağılmıyor.' }, { k: 'dd4', metin: 'Önemli anlarda gereksiz şeyleri zihnimden uzaklaştırabiliyorum.' } ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] }, { id: 'dikkatHatasi', baslik: '⚠️ Dikkat Hatası (Düşük puan iyi)', sorular: [ { k: 'dh1', metin: 'Yarışma sırasında aklım dağılıyor ve dikkatim başka yerlere gidiyor.' }, { k: 'dh2', metin: 'Öfke sonrası odağımı tekrar toplamakta güçlük çekiyorum.' }, { k: 'dh3', metin: 'Seyirci veya gürültü dikkatimi önemli ölçüde bozuyor.' }, { k: 'dh4', metin: 'Hata yaptığımda o hatayı düşünmeye devam ederek sonraki hamlemi etkiliyorum.' } ], labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'] } ] } ];  function anketFormuHazirla() { aktifAnketCevaplari = {}; let html = ` <div style="margin-bottom:16px"> <div class="form-row"> <div class="form-grup"> <label class="form-etiket">Yaklaşan yarış</label> <input type="text" id="anketYaris" class="form-input" placeholder="Bölge Şampiyonası..."> </div> <div class="form-grup"> <label class="form-etiket">Kaç gün kaldı?</label> <input type="number" id="anketGun" class="form-input" placeholder="7"> </div> </div> </div>`;  ANKET_BOLUMLER.forEach(bolum => { html += `<div class="anket-alan"> <div class="anket-alan-baslik" onclick="anketBolumToggle(this)" style="border-left:4px solid ${bolum.renk}"> <span style="flex:1">${bolum.baslik}</span><span>▼</span> </div> <div class="anket-alan-icerik"> <p style="font-size:12px;color:var(--gray-500);margin-bottom:14px">${bolum.aciklama}</p> ${bolum.alt.map(alt => ` <div style="margin-bottom:20px"> <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray-200)">${alt.baslik}</div> ${alt.sorular.map(soru => ` <div class="soru" id="soru_${soru.k}"> <div class="soru-metin">${soru.metin}</div> <div class="likert-secenekler"> ${[1,2,3,4,5].map(n => `<button type="button" class="likert-btn" data-key="${soru.k}" data-val="${n}" onclick="likertSec(this)">${n}</button>`).join('')} </div> <div class="likert-etiketler"> <span>${alt.labels[0]}</span><span>${alt.labels[4]}</span> </div> </div>`).join('')} </div>`).join('')} </div></div>`; });  html += ` <div style="margin-top:16px"> <div class="form-grup"> <label class="form-etiket">Notun var mı?</label> <textarea id="anketNot" class="form-input" rows="3" placeholder="Aklından geçenler..."></textarea> </div> <div id="anketHata" class="hata-mesaji"></div> <button class="btn btn-primary" onclick="anketGonder()">✅ Anketi Gönder</button> </div>`;  document.getElementById('sporcuAnketDiv').innerHTML = html; }  function anketBolumToggle(el) { const icerik = el.nextElementSibling; const ok = el.querySelector('span:last-child'); const gizli = icerik.style.display === 'none'; icerik.style.display = gizli ? 'block' : 'none'; ok.textContent = gizli ? '▼' : '▶'; }  function likertSec(btn) { const key = btn.dataset.key; const val = parseInt(btn.dataset.val); aktifAnketCevaplari[key] = val; const soru = document.getElementById(`soru_${key}`); if (soru) soru.querySelectorAll('.likert-btn').forEach(b => b.classList.toggle('secili', parseInt(b.dataset.val) === val)); }  async function anketGonder() { const tumSorular = ANKET_BOLUMLER.flatMap(b => b.alt.flatMap(a => a.sorular.map(s => s.k))); const eksikler = tumSorular.filter(k => !aktifAnketCevaplari[k]); if (eksikler.length > 8) { hataGoster('anketHata', `${eksikler.length} soru yanıtsız. Lütfen tüm soruları yanıtla.`); return; } const veri = { sporcu_id: oturumKullanici.id, anket_tarihi: new Date().toISOString().split('T')[0], yaklasan_yaris: document.getElementById('anketYaris').value.trim() || null, yarisa_gun: parseInt(document.getElementById('anketGun').value) || null, sporcu_notu: document.getElementById('anketNot').value.trim() || null, ...aktifAnketCevaplari }; try { await anketEkle(veri); const p = psikolojiPuanlari(veri); document.getElementById('sporcuAnketDiv').innerHTML = ` <div class="tamamlandi-ekrani"> <span class="tamamlandi-ikon">🎉</span> <div class="tamamlandi-baslik">Anket Tamamlandı!</div> <div class="tamamlandi-metin">Yanıtların kaydedildi. Antrenörün sonuçları inceleyecek.</div> ${p ? renderPsikolojOzet(p) : ''} </div>`; } catch (e) { hataGoster('anketHata', e.message || 'Gönderme hatası'); } }  async function sporcuSonuclariniYukle() { yukleniyor('sporcuSonuclarDiv'); try { const [testler, anketler] = await Promise.all([ motorikTestleriGetir(oturumKullanici.id), anketleriGetir(oturumKullanici.id) ]); let html = ''; if (testler && testler.length > 0) { html += `<div class="kart"><div class="kart-baslik">📊 Test Geçmişim</div> ${testler.map(t => `<div class="gecmis-item"> <span class="gecmis-tarih">${tarihFormatla(t.test_tarihi)}</span> <span class="gecmis-icerik">${Object.keys(TEST_ETIKETLERI).filter(k=>t[k]!=null).length} test sonucu</span> </div>`).join('')}</div>`; } if (anketler && anketler.length > 0) { html += `<div class="kart"><div class="kart-baslik">🧠 Anket Geçmişim</div> ${anketler.map(a => { const p = psikolojiPuanlari(a); return `<div class="gecmis-item"> <span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span> <span class="gecmis-icerik">${p ? `Özgüven: ${p.ozguven?.toFixed(0)} · Kaygı: ${p.bilisselKaygi?.toFixed(0)}` : 'Anket'}</span> </div>`; }).join('')}</div>`; } if (!html) html = '<div class="bos-durum"><span class="ikon">📋</span><p>Henüz sonuç yok</p></div>'; document.getElementById('sporcuSonuclarDiv').innerHTML = html; } catch (e) { document.getElementById('sporcuSonuclarDiv').innerHTML = `<p style="color:red">${e.message}</p>`; } } 
