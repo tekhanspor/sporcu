@@ -933,7 +933,7 @@ function testEkleModalAc() {
   document.getElementById('tTarih').value = new Date().toISOString().split('T')[0];
   document.getElementById('tSonrakiTarih').value = '';
   ['t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
-   't_flamingo','t_otur_uzan','t_beep','t_cember','t_cetvel','t_el_dina','t_wingate','t_notlar']
+   't_flamingo','t_otur_uzan','t_beep','t_cetvel','t_dolyo','t_fskt','t_fskt_kdi','t_dck60','t_notlar']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   hataGizle('testModalHata');
   modalAc('testModal');
@@ -957,10 +957,11 @@ async function testKaydet() {
     flamingo_hata:       parseInt(document.getElementById('t_flamingo').value)        || null,
     otur_uzan_cm:        parseFloat(document.getElementById('t_otur_uzan').value)    || null,
     beep_test_seviye:    parseFloat(document.getElementById('t_beep').value)         || null,
-    cember_koord_sn:     parseFloat(document.getElementById('t_cember').value)       || null,
     cetvel_reaksiyon_cm: parseFloat(document.getElementById('t_cetvel').value)       || null,
-    el_dinamometre_kg:   parseFloat(document.getElementById('t_el_dina').value)      || null,
-    wingate_wkg:         parseFloat(document.getElementById('t_wingate').value)      || null,
+    dolyo_chagi_tekrar:  parseInt(document.getElementById('t_dolyo').value)           || null,
+    fskt_tekrar:         parseInt(document.getElementById('t_fskt').value)            || null,
+    fskt_kdi:            parseFloat(document.getElementById('t_fskt_kdi').value)     || null,
+    dck60_tekrar:        parseInt(document.getElementById('t_dck60').value)           || null,
     notlar: document.getElementById('t_notlar').value.trim() || null
   };
 
