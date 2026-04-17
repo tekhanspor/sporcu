@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <title>Tekhan Sporcu Sistemi</title>
   <link rel="stylesheet" href="style.css">
 </head>
@@ -11,7 +12,7 @@
 
 <div id="bildirim" class="bildirim"></div>
 
-<!-- LOGIN -->
+<!-- ══ LOGİN ══ -->
 <div id="loginEkrani" class="screen aktif">
   <div class="login-kart">
     <div class="login-logo">
@@ -19,45 +20,50 @@
       <h1>Tekhan Sporcu</h1>
       <p>Motorik & Psikoloji Değerlendirme</p>
     </div>
+
     <div class="rol-secici">
       <button class="rol-btn aktif" onclick="rolSec('antrenor', this)">🏆 Antrenör</button>
       <button class="rol-btn" onclick="rolSec('sporcu', this)">👤 Sporcu</button>
     </div>
+
     <div id="loginHata" class="hata-mesaji"></div>
+
     <div class="form-grup">
       <label class="form-etiket">Kullanıcı Adı</label>
-      <input type="text" id="loginKullanici" class="form-input" placeholder="kullanici_adi" autocomplete="username" autocapitalize="none" autocorrect="off">
+      <input type="text" id="loginKullanici" class="form-input" placeholder="kullanici_adi"
+        autocomplete="username" autocapitalize="none" autocorrect="off">
     </div>
     <div class="form-grup">
       <label class="form-etiket">Şifre</label>
-      <input type="password" id="loginSifre" class="form-input" placeholder="••••••••" autocomplete="current-password">
+      <input type="password" id="loginSifre" class="form-input" placeholder="••••••••"
+        autocomplete="current-password">
     </div>
     <button class="btn btn-primary" onclick="girisYap()">Giriş Yap</button>
   </div>
 </div>
 
-<!-- ANTRENÖR PANELİ -->
+<!-- ══ ANTRENÖR PANELİ ══ -->
 <div id="antrenorEkrani" class="screen">
   <div class="header">
     <div style="flex:1">
       <div class="header-baslik">🏆 Antrenör Paneli</div>
       <div id="antrenorAdi" class="header-alt"></div>
     </div>
-    <button class="btn-icon" onclick="cikisYap()">⏏</button>
+    <button class="btn-icon" onclick="cikisYap()" title="Çıkış">⏏</button>
   </div>
+
   <div class="tab-nav">
-    <button class="tab-btn aktif" onclick="tabSec('sporcular', this)">👥 Sporcular</button>
-    <button class="tab-btn" onclick="tabSec('testler', this)">📊 Testler</button>
-    <button class="tab-btn" onclick="tabSec('anketler', this)">🧠 Anketler</button>
-    <button class="tab-btn" onclick="tabSec('grafikler', this)">📈 Grafikler</button>
+    <button class="tab-btn aktif" onclick=\"tabSec('sporcular', this)\">👥 Sporcular</button>
+    <button class="tab-btn" onclick=\"tabSec('testler', this)\">📊 Testler</button>
+    <button class="tab-btn" onclick=\"tabSec('anketler', this)\">🧠 Anketler</button>
+    <button class="tab-btn" onclick=\"tabSec('grafikler', this)\">📈 Grafikler</button>
   </div>
+
   <div class="icerik">
     <div id="tab-sporcular">
       <input type="text" class="arama-input" placeholder="Sporcu ara..." id="sporcuArama" oninput="sporcuFiltrele()">
       <div id="sporcuListesiDiv"></div>
     </div>
-    <div id="tab-testler" style="display:none"><div id="tumTestlerDiv"></div></div>
-    <div id="tab-anketler" style="display:none"><div id="tumAnketlerDiv"></div></div>
     <div id="tab-grafikler" style="display:none">
       <div class="form-grup">
         <label class="form-etiket">Sporcu seç</label>
@@ -68,22 +74,23 @@
       <div id="grafiklerDiv"></div>
     </div>
   </div>
+
   <button class="btn-fab" id="fabBtn" onclick="sporcuEklePanelAc()">+</button>
 </div>
 
-<!-- SPORCU PROFİL (ANT. GÖRÜNÜM) -->
+<!-- ══ SPORCU PROFİL (ANT. GÖRÜNÜM) ══ -->
 <div id="sporcuProfilEkrani" class="screen">
   <div class="header">
     <button class="header-geri" onclick="geriGit('antrenorEkrani')">←</button>
     <div class="header-baslik" id="profilBaslik">Sporcu Profili</div>
-    <button class="btn-icon btn-sm" onclick="testEkleModalAc()">📊</button>
+    <button class="btn-icon btn-sm" onclick="testEkleModalAc()" title="Test Ekle">📊</button>
   </div>
   <div id="profilHeaderDiv"></div>
   <div class="tab-nav">
-    <button class="tab-btn aktif" onclick="profilTabSec('bilgiler', this)">Bilgiler</button>
-    <button class="tab-btn" onclick="profilTabSec('testler', this)">Motorik</button>
-    <button class="tab-btn" onclick="profilTabSec('psikoloji', this)">Psikoloji</button>
-    <button class="tab-btn" onclick="profilTabSec('recete', this)">Reçete</button>
+    <button class="tab-btn aktif" onclick=\"profilTabSec('bilgiler', this)\">Bilgiler</button>
+    <button class="tab-btn" onclick=\"profilTabSec('testler', this)\">Motorik</button>
+    <button class="tab-btn" onclick=\"profilTabSec('psikoloji', this)\">Psikoloji</button>
+    <button class="tab-btn" onclick=\"profilTabSec('recete', this)\">Reçete</button>
   </div>
   <div class="icerik">
     <div id="ptab-bilgiler"><div id="profilBilgilerDiv"></div></div>
@@ -93,7 +100,7 @@
   </div>
 </div>
 
-<!-- SPORCU KENDİ EKRANI -->
+<!-- ══ SPORCU KENDİ EKRANI ══ -->
 <div id="sporcuEkrani" class="screen">
   <div class="header">
     <div style="flex:1">
@@ -103,10 +110,10 @@
     <button class="btn-icon" onclick="cikisYap()">⏏</button>
   </div>
   <div class="tab-nav">
-    <button class="tab-btn aktif" onclick="sporcuTabSec('profil', this)">👤 Profilim</button>
-    <button class="tab-btn" onclick="sporcuTabSec('testlerim', this)">📊 Testlerim</button>
-    <button class="tab-btn" onclick="sporcuTabSec('anketim', this)">🧠 Anket</button>
-    <button class="tab-btn" onclick="sporcuTabSec('sonuclarim', this)">📋 Sonuçlarım</button>
+    <button class="tab-btn aktif" onclick=\"sporcuTabSec('profil', this)\">👤 Profilim</button>
+    <button class="tab-btn" onclick=\"sporcuTabSec('testlerim', this)\">📊 Testlerim</button>
+    <button class="tab-btn" onclick=\"sporcuTabSec('anketim', this)\">🧠 Anket</button>
+    <button class="tab-btn" onclick=\"sporcuTabSec('sonuclarim', this)\">📋 Sonuçlarım</button>
   </div>
   <div class="icerik">
     <div id="stab-profil"><div id="sporcuProfilDiv"></div></div>
@@ -116,12 +123,13 @@
   </div>
 </div>
 
-<!-- SPORCU EKLE/DÜZENLE MODALI -->
+<!-- ══ SPORCU EKLE/DÜZENLE MODALI ══ -->
 <div id="sporcuModal" class="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-baslik" id="sporcuModalBaslik">Sporcu Ekle</div>
     <input type="hidden" id="sporcuDuzId">
+
     <div class="form-grup">
       <label class="form-etiket">Ad Soyad *</label>
       <input type="text" id="sAd" class="form-input" placeholder="Ahmet Yılmaz">
@@ -129,11 +137,11 @@
     <div class="form-row">
       <div class="form-grup">
         <label class="form-etiket">Kullanıcı Adı *</label>
-        <input type="text" id="sKullaniciAdi" class="form-input" placeholder="ahmet123" autocapitalize="none">
+        <input type="text" id="sKullaniciAdi" class="form-input" placeholder="ahmet123" autocapitalize="none" autocorrect="off">
       </div>
       <div class="form-grup">
         <label class="form-etiket">Şifre *</label>
-        <input type="text" id="sSifre" class="form-input" placeholder="sifre123">
+        <input type="text" id="sSifre" class="form-input" placeholder="şifre123">
       </div>
     </div>
     <div class="form-row">
@@ -168,18 +176,20 @@
       <label class="form-etiket">Kulüp / Okul</label>
       <input type="text" id="sKulup" class="form-input" placeholder="Tekhan Spor Kulübü">
     </div>
+
     <div id="sporcuModalHata" class="hata-mesaji"></div>
     <button class="btn btn-primary" onclick="sporcuKaydet()">Kaydet</button>
     <button class="btn btn-outline" style="margin-top:8px" onclick="modalKapat('sporcuModal')">İptal</button>
   </div>
 </div>
 
-<!-- TEST EKLE MODALI -->
+<!-- ══ TEST EKLE MODALI ══ -->
 <div id="testModal" class="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-baslik">📊 Motorik Test Sonuçları</div>
     <input type="hidden" id="testSporcuId">
+
     <div class="form-row">
       <div class="form-grup">
         <label class="form-etiket">Test Tarihi *</label>
@@ -190,6 +200,8 @@
         <input type="date" id="tSonrakiTarih" class="form-input">
       </div>
     </div>
+
+    <div class="kart-baslik" style="margin:12px 0 8px">12 Motorik Test</div>
     <div class="form-row">
       <div class="form-grup">
         <label class="form-etiket">Uzun Atlama (cm)</label>
@@ -254,6 +266,7 @@
       <label class="form-etiket">Notlar</label>
       <input type="text" id="t_notlar" class="form-input" placeholder="Varsa not...">
     </div>
+
     <div id="testModalHata" class="hata-mesaji"></div>
     <button class="btn btn-primary" onclick="testKaydet()">Kaydet</button>
     <button class="btn btn-outline" style="margin-top:8px" onclick="modalKapat('testModal')">İptal</button>
