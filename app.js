@@ -264,12 +264,13 @@ async function grafikYukle() {
   }
 }
 
-function renderGrafikler(testler, anketler, sporcu) {
+function renderGrafikler(testler, anketler, sporcu, hedefDiv) {
+  hedefDiv = hedefDiv || 'grafiklerDiv';
   Object.values(grafikInstances).forEach(c => c.destroy());
   grafikInstances = {};
 
   if (!testler || testler.length === 0) {
-    document.getElementById('grafiklerDiv').innerHTML = '<div class="bos-durum"><span class="ikon">📈</span><p>Test verisi yok</p></div>';
+    document.getElementById(hedefDiv).innerHTML = '<div class="bos-durum"><span class="ikon">📈</span><p>Test verisi yok</p></div>';
     return;
   }
 
@@ -285,7 +286,7 @@ function renderGrafikler(testler, anketler, sporcu) {
   if (anketler && anketler.length > 0) {
     html += '<div class="kart"><div class="kart-baslik">🧠 Psikolojik Profil (Radar)</div><canvas id="chart_psiko" height="300"></canvas></div>';
   }
-  document.getElementById('grafiklerDiv').innerHTML = html;
+  document.getElementById(hedefDiv).innerHTML = html;
 
   motorikAlanlar.forEach((alan, i) => {
     const canvas = document.getElementById(`chart_${alan}`);
@@ -346,6 +347,7 @@ async function sporcuProfilAc(id) {
     renderProfilTestler(testler, sporcu);
     renderProfilPsikoloji(anketler, antPsiko);
     renderRecete(testler, anketler, sporcu);
+    renderGrafikler(testler, anketler, sporcu, 'profilGrafiklerDiv');
   } catch (e) {
     bildirimGoster('Hata: ' + e.message);
   }
@@ -859,7 +861,7 @@ function psikolojiReceteGetir(k) {
 function profilTabSec(tab, btn) {
   document.querySelectorAll('#sporcuProfilEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
   if (btn) btn.classList.add('aktif');
-  ['bilgiler','testler','psikoloji','recete'].forEach(t => {
+  ['bilgiler','testler','psikoloji','recete','grafikler'].forEach(t => {
     document.getElementById(`ptab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
 }
