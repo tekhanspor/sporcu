@@ -174,97 +174,99 @@
     <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin:12px 0 8px">Genel Testler (1–9)</div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Uzun Atlama (cm)</label>
+        <label class="form-etiket">1 — Uzun Atlama (cm)</label>
         <input type="number" id="t_uzun_atlama" class="form-input" placeholder="152" step="0.1">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">Top Fırlatma (cm)</label>
+        <label class="form-etiket">2 — Top Fırlatma (cm)</label>
         <input type="number" id="t_saglik_topu" class="form-input" placeholder="380" step="0.1">
       </div>
     </div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">30sn Mekik (tekrar)</label>
+        <label class="form-etiket">3 — 30sn Mekik (tekrar)</label>
         <input type="number" id="t_mekik" class="form-input" placeholder="22">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">30m Sprint (sn)</label>
+        <label class="form-etiket">4 — 30m Sprint (sn)</label>
         <input type="number" id="t_sprint" class="form-input" placeholder="5.1" step="0.01">
       </div>
     </div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Illinois (sn)</label>
+        <label class="form-etiket">5 — Illinois (sn)</label>
         <input type="number" id="t_illinois" class="form-input" placeholder="17.5" step="0.01">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">Flamingo (hata)</label>
+        <label class="form-etiket">6 — Flamingo (hata sayısı)</label>
         <input type="number" id="t_flamingo" class="form-input" placeholder="5">
       </div>
     </div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Otur-Uzan (cm)</label>
+        <label class="form-etiket">7 — Otur-Uzan (cm)</label>
         <input type="number" id="t_otur_uzan" class="form-input" placeholder="30" step="0.1">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">Beep Test (seviye)</label>
+        <label class="form-etiket">8 — Beep Test (seviye)</label>
         <input type="number" id="t_beep" class="form-input" placeholder="6.8" step="0.1">
       </div>
     </div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Cetvel Reaksiyon (cm)</label>
+        <label class="form-etiket">9 — Cetvel Reaksiyon (cm)</label>
         <input type="number" id="t_cetvel" class="form-input" placeholder="18" step="0.1">
       </div>
     </div>
 
-    <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin:14px 0 4px">TKD Özgün Testler (10–12)</div>
+    <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin:14px 0 8px">TKD Özgün Testler (10–13)</div>
 
-    <div style="font-size:12px;color:var(--gray-500);margin-bottom:8px">10 — 10sn Dolyo Chagi</div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Dolyo Chagi (tekrar)</label>
+        <label class="form-etiket">10 — Dolyo Chagi (tekrar)</label>
         <input type="number" id="t_dolyo" class="form-input" placeholder="17">
+      </div>
+      <div class="form-grup">
+        <label class="form-etiket">13 — Şınav (tekrar)</label>
+        <input type="number" id="t_sinav" class="form-input" placeholder="18">
       </div>
     </div>
 
-    <div style="font-size:12px;color:var(--gray-500);margin:10px 0 4px">11 — FSKT · 5 tur × 10sn — KDI otomatik hesaplanır</div>
+    <div style="font-size:12px;color:var(--gray-500);margin:10px 0 6px">11 — FSKT · 5 tur × 10sn (KDI otomatik hesaplanır)</div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Tur 1 (tekrar)</label>
+        <label class="form-etiket">Tur 1</label>
         <input type="number" id="t_fskt_1" class="form-input" placeholder="18" oninput="fsktOnizle()">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">Tur 2 (tekrar)</label>
+        <label class="form-etiket">Tur 2</label>
         <input type="number" id="t_fskt_2" class="form-input" placeholder="17" oninput="fsktOnizle()">
       </div>
     </div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Tur 3 (tekrar)</label>
+        <label class="form-etiket">Tur 3</label>
         <input type="number" id="t_fskt_3" class="form-input" placeholder="15" oninput="fsktOnizle()">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">Tur 4 (tekrar)</label>
+        <label class="form-etiket">Tur 4</label>
         <input type="number" id="t_fskt_4" class="form-input" placeholder="14" oninput="fsktOnizle()">
       </div>
     </div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Tur 5 (tekrar)</label>
+        <label class="form-etiket">Tur 5</label>
         <input type="number" id="t_fskt_5" class="form-input" placeholder="13" oninput="fsktOnizle()">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">Hesaplanan Sonuç</label>
+        <label class="form-etiket">Sonuç</label>
         <div id="fsktOnizleDiv" style="padding:11px 13px;background:var(--gray-50);border-radius:8px;font-size:13px;color:var(--gray-500)">5 turu gir</div>
       </div>
     </div>
 
-    <div style="font-size:12px;color:var(--gray-500);margin:10px 0 4px">12 — 60sn DCK</div>
-    <div class="form-row">
+    <div class="form-row" style="margin-top:8px">
       <div class="form-grup">
-        <label class="form-etiket">60sn DCK (tekrar)</label>
+        <label class="form-etiket">12 — 60sn DCK (tekrar)</label>
         <input type="number" id="t_dck60" class="form-input" placeholder="65">
       </div>
     </div>
