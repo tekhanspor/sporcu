@@ -45,21 +45,11 @@
   </div>
   <div class="tab-nav">
     <button class="tab-btn aktif" onclick="tabSec('sporcular', this)">👥 Sporcular</button>
-    <button class="tab-btn" onclick="tabSec('grafikler', this)">📈 Grafikler</button>
   </div>
   <div class="icerik">
     <div id="tab-sporcular">
       <input type="text" class="arama-input" placeholder="Sporcu ara..." id="sporcuArama" oninput="sporcuFiltrele()">
       <div id="sporcuListesiDiv"></div>
-    </div>
-    <div id="tab-grafikler" style="display:none">
-      <div class="form-grup">
-        <label class="form-etiket">Sporcu seç</label>
-        <select class="form-input" id="grafikSporcuSec" onchange="grafikYukle()">
-          <option value="">— Sporcu seçin —</option>
-        </select>
-      </div>
-      <div id="grafiklerDiv"></div>
     </div>
   </div>
   <button class="btn-fab" id="fabBtn" onclick="sporcuEklePanelAc()">+</button>
@@ -77,12 +67,14 @@
     <button class="tab-btn" onclick="profilTabSec('testler', this)">Motorik</button>
     <button class="tab-btn" onclick="profilTabSec('psikoloji', this)">Psikoloji</button>
     <button class="tab-btn" onclick="profilTabSec('recete', this)">Reçete</button>
+    <button class="tab-btn" onclick="profilTabSec('grafikler', this)">📈 Grafikler</button>
   </div>
   <div class="icerik">
     <div id="ptab-bilgiler"><div id="profilBilgilerDiv"></div></div>
     <div id="ptab-testler" style="display:none"><div id="profilTestlerDiv"></div></div>
     <div id="ptab-psikoloji" style="display:none"><div id="profilPsikolojiDiv"></div></div>
     <div id="ptab-recete" style="display:none"><div id="profilReceteDiv"></div></div>
+    <div id="ptab-grafikler" style="display:none"><div id="profilGrafiklerDiv"></div></div>
   </div>
 </div>
 
