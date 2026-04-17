@@ -329,6 +329,105 @@ function renderGrafikler(testler, anketler, sporcu, hedefDiv) {
   }
 }
 
+
+// ── BMI HESAPLAMA & WHO NORMLARI ──────────────────────────────────────────
+// WHO BMI-for-age persentil sınırları (yaş: 10-16, erkek ve kız)
+// [zayıf_ust(<5p), normal_ust(<85p), fazla_ust(<95p)] → üstü obez
+const WHO_BMI = {
+  Erkek: {
+    10: [13.7, 18.9, 21.5],
+    11: [14.1, 19.7, 22.5],
+    12: [14.5, 20.5, 23.5],
+    13: [15.0, 21.3, 24.5],
+    14: [15.5, 22.0, 25.3],
+    15: [16.0, 22.7, 26.0],
+    16: [16.5, 23.3, 26.7]
+  },
+  Kiz: {
+    10: [13.4, 19.0, 22.0],
+    11: [13.8, 19.9, 23.1],
+    12: [14.3, 20.8, 24.1],
+    13: [14.8, 21.6, 25.0],
+    14: [15.3, 22.3, 25.7],
+    15: [15.7, 22.9, 26.3],
+    16: [16.1, 23.4, 26.8]
+  }
+};
+
+function hesaplaBMI(boy, kilo) {
+  if (!boy || !kilo) return null;
+  return Math.round((kilo / Math.pow(boy / 100, 2)) * 10) / 10;
+}
+
+function bmiKategori(bmi, yas, cinsiyet) {
+  if (!bmi || !yas) return null;
+  var yasKey = Math.min(Math.max(Math.round(yas), 10), 16);
+  var cin = (cinsiyet === 'Kız') ? 'Kiz' : 'Erkek';
+  var sinirlar = WHO_BMI[cin] && WHO_BMI[cin][yasKey];
+  if (!sinirlar) return null;
+  if (bmi < sinirlar[0]) return { kategori: 'Zayıf', renk: 'blue' };
+  if (bmi < sinirlar[1]) return { kategori: 'Normal', renk: 'green' };
+  if (bmi < sinirlar[2]) return { kategori: 'Fazla Kilolu', renk: 'orange' };
+  return { kategori: 'Obez', renk: 'red' };
+}
+
+function bmiUyariMetni(kategori) {
+  if (kategori === 'Fazla Kilolu') {
+    return {
+      metin: 'Kilonu kontrol etmek taekwondoda çok önemli. Fazla kilo taşımak hem tekme atarken seni yoruyor hem de elektronik sistemden daha az puan çıkmasına neden olabiliyor — çünkü daha fazla enerji harcayarak aynı sonucu almak zorunda kalıyorsun.',
+      tavsiye: '💡 Ne yapabilirsin: Antrenmanlarına düzenli katıl, şekerli ve yağlı yiyecekleri azalt. Antrenörünle veya bir beslenme uzmanıyla konuş.'
+    };
+  }
+  if (kategori === 'Obez') {
+    return {
+      metin: 'Kilonu yönetmek şu an en önemli önceliğin olmalı. Bu seviyedeki fazla kilo maçta seni çok erken yoruyor, tekme hızın ve gücün düşüyor. Rakibin aynı sıklette senden çok daha avantajlı konumda.',
+      tavsiye: '💡 Ne yapabilirsin: Bir sağlık uzmanı veya diyetisyenle görüşmeni şiddetle tavsiye ederiz. Antrenörünle birlikte bir plan yapın.'
+    };
+  }
+  return null;
+}
+
+function renderBMIKart(testler, sporcu) {
+  if (!testler || testler.length === 0) return '';
+  var yas = yasHesapla(sporcu.dogum_tarihi);
+  var cin = sporcu.cinsiyet || 'Erkek';
+  
+  // BMI geçmişi — boy/kilo olan testleri filtrele
+  var bmiGecmis = testler.filter(function(t) { return t.boy_cm && t.kilo_kg; });
+  if (bmiGecmis.length === 0) return '';
+  
+  var html = '<div class="kart"><div class="kart-baslik">⚖️ Boy · Kilo · BMI Geçmişi</div>';
+  
+  bmiGecmis.forEach(function(t) {
+    var bmi = hesaplaBMI(t.boy_cm, t.kilo_kg);
+    var kat = bmiKategori(bmi, yas, cin);
+    var barRenk = !kat ? '#gray' : kat.renk === 'green' ? '#057a55' : kat.renk === 'blue' ? '#1a56db' : kat.renk === 'orange' ? '#e65100' : '#c81e1e';
+    var badgeClass = !kat ? '' : kat.renk === 'green' ? 'green' : kat.renk === 'blue' ? 'blue' : kat.renk === 'orange' ? 'orange' : 'red';
+    var uyari = kat ? bmiUyariMetni(kat.kategori) : null;
+    var bgRenk = !kat ? '#f9fafb' : kat.renk === 'green' ? '#f0fdf4' : kat.renk === 'blue' ? '#eff6ff' : kat.renk === 'orange' ? '#fff7ed' : '#fef2f2';
+    
+    html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+    html += '<span style="font-size:12px;color:var(--gray-500);font-weight:600">' + tarihFormatla(t.test_tarihi) + '</span>';
+    if (kat) html += '<span class="badge badge-' + badgeClass + '">' + kat.kategori + '</span>';
+    html += '</div>';
+    html += '<div style="display:flex;gap:16px;margin-top:6px">';
+    html += '<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--gray-800)">' + t.boy_cm + '</div><div style="font-size:10px;color:var(--gray-500)">Boy (cm)</div></div>';
+    html += '<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--gray-800)">' + t.kilo_kg + '</div><div style="font-size:10px;color:var(--gray-500)">Kilo (kg)</div></div>';
+    html += '<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:' + barRenk + '">' + (bmi || '—') + '</div><div style="font-size:10px;color:var(--gray-500)">BMI</div></div>';
+    html += '</div>';
+    if (uyari) {
+      html += '<div style="font-size:12px;color:var(--gray-700);margin-top:8px;padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
+      html += uyari.metin + '<br><br><span style="color:' + barRenk + ';font-weight:600">' + uyari.tavsiye + '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+  });
+  
+  html += '</div>';
+  return html;
+}
+
 // ── SPORCU PROFİL (ANT. GÖRÜNÜM) ─────────────────────────────────────────
 async function sporcuProfilAc(id) {
   aktifSporcuId = id;
@@ -342,6 +441,7 @@ async function sporcuProfilAc(id) {
       sporcuGetir(id), motorikTestleriGetir(id), anketleriGetir(id), antrenorPsikolojiGetir(id)
     ]);
     document.getElementById('profilBaslik').textContent = sporcu.ad_soyad;
+    window._aktifTestler = testler;
     renderProfilHeader(sporcu);
     renderProfilBilgiler(sporcu);
     renderProfilTestler(testler, sporcu);
@@ -950,7 +1050,7 @@ function testEkleModalAc() {
   document.getElementById('testSporcuId').value = aktifSporcuId;
   document.getElementById('tTarih').value = new Date().toISOString().split('T')[0];
   document.getElementById('tSonrakiTarih').value = '';
-  ['t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
+  ['t_boy','t_kilo','t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
    't_flamingo','t_otur_uzan','t_beep','t_cetvel','t_dolyo',
    't_fskt_1','t_fskt_2','t_fskt_3','t_fskt_4','t_fskt_5','t_dck60','t_sinav','t_notlar']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -997,6 +1097,8 @@ async function testKaydet() {
     sporcu_id: sporcuId,
     test_tarihi: tarih,
     sonraki_test_tarihi: document.getElementById('tSonrakiTarih').value || null,
+    boy_cm:               parseFloat(document.getElementById('t_boy').value)          || null,
+    kilo_kg:              parseFloat(document.getElementById('t_kilo').value)         || null,
     uzun_atlama_cm:      parseFloat(document.getElementById('t_uzun_atlama').value) || null,
     saglik_topu_cm:      parseFloat(document.getElementById('t_saglik_topu').value) || null,
     mekik_tekrar:        parseInt(document.getElementById('t_mekik').value)          || null,
