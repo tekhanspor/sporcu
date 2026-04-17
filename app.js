@@ -1394,7 +1394,10 @@ async function sporcuSonuclariniYukle() {
         var barRenk = r.renk === 'green' ? '#057a55' : r.renk === 'yellow' ? '#b45309' : r.renk === 'orange' ? '#e65100' : '#c81e1e';
         var fark = NORMLAR[alan].yuksek_iyi ? (val - r.norm) : (r.norm - val);
         var farkStr = fark >= 0 ? ('+' + Math.abs(fark).toFixed(1)) : ('-' + Math.abs(fark).toFixed(1));
-        html += '<div class="test-satir">';
+        var aciklamaObj2 = typeof TEST_ACIKLAMALAR !== 'undefined' && TEST_ACIKLAMALAR[alan] ? TEST_ACIKLAMALAR[alan][r.renk] : null;
+        var bgRenk3 = r.renk === 'green' ? '#f0fdf4' : r.renk === 'yellow' ? '#fefce8' : r.renk === 'orange' ? '#fff7ed' : '#fef2f2';
+        html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div class="test-satir" style="border-bottom:none;padding:0">';
         html += '<span style="font-size:11px;color:var(--gray-500);width:18px;flex-shrink:0">' + (i+1) + '</span>';
         html += '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + et.ad + '</div>';
         html += '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + Math.min(r.oran||80,100) + '%;background:' + barRenk + '"></div></div>';
@@ -1403,6 +1406,10 @@ async function sporcuSonuclariniYukle() {
         html += '<div style="font-size:14px;font-weight:700">' + val + ' <span style="font-size:10px;color:var(--gray-500)">' + et.birim + '</span></div>';
         html += '<span class="badge badge-' + (r.renk === 'green' ? 'green' : r.renk === 'yellow' ? 'yellow' : r.renk === 'orange' ? 'orange' : 'red') + '">' + r.durum + '</span>';
         html += '</div></div>';
+        if (aciklamaObj2) {
+          html += '<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:' + bgRenk3 + ';border-radius:8px;line-height:1.6">' + aciklamaObj2 + '</div>';
+        }
+        html += '</div>';
       });
       html += '</div>';
     }
