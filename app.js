@@ -937,10 +937,40 @@ function testEkleModalAc() {
   document.getElementById('tTarih').value = new Date().toISOString().split('T')[0];
   document.getElementById('tSonrakiTarih').value = '';
   ['t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
-   't_flamingo','t_otur_uzan','t_beep','t_cetvel','t_dolyo','t_fskt','t_fskt_kdi','t_dck60','t_notlar']
+   't_flamingo','t_otur_uzan','t_beep','t_cetvel','t_dolyo',
+   't_fskt_1','t_fskt_2','t_fskt_3','t_fskt_4','t_fskt_5','t_dck60','t_notlar']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   hataGizle('testModalHata');
   modalAc('testModal');
+}
+
+function fsktOnizle() {
+  var turlar = [1,2,3,4,5].map(function(i) {
+    return parseInt(document.getElementById('t_fskt_' + i).value) || 0;
+  });
+  var dolu = turlar.filter(function(v) { return v > 0; });
+  var div = document.getElementById('fsktOnizleDiv');
+  if (!div) return;
+  if (dolu.length < 5) {
+    div.textContent = dolu.length + '/5 tur girildi';
+    div.style.color = 'var(--gray-500)';
+    return;
+  }
+  var enIyi = Math.max.apply(null, turlar);
+  var toplam = turlar.reduce(function(a,b) { return a+b; }, 0);
+  var kdi = Math.round((1 - toplam / (enIyi * 5)) * 100 * 10) / 10;
+  div.innerHTML = 'En iyi: <b>' + enIyi + '</b> tekrar · KDI: <b style="color:' + (kdi <= 20 ? '#057a55' : '#c81e1e') + '">' + kdi + '%</b>';
+}
+
+function hesaplaFSKT() {
+  var turlar = [1,2,3,4,5].map(function(i) {
+    return parseInt(document.getElementById('t_fskt_' + i).value) || 0;
+  }).filter(function(v) { return v > 0; });
+  if (turlar.length === 0) return { fskt_tekrar: null, fskt_kdi: null };
+  var enIyi = Math.max.apply(null, turlar);
+  var toplam = turlar.reduce(function(a,b) { return a+b; }, 0);
+  var kdi = turlar.length === 5 ? Math.round((1 - toplam / (enIyi * 5)) * 100 * 10) / 10 : null;
+  return { fskt_tekrar: enIyi, fskt_kdi: kdi };
 }
 
 async function testKaydet() {
@@ -963,9 +993,8 @@ async function testKaydet() {
     beep_test_seviye:    parseFloat(document.getElementById('t_beep').value)         || null,
     cetvel_reaksiyon_cm: parseFloat(document.getElementById('t_cetvel').value)       || null,
     dolyo_chagi_tekrar:  parseInt(document.getElementById('t_dolyo').value)           || null,
-    fskt_tekrar:         parseInt(document.getElementById('t_fskt').value)            || null,
-    fskt_kdi:            parseFloat(document.getElementById('t_fskt_kdi').value)     || null,
     dck60_tekrar:        parseInt(document.getElementById('t_dck60').value)           || null,
+    ...hesaplaFSKT(),
     notlar: document.getElementById('t_notlar').value.trim() || null
   };
 
