@@ -98,6 +98,7 @@
   </div>
 </div>
 
+<!-- SPORCU EKLE/DÜZENLE MODALI -->
 <div id="sporcuModal" class="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -155,6 +156,7 @@
   </div>
 </div>
 
+<!-- TEST EKLE MODALI -->
 <div id="testModal" class="modal-overlay">
   <div class="modal">
     <div class="modal-handle"></div>
@@ -170,6 +172,7 @@
         <input type="date" id="tSonrakiTarih" class="form-input">
       </div>
     </div>
+    <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin:12px 0 8px">Genel Testler (1–9)</div>
     <div class="form-row">
       <div class="form-grup">
         <label class="form-etiket">Uzun Atlama (cm)</label>
@@ -212,22 +215,29 @@
     </div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">Çember Koord. (sn)</label>
-        <input type="number" id="t_cember" class="form-input" placeholder="10.8" step="0.01">
+        <label class="form-etiket">Cetvel Reaksiyon (cm)</label>
+        <input type="number" id="t_cetvel" class="form-input" placeholder="18" step="0.1">
+      </div>
+    </div>
+    <div style="font-size:13px;font-weight:700;color:var(--gray-700);margin:12px 0 8px">TKD Özgün Testler (10–12)</div>
+    <div class="form-row">
+      <div class="form-grup">
+        <label class="form-etiket">10sn Dolyo Chagi (tekrar)</label>
+        <input type="number" id="t_dolyo" class="form-input" placeholder="17">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">Cetvel React. (cm)</label>
-        <input type="number" id="t_cetvel" class="form-input" placeholder="18" step="0.1">
+        <label class="form-etiket">FSKT Tekme Hızı (tekrar)</label>
+        <input type="number" id="t_fskt" class="form-input" placeholder="18">
       </div>
     </div>
     <div class="form-row">
       <div class="form-grup">
-        <label class="form-etiket">El Dinamo. (kg)</label>
-        <input type="number" id="t_el_dina" class="form-input" placeholder="27" step="0.1">
+        <label class="form-etiket">FSKT KDI (%)</label>
+        <input type="number" id="t_fskt_kdi" class="form-input" placeholder="15" step="0.1">
       </div>
       <div class="form-grup">
-        <label class="form-etiket">Wingate (W/kg)</label>
-        <input type="number" id="t_wingate" class="form-input" placeholder="8.2" step="0.01">
+        <label class="form-etiket">60sn DCK (tekrar)</label>
+        <input type="number" id="t_dck60" class="form-input" placeholder="65">
       </div>
     </div>
     <div class="form-grup">
