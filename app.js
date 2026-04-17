@@ -455,19 +455,23 @@ function renderProfilTestler(testler, sporcu) {
       const barYuzde = Math.min(oran || 80, 100);
       const fark = NORMLAR[alan]?.yuksek_iyi ? (val - norm) : (norm - val);
       const farkStr = fark >= 0 ? `+${Math.abs(fark).toFixed(1)}` : `-${Math.abs(fark).toFixed(1)}`;
-      return `<div class="test-satir">
-        <span class="test-no" style="font-size:11px;color:var(--gray-500);width:18px;flex-shrink:0">${i+1}</span>
-        <div class="test-ad" style="flex:1">
-          <div style="font-size:13px;font-weight:500">${et.ad}</div>
-          <div class="ilerleme-kap" style="margin:3px 0">
-            <div class="ilerleme-bar" style="width:${barYuzde}%;background:${barRenk}"></div>
+      const aciklama = TEST_ACIKLAMALAR[alan] ? TEST_ACIKLAMALAR[alan][renk] || '' : '';
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+        <div class="test-satir" style="border-bottom:none;padding:0">
+          <span class="test-no" style="font-size:11px;color:var(--gray-500);width:18px;flex-shrink:0">${i+1}</span>
+          <div class="test-ad" style="flex:1">
+            <div style="font-size:13px;font-weight:500">${et.ad}</div>
+            <div class="ilerleme-kap" style="margin:3px 0">
+              <div class="ilerleme-bar" style="width:${barYuzde}%;background:${barRenk}"></div>
+            </div>
+            <div style="font-size:10px;color:var(--gray-500)">Norm: <b>${norm}</b> ${et.birim} · Fark: <b style="color:${barRenk}">${farkStr}</b></div>
           </div>
-          <div style="font-size:10px;color:var(--gray-500)">Norm: <b>${norm}</b> ${et.birim} · Fark: <b style="color:${barRenk}">${farkStr}</b></div>
+          <div style="text-align:right;flex-shrink:0;min-width:90px">
+            <div style="font-size:15px;font-weight:700">${val} <span style="font-size:10px;color:var(--gray-500)">${et.birim}</span></div>
+            <span class="badge badge-${renk === 'green' ? 'green' : renk === 'yellow' ? 'yellow' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
+          </div>
         </div>
-        <div style="text-align:right;flex-shrink:0;min-width:90px">
-          <div style="font-size:15px;font-weight:700">${val} <span style="font-size:10px;color:var(--gray-500)">${et.birim}</span></div>
-          <span class="badge badge-${renk === 'green' ? 'green' : renk === 'yellow' ? 'yellow' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
-        </div>
+        ${aciklama ? `<div style="font-size:12px;color:var(--gray-600);margin-top:6px;padding:8px 10px;background:${renk === 'green' ? '#f0fdf4' : renk === 'yellow' ? '#fefce8' : renk === 'orange' ? '#fff7ed' : '#fef2f2'};border-radius:8px;line-height:1.5">${aciklama}</div>` : ''}
       </div>`;
     }).join('')}
     ${enSon.notlar ? `<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-500)">📝 ${enSon.notlar}</div>` : ''}
@@ -938,7 +942,7 @@ function testEkleModalAc() {
   document.getElementById('tSonrakiTarih').value = '';
   ['t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
    't_flamingo','t_otur_uzan','t_beep','t_cetvel','t_dolyo',
-   't_fskt_1','t_fskt_2','t_fskt_3','t_fskt_4','t_fskt_5','t_dck60','t_notlar']
+   't_fskt_1','t_fskt_2','t_fskt_3','t_fskt_4','t_fskt_5','t_dck60','t_sinav','t_notlar']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
   hataGizle('testModalHata');
   modalAc('testModal');
@@ -994,6 +998,7 @@ async function testKaydet() {
     cetvel_reaksiyon_cm: parseFloat(document.getElementById('t_cetvel').value)       || null,
     dolyo_chagi_tekrar:  parseInt(document.getElementById('t_dolyo').value)           || null,
     dck60_tekrar:        parseInt(document.getElementById('t_dck60').value)           || null,
+    sinav_tekrar:        parseInt(document.getElementById('t_sinav').value)           || null,
     ...hesaplaFSKT(),
     notlar: document.getElementById('t_notlar').value.trim() || null
   };
