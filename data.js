@@ -574,3 +574,178 @@ const PSIKO_ACIKLAMALAR = {
   }
 
 };
+
+const ANTRENOR_PSIKO_ACIKLAMALAR = {
+
+  kaygiGozlem: {
+    green: {
+      metin: "Sporcu maç öncesi ve maç sırasında sakin görünüyor. Gerginlik belirtileri yok, beden dili rahat ve kontrollü. Bu seviyedeki sakinlik yüksek performansla doğrudan ilişkili.",
+      tavsiye: "💡 Antrenör notu: Bu durumu korumak için maç öncesi rutini aynı tut. Sporcu ne yapıyorsa işe yarıyor — değiştirme."
+    },
+    orange: {
+      metin: "Sporcuda hafif kaygı belirtileri gözlemliyorsun. Zaman zaman gerginlik, huzursuzluk veya dikkat dağınıklığı olabiliyor ama maçı yönetebiliyorlar.",
+      tavsiye: "💡 Antrenör notu: Maç öncesi kısa bir sohbet yap. 'Bugün nasılsın?' diye sor. Baskı uygulamak yerine güven ver. Isınma rutinini düzenli ve sakin tut."
+    },
+    orange2: {
+      metin: "Belirgin kaygı belirtileri var. Maç öncesi aşırı hareketlilik, sessizleşme veya konsantrasyon güçlüğü gözlemliyorsun. Bu durum sahada hata oranını artırabilir.",
+      tavsiye: "💡 Antrenör notu: Maç öncesi sporcuyu yalnız bırak, kalabalıktan uzaklaştır. Derin nefes egzersizi yaptır. 'Sen bunu yapabilirsin' yerine 'Şu an sadece bir sonraki hamleyi düşün' de."
+    },
+    red: {
+      metin: "Ciddi kaygı belirtileri gözlemliyorsun. Sporcu maça odaklanamıyor, gerginlik fiziğine yansıyor ve performansı olumsuz etkileniyor. Bu durumda maçtan önce müdahale gerekebilir.",
+      tavsiye: "💡 Antrenör notu: Sporcuyu sessiz bir yere al, 4-4-4 nefes tekniği uygulat (4 saniye al, 4 tut, 4 ver). 'Kaybetsek ne olur?' sorusu yerine 'Şu an yapman gereken tek şey ne?' diye sor. Bu durumun tekrarlanması halinde sporcu psikoloğuyla görüşmeyi düşün."
+    }
+  },
+
+  gorevYonAnt: {
+    green: {
+      metin: "Sporcu antrenmanlarda gelişmeye ve öğrenmeye odaklı. Hata yaptığında öğrenme fırsatı olarak değerlendiriyor, rakibini yenmekten çok tekniğini geliştirmeye çalışıyor.",
+      tavsiye: "💡 Antrenör notu: Bu yaklaşımı destekle. Maç sonrası 'Kazandın mı?' yerine 'Bugün ne öğrendin?' diye sor. Bu sporcu uzun vadede çok daha hızlı gelişecek."
+    },
+    orange: {
+      metin: "Sporcu genel olarak gelişmeye odaklı ama zaman zaman sonuçlara takılabiliyor. Kaybettiğinde motivasyonu biraz düşebiliyor.",
+      tavsiye: "💡 Antrenör notu: Maç sonrası değerlendirmelerde sonuçtan önce performansı konuş. 'Bugün x tekniğin çok iyiydi' gibi somut geri bildirimler ver."
+    },
+    orange2: {
+      metin: "Sporcu çoğunlukla sonuç odaklı. Kaybettiğinde ya da beklentinin altında kaldığında motivasyon kaybı yaşıyor. Öğrenme sürecine sabrı düşük.",
+      tavsiye: "💡 Antrenör notu: Her antrenman için küçük, ulaşılabilir hedefler koy. 'Bu hafta dolyo chagi'ni 2 tekrar artır' gibi. Küçük başarılar güven ve motivasyonu yavaş yavaş geliştirir."
+    },
+    red: {
+      metin: "Sporcu neredeyse tamamen sonuç odaklı. Kaybetmek onu derinden etkiliyor, hata yaptığında çok sert tepki veriyor. Antrenmanı bir gelişim aracı olarak değil bir sınav olarak görüyor.",
+      tavsiye: "💡 Antrenör notu: Yüksek baskılı ortamlardan kaçın. Hata yaptığında tepkin çok önemli — sakin kal, düzeltici geri bildirim ver. 'Yanlış yaptın' yerine 'Bir daha dene, şöyle ol' de."
+    }
+  },
+
+  egoYonAnt: {
+    green: {
+      metin: "Sporcu başkalarından üstün görünme ihtiyacı hissetmiyor. Rekabet var ama sağlıklı sınırlar içinde. Kaybetmeyi kişisel bir yenilgi olarak almıyor.",
+      tavsiye: "💡 Antrenör notu: Bu dengeyi koru. Aşırı rekabetçi ortamlar veya sürekli karşılaştırmalar bu dengeyi bozabilir."
+    },
+    orange: {
+      metin: "Hafif ego yönelimi var. Zaman zaman rakibini yenmek veya takımda en iyi olmak önemli geliyor. Genellikle kontrol altında ama büyük maçlarda baskı yaratabilir.",
+      tavsiye: "💡 Antrenör notu: Grup antrenmanlarında sporcuları kıyaslamaktan kaçın. Her sporcunun kendi gelişim eğrisini takip etmesini teşvik et."
+    },
+    orange2: {
+      metin: "Ego yönelimi belirgin. Rakibinden iyi görünmek çok önemli. Kaybettiğinde ya da bir arkadaşı daha iyi performans gösterdiğinde sert tepkiler veriyor.",
+      tavsiye: "💡 Antrenör notu: Takım içi sıralamalardan ve sürekli karşılaştırmalardan kaçın. Sporcuya kendi önceki performansıyla kıyaslama fırsatı ver. 'Geçen haftaki senin rekabetçin bu hafta sensin' anlayışını yerleştir."
+    },
+    red: {
+      metin: "Çok yüksek ego yönelimi. Kaybetmek veya başkasının daha iyi olması bu sporcuyu ciddi şekilde etkiliyor. Antrenmanı bırakma, motivasyon kaybı veya takım içi çatışma riski var.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuyla birebir konuşmalar yap. 'Sen neden taekwondo yapıyorsun?' diye sor ve dinle. Uzun vadeli sporculuk kimliğini geliştirmeye odaklan. Gerekirse sporcu psikoloğuyla görüşmeyi öner."
+    }
+  },
+
+  kontrolAnt: {
+    green: {
+      metin: "Sporcu zor anlarda kendini toparlamayı biliyor. Sayı yediğinde, hata yaptığında veya maç aleyhine döndüğünde paniklemeden devam edebiliyor.",
+      tavsiye: "💡 Antrenör notu: Bu özelliği antrenmanlarında da pekiştir. Bilerek zorlu senaryolar yarat ve sporcunun sakin kalma pratiği yapmasına fırsat ver."
+    },
+    orange: {
+      metin: "Çoğu zaman kendini kontrol edebiliyor ama çok baskılı anlarda sarsılabiliyor. Önemli maçlarda ya da art arda hata yaptığında dikkat dağılması yaşanabiliyor.",
+      tavsiye: "💡 Antrenör notu: Antrenman sırasında yüksek baskı simülasyonları uygula. Örneğin 'Son 30 saniye, 2 puan gerideyiz' senaryoları ile alıştırmalar yap."
+    },
+    orange2: {
+      metin: "Duygusal kontrol zorluğu var. Olumsuz anlarda tepkileri performansını etkiliyor. Sayı yediğinde veya hata yaptığında toparlanmak zaman alıyor.",
+      tavsiye: "💡 Antrenör notu: Maç sırasında kısa 'reset' ritüelleri öğret. Mesela her sayı sonrası bir nefes alıp hazır pozisyona dönmek. Bu küçük ritüeller zamanla otomatikleşir."
+    },
+    red: {
+      metin: "Ciddi duygusal kontrol güçlüğü gözlemliyorsun. Stresli anlarda performans belirgin şekilde düşüyor, tepkiler bazen aşırıya kaçabiliyor. Bu durum maç disiplinine de zarar verebilir.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuyla acele etme, baskı yapma. Küçük adımlarla ilerle. Nefes tekniklerini antrenmanın her günkü rutinine ekle. Sporcu psikoloğuyla görüşme ciddi bir seçenek olarak düşünülmeli."
+    }
+  },
+
+  baglilikAnt: {
+    green: {
+      metin: "Sporcu antrenmanlarına kararlı ve tutarlı biçimde katılıyor. Zorlu seanslardan kaçmıyor, hedeflerine bağlı kalıyor. Bu tutarlılık performans gelişiminin en güvenilir göstergesi.",
+      tavsiye: "💡 Antrenör notu: Bu bağlılığı ödüllendir — maddi değil, sözlü. 'Bugün çok kararlı çalıştın' gibi geri bildirimler motivasyonu korur."
+    },
+    orange: {
+      metin: "Genel olarak bağlı ama zaman zaman antrenman kaçırma veya zorlu egzersizlerden çekilme eğilimi olabiliyor. Özellikle yorgun veya motivasyonu düşük dönemlerde dikkat gerekiyor.",
+      tavsiye: "💡 Antrenör notu: Motivasyon düşüşü yaşadığında neden sorusunu sor. Bazen dış nedenler (okul stresi, aile durumu) antrenmana yansır. Anlayışlı ol ama hedefleri hatırlat."
+    },
+    orange2: {
+      metin: "Bağlılık sorunları var. Antrenmanları sık atlıyor veya zorlu bölümlerde erken çıkıyor. Bu durum fiziksel gelişimi yavaşlatıyor ve teknik kalıcılığı engelliyor.",
+      tavsiye: "💡 Antrenör notu: Kısa vadeli somut hedefler koy. Uzun vadeli hedefler bu sporcuya uzak geliyor olabilir. 'Bu hafta 3 antrenman' gibi mini hedefler daha etkili olabilir."
+    },
+    red: {
+      metin: "Ciddi bağlılık eksikliği. Sporcunun antrenmanlarla bağı zayıf, motivasyon çok düşük. Bu hızla bir bırakma sürecine dönüşebilir.",
+      tavsiye: "💡 Antrenör notu: Sporcu neden taekwondoda olduğunu unutmuş olabilir. Birebir bir konuşma yap — ne istiyor, neden burada, ne onu burada tutabilir? Cevapları dinle ve onlarla birlikte bir yol çiz."
+    }
+  },
+
+  meyдanAnt: {
+    green: {
+      metin: "Sporcu zorlukları kucaklıyor. Zor antrenmanlar, güçlü rakipler veya yeni teknikler onu heyecanlandırıyor. Başarısızlıktan ders çıkarma kapasitesi yüksek.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuya daha zorlu görevler ver, rahat bölgesinin dışına çıkmasına fırsat yarat. Gelişimi hızlandırabilirsin."
+    },
+    orange: {
+      metin: "Çoğunlukla zorluklara açık ama çok büyük engellerle karşılaşınca biraz çekilebiliyor. Başarısızlıkları her zaman yapıcı değerlendiremeyebiliyor.",
+      tavsiye: "💡 Antrenör notu: Kaybedilen maçları sonra birlikte analiz et. 'Bugün nereyi geliştirmemiz gerekiyor?' sorusu 'Neden kaybettik?' sorusundan çok daha yapıcı."
+    },
+    orange2: {
+      metin: "Zorluklardan kaçınma eğilimi belirgin. Zor antrenmanlardan, güçlü rakiplerden ya da yeni tekniklerden çekinebiliyor. Başarısızlık korkusu gelişimi yavaşlatıyor.",
+      tavsiye: "💡 Antrenör notu: Küçük başarılar üzerine inşa et. Sporcuyu başarabileceği zorluklarla karşılaştır önce. Her küçük başarı meydan okuma cesaretini artırır."
+    },
+    red: {
+      metin: "Zorluklardan belirgin şekilde kaçıyor. Zor antrenmanları, güçlü rakipleri veya hata yapma riskini içeren durumları aktif olarak reddediyor. Bu uzun vadede büyük bir gelişim engeli.",
+      tavsiye: "💡 Antrenör notu: Baskı uygulama — daha da kaçmasına neden olur. Güvenli bir ortam yarat. Hata yaparken tepkin nasıl? Eğer sen de sert tepki veriyorsan bu korkuyu besliyor olabilirsin. Sabırla, adım adım."
+    }
+  },
+
+  guvenAnt: {
+    green: {
+      metin: "Sporcu kendine güveniyor ve bu maça yansıyor. Zor anlarda bile 'yapabilirim' tutumunu koruyabiliyor. Hatalar onu uzun süre etkilemiyor.",
+      tavsiye: "💡 Antrenör notu: Bu güveni besle. Sporcu iyi bir şey yaptığında hemen ve somut olarak söyle. Güven sürekli yenilenmesi gereken bir enerji kaynağı."
+    },
+    orange: {
+      metin: "Genel olarak kendine güveniyor ama baskı anlarında veya art arda hata yaptığında sarsılabiliyor. Büyük maçlarda veya güçlü rakipler karşısında destek gerekebilir.",
+      tavsiye: "💡 Antrenör notu: Maçtan önce kısa bir 'güç konuşması' yap. Sporcunun iyi yaptığı 2-3 şeyi hatırlat. Somut ve gerçek olmalı — abartı işe yaramaz."
+    },
+    orange2: {
+      metin: "Kendine güven eksikliği performansını etkiliyor. Denemekten çekiniyor, teknik bildiği halde uygulamakta tereddüt ediyor. 'Yapamam' hissi sık geliyor.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuyu başarabileceği durumlarla sık buluştur. Her küçük başarıyı sesli olarak ödüllendir. Eleştirilerini sandviç tekniğiyle ver: iyi → gelişim alanı → iyi."
+    },
+    red: {
+      metin: "Ciddi özgüven eksikliği gözlemliyorsun. Sporcu kendini çok olumsuz değerlendiriyor, her hatada derin bir hayal kırıklığına giriyor. Bu döngü kırılmazsa bırakma riski artıyor.",
+      tavsiye: "💡 Antrenör notu: Performans değerlendirmelerini bir süre için tamamen durdur. Sadece 'sahaya çıkmak' ve 'denemek' üzerine odaklan. Sporcu psikoloğuyla görüşme bu noktada çok önemli."
+    }
+  },
+
+  dikkatAnt: {
+    green: {
+      metin: "Sahada dikkat kalitesi yüksek. Rakibini iyi okuyor, çevresel değişimlere hızlı adapte oluyor. Hem geniş hem dar odaklanmayı gerektiğinde kullanabiliyor.",
+      tavsiye: "💡 Antrenör notu: Bu özelliği taktik antrenmanlarıyla daha da geliştir. Çoklu uyaran içeren egzersizler ekle."
+    },
+    orange: {
+      metin: "Dikkat kalitesi genel olarak iyi ama yorulduğunda veya stres altında odak dağılması olabiliyor. Uzun maçların sonunda ya da yüksek baskı altında tepki gecikmesi gözlemlenebiliyor.",
+      tavsiye: "💡 Antrenör notu: Antrenmanın yorucu bölümlerine taktik egzersizler ekle. Yorgunluk altında dikkat pratiği maçın gerçek koşullarına hazırlar."
+    },
+    orange2: {
+      metin: "Dikkat kontrolünde güçlük var. Sahada zaman zaman odağını kaybediyor, rakibinin hareketlerini kaçırabiliyor. Bu hem savunmada hem hücumda gecikmelere yol açıyor.",
+      tavsiye: "💡 Antrenör notu: Kısa süreli yoğun odak egzersizleri ekle. Örneğin 'Sadece şu anda rakibinin sağ omzuna bak' gibi tek nokta odak çalışmaları dikkat kapasitesini artırır."
+    },
+    red: {
+      metin: "Sahada dikkat kontrolü çok zayıf. Rakibinden bağımsız faktörler (seyirci, gürültü, önceki hata) sahaya yansıyor. Maç içi anlık kararlar tutarsız.",
+      tavsiye: "💡 Antrenör notu: Dikkat sorunları bazen kaygı veya uyku ile ilişkili olabilir. Sporcunun genel yaşam durumunu da değerlendir. Antrenman dışında da gözlemle. Gerekirse profesyonel destek öner."
+    }
+  },
+
+  dikkatBozAnt: {
+    green: {
+      metin: "Sahada dikkat bozukluğu gözlemlemiyorsun. Sporcu maç sırasında dış etkenlere rağmen odağını koruyabiliyor. Hata sonrası toparlanma hızlı.",
+      tavsiye: "💡 Antrenör notu: Bu konsantrasyonu korumak için maç öncesi rutini istikrarlı tut. Rutin bozulursa odak da bozulabilir."
+    },
+    orange: {
+      metin: "Ara sıra dikkat bozulması oluyor. Özellikle hata sonrası ya da seyirci tepkilerine karşı zaman zaman odak kaybı yaşıyor. Genellikle toparlanabiliyor.",
+      tavsiye: "💡 Antrenör notu: Maç sırasında köşe molalarında kısa ve net talimatlar ver. Uzun açıklamalar dikkat dağıtır. 'Sol tekme, sağ açı' gibi kısa komutlar daha etkili."
+    },
+    orange2: {
+      metin: "Dikkat bozukluğu maçı etkiliyor. Hata yaptıktan sonra o hatayı kovalıyor, bir sonraki hamleye geçemez oluyor. Gürültülü ortamlar veya yoğun seyirci baskısı performansı olumsuz etkiliyor.",
+      tavsiye: "💡 Antrenör notu: 'Oldu, bitti, şimdi ne?' tekniğini öğret. Hata yaptığında sporcuya baktığında başını sallama veya kısa bir jest yap — bu 'reset' sinyali işe yarar."
+    },
+    red: {
+      metin: "Ciddi dikkat bozukluğu. Bir hata tüm maçı etkiliyor. Seyirci, gürültü veya rakibin provokasyonları odağı tamamen dağıtabiliyor. Bu sahada zincirleme hataya dönüşüyor.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuyu önce düşük baskılı ortamlarda yarıştır. Kalabalık ve yüksek baskılı ortamlara kademeli olarak alıştır. Sporcu psikoloğu bu konuda somut teknikler öğretebilir."
+    }
+  }
+
+};
