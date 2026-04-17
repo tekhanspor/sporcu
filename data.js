@@ -1,7 +1,7 @@
 // data.js — Supabase bağlantısı & veri katmanı
 
-const SUPABASE_URL = 'https://knxkamonilmpfvgxstbb.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtueGthbW9uaWxtcGZ2Z3hzdGJiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NTU4NzAsImV4cCI6MjA5MTQzMTg3MH0.X8vJTYYfToZcGCdBztguz4uxO52u994mutC5euvq630';
+const SUPABASE_URL = 'https://moryygjzanzqgqjcaqda.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vcnl5Z2p6YW56cWdxamNhcWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjY2ODksImV4cCI6MjA5MTk0MjY4OX0.gXsYQu9msebmcr9hjSidGeuwVP-NdGZtOhbsk1DO4Nw';
 
 async function sbFetch(path, options = {}) {
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
