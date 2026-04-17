@@ -498,6 +498,27 @@ function renderProfilBilgiler(s) {
       </button>
     </div>
   </div>`;
+
+  // BMI kartı ekle
+  var bmiVal = hesaplaBMI(s.boy_cm, s.kilo_kg);
+  var bmiYas = yasHesapla(s.dogum_tarihi);
+  var bmiKatObj = bmiVal ? bmiKategori(bmiVal, bmiYas, s.cinsiyet) : null;
+  if (bmiVal && bmiKatObj) {
+    var bmiR = bmiKatObj.renk === 'green' ? '#057a55' : bmiKatObj.renk === 'blue' ? '#1a56db' : bmiKatObj.renk === 'orange' ? '#e65100' : '#c81e1e';
+    var bmiHtml = '<div class="kart" style="margin-top:8px">';
+    bmiHtml += '<div class="kart-baslik">⚖️ Vücut Kitle Endeksi (BMI)</div>';
+    bmiHtml += '<div style="display:flex;align-items:center;gap:16px;padding:8px 0">';
+    bmiHtml += '<div style="text-align:center;min-width:60px"><div style="font-size:28px;font-weight:800;color:' + bmiR + '">' + bmiVal + '</div><div style="font-size:11px;color:var(--gray-500)">BMI</div></div>';
+    bmiHtml += '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:' + bmiR + '">' + bmiKatObj.kategori + '</div><div style="font-size:12px;color:var(--gray-500)">' + s.boy_cm + ' cm · ' + s.kilo_kg + ' kg</div></div>';
+    bmiHtml += '</div>';
+    var uyari = bmiUyariMetni(bmiKatObj.kategori);
+    if (uyari) {
+      var bgRenkU = bmiKatObj.renk === 'orange' ? '#fff7ed' : '#fef2f2';
+      bmiHtml += '<div style="font-size:12px;color:var(--gray-700);padding:8px 10px;background:' + bgRenkU + ';border-radius:8px;line-height:1.5">' + uyari.metin + '</div>';
+    }
+    bmiHtml += '</div>';
+    document.getElementById('profilBilgilerDiv').innerHTML += bmiHtml;
+  }
 }
 
 function renderProfilTestler(testler, sporcu) {
@@ -1050,7 +1071,7 @@ function testEkleModalAc() {
   document.getElementById('testSporcuId').value = aktifSporcuId;
   document.getElementById('tTarih').value = new Date().toISOString().split('T')[0];
   document.getElementById('tSonrakiTarih').value = '';
-  ['t_boy','t_kilo','t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
+  ['t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
    't_flamingo','t_otur_uzan','t_beep','t_cetvel','t_dolyo',
    't_fskt_1','t_fskt_2','t_fskt_3','t_fskt_4','t_fskt_5','t_dck60','t_sinav','t_notlar']
     .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
@@ -1097,8 +1118,6 @@ async function testKaydet() {
     sporcu_id: sporcuId,
     test_tarihi: tarih,
     sonraki_test_tarihi: document.getElementById('tSonrakiTarih').value || null,
-    boy_cm:               parseFloat(document.getElementById('t_boy').value)          || null,
-    kilo_kg:              parseFloat(document.getElementById('t_kilo').value)         || null,
     uzun_atlama_cm:      parseFloat(document.getElementById('t_uzun_atlama').value) || null,
     saglik_topu_cm:      parseFloat(document.getElementById('t_saglik_topu').value) || null,
     mekik_tekrar:        parseInt(document.getElementById('t_mekik').value)          || null,
@@ -1139,7 +1158,13 @@ async function sporcuPanelAc() {
 
 function renderSporcuProfil(s) {
   const yas = yasHesapla(s.dogum_tarihi);
-  document.getElementById('sporcuProfilDiv').innerHTML = `
+  const bmi = hesaplaBMI(s.boy_cm, s.kilo_kg);
+  const bmiKat = bmi ? bmiKategori(bmi, yas, s.cinsiyet) : null;
+  const bmiRenk = !bmiKat ? '#6b7280' : bmiKat.renk === 'green' ? '#057a55' : bmiKat.renk === 'blue' ? '#1a56db' : bmiKat.renk === 'orange' ? '#e65100' : '#c81e1e';
+  const bmiUyari = bmiKat ? bmiUyariMetni(bmiKat.kategori) : null;
+  const bmiBg = !bmiKat ? '#f9fafb' : bmiKat.renk === 'green' ? '#f0fdf4' : bmiKat.renk === 'blue' ? '#eff6ff' : bmiKat.renk === 'orange' ? '#fff7ed' : '#fef2f2';
+
+  let html = `
   <div class="profil-header" style="margin:-16px -16px 16px">
     <div class="profil-avatar-buyuk">${basTaHarfler(s.ad_soyad)}</div>
     <div>
@@ -1152,8 +1177,49 @@ function renderSporcuProfil(s) {
     <div class="istat-kart"><div class="istat-sayi">${yas}</div><div class="istat-etiket">Yaş</div></div>
     <div class="istat-kart"><div class="istat-sayi">${s.boy_cm || '—'}</div><div class="istat-etiket">Boy (cm)</div></div>
     <div class="istat-kart"><div class="istat-sayi">${s.kilo_kg || '—'}</div><div class="istat-etiket">Kilo (kg)</div></div>
-    <div class="istat-kart"><div class="istat-sayi" style="font-size:18px">${s.dan_kusak || '—'}</div><div class="istat-etiket">Kuşak</div></div>
+    <div class="istat-kart"><div class="istat-sayi" style="color:${bmiRenk}">${bmi || '—'}</div><div class="istat-etiket">BMI</div></div>
   </div>`;
+
+  // BMI uyarı metni
+  if (bmiUyari) {
+    html += `<div style="font-size:12px;color:var(--gray-700);margin-top:8px;padding:10px;background:${bmiBg};border-radius:10px;line-height:1.6">
+      <b style="color:${bmiRenk}">${bmiKat.kategori}</b><br>${bmiUyari.metin}<br><br>
+      <span style="color:${bmiRenk};font-weight:600">${bmiUyari.tavsiye}</span>
+    </div>`;
+  }
+
+  // Boy-kilo güncelleme formu
+  html += `<div class="kart" style="margin-top:12px">
+    <div class="kart-baslik">⚖️ Boy & Kilo Güncelle</div>
+    <div class="form-row">
+      <div class="form-grup">
+        <label class="form-etiket">Boy (cm)</label>
+        <input type="number" id="spBoy" class="form-input" value="${s.boy_cm || ''}" placeholder="160" step="0.1">
+      </div>
+      <div class="form-grup">
+        <label class="form-etiket">Kilo (kg)</label>
+        <input type="number" id="spKilo" class="form-input" value="${s.kilo_kg || ''}" placeholder="55" step="0.1">
+      </div>
+    </div>
+    <button class="btn btn-primary" style="margin-top:4px" onclick="sporcuBoyKiloGuncelle()">Kaydet</button>
+  </div>`;
+
+  document.getElementById('sporcuProfilDiv').innerHTML = html;
+}
+
+async function sporcuBoyKiloGuncelle() {
+  var boy = parseFloat(document.getElementById('spBoy').value) || null;
+  var kilo = parseFloat(document.getElementById('spKilo').value) || null;
+  if (!boy || !kilo) { bildirimGoster('Boy ve kilo giriniz'); return; }
+  try {
+    await sporcuGuncelle(oturumKullanici.id, { boy_cm: boy, kilo_kg: kilo });
+    oturumKullanici.boy_cm = boy;
+    oturumKullanici.kilo_kg = kilo;
+    bildirimGoster('✅ Boy ve kilo güncellendi');
+    renderSporcuProfil(oturumKullanici);
+  } catch(e) {
+    bildirimGoster('Hata: ' + e.message);
+  }
 }
 
 async function sporcuTestleriniYukle() {
