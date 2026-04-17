@@ -1,1665 +1,751 @@
-// app.js — Tekhan Sporcu Sistemi
+// data.js — Supabase bağlantısı & veri katmanı
 
-let aktifRol = 'antrenor';
-let oturumKullanici = null;
-let aktifSporcuId = null;
-let tumSporcular = [];
-let aktifAnketCevaplari = {};
-let grafikInstances = {};
+const SUPABASE_URL = 'https://moryygjzanzqgqjcaqda.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1vcnl5Z2p6YW56cWdxamNhcWRhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzNjY2ODksImV4cCI6MjA5MTk0MjY4OX0.gXsYQu9msebmcr9hjSidGeuwVP-NdGZtOhbsk1DO4Nw';
 
-// ── BAŞLANGIÇ ─────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', () => {
-  const kayitli = sessionStorage.getItem('oturum');
-  if (kayitli) {
-    const veri = JSON.parse(kayitli);
-    oturumKullanici = veri.kullanici;
-    aktifRol = veri.rol;
-    if (aktifRol === 'antrenor') antrenorPanelAc();
-    else sporcuPanelAc();
+async function sbFetch(path, options = {}) {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${path}`, {
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': `Bearer ${SUPABASE_KEY}`,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...options.headers
+    },
+    ...options
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.message || `HTTP ${res.status}`);
   }
-  document.getElementById('loginKullanici').addEventListener('keydown', e => { if (e.key === 'Enter') girisYap(); });
-  document.getElementById('loginSifre').addEventListener('keydown', e => { if (e.key === 'Enter') girisYap(); });
-});
-
-// ── YARDIMCILAR ───────────────────────────────────────────────────────────
-function ekranGoster(id) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('aktif'));
-  document.getElementById(id).classList.add('aktif');
-  window.scrollTo(0, 0);
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
 }
 
-function bildirimGoster(mesaj, sure = 2500) {
-  const el = document.getElementById('bildirim');
-  el.textContent = mesaj;
-  el.classList.add('goster');
-  setTimeout(() => el.classList.remove('goster'), sure);
+// ── ANTRENÖR ──────────────────────────────────────────────────────────────
+async function antrenorGiris(kullaniciAdi, sifre) {
+  const rows = await sbFetch(`antrenor?kullanici_adi=eq.${encodeURIComponent(kullaniciAdi)}&select=*`);
+  if (!rows || rows.length === 0) throw new Error('Kullanıcı adı bulunamadı');
+  const antrenor = rows[0];
+  if (antrenor.sifre_hash !== sifre) throw new Error('Şifre hatalı');
+  return antrenor;
 }
 
-function modalAc(id) { document.getElementById(id).classList.add('aktif'); }
-function modalKapat(id) { document.getElementById(id).classList.remove('aktif'); }
-
-function hataGoster(elId, mesaj) {
-  const el = document.getElementById(elId);
-  if (!el) return;
-  el.textContent = mesaj;
-  el.style.display = 'block';
-}
-function hataGizle(elId) {
-  const el = document.getElementById(elId);
-  if (el) el.style.display = 'none';
+// ── SPORCU ────────────────────────────────────────────────────────────────
+async function sporcuListesi() {
+  return await sbFetch('sporcular?aktif=eq.true&order=ad_soyad.asc&select=*');
 }
 
-function yukleniyor(elId) {
-  const el = document.getElementById(elId);
-  if (el) el.innerHTML = '<div class="yukleniyor"><div class="spinner"></div> Yükleniyor...</div>';
+async function sporcuGetir(id) {
+  const rows = await sbFetch(`sporcular?id=eq.${id}&select=*`);
+  return rows?.[0] || null;
 }
 
-function tarihFormatla(tarih) {
-  if (!tarih) return '—';
-  return new Date(tarih).toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-}
-
-function basTaHarfler(isim) {
-  if (!isim) return '?';
-  return isim.split(' ').map(k => k[0]).join('').substring(0, 2).toUpperCase();
-}
-
-function geriGit(ekranId) {
-  ekranGoster(ekranId);
-  if (ekranId === 'antrenorEkrani') sporcularYukle();
-}
-
-// ── GİRİŞ ─────────────────────────────────────────────────────────────────
-function rolSec(rol, btn) {
-  aktifRol = rol;
-  document.querySelectorAll('.rol-btn').forEach(b => b.classList.remove('aktif'));
-  if (btn) btn.classList.add('aktif');
-  hataGizle('loginHata');
-}
-
-async function girisYap() {
-  const kadi = document.getElementById('loginKullanici').value.trim();
-  const sifre = document.getElementById('loginSifre').value;
-  hataGizle('loginHata');
-  if (!kadi || !sifre) { hataGoster('loginHata', 'Kullanıcı adı ve şifre gerekli'); return; }
-  try {
-    const kullanici = aktifRol === 'antrenor'
-      ? await antrenorGiris(kadi, sifre)
-      : await sporcuGiris(kadi, sifre);
-    oturumKullanici = kullanici;
-    sessionStorage.setItem('oturum', JSON.stringify({ kullanici, rol: aktifRol }));
-    if (aktifRol === 'antrenor') antrenorPanelAc();
-    else sporcuPanelAc();
-  } catch (e) {
-    hataGoster('loginHata', e.message || 'Giriş hatası');
-  }
-}
-
-function cikisYap() {
-  sessionStorage.removeItem('oturum');
-  oturumKullanici = null;
-  aktifSporcuId = null;
-  document.getElementById('loginKullanici').value = '';
-  document.getElementById('loginSifre').value = '';
-  ekranGoster('loginEkrani');
-}
-
-// ── ANTRENÖR PANELİ ───────────────────────────────────────────────────────
-function antrenorPanelAc() {
-  ekranGoster('antrenorEkrani');
-  document.getElementById('antrenorAdi').textContent = oturumKullanici.ad_soyad || '';
-  sporcularYukle();
-}
-
-async function sporcularYukle() {
-  yukleniyor('sporcuListesiDiv');
-  try {
-    tumSporcular = await sporcuListesi();
-    sporcuFiltrele();
-  } catch (e) {
-    document.getElementById('sporcuListesiDiv').innerHTML = `<div class="bos-durum"><span class="ikon">⚠️</span><p>${e.message}</p></div>`;
-  }
-}
-
-function sporcuFiltrele() {
-  const q = (document.getElementById('sporcuArama').value || '').toLowerCase();
-  const filtreli = q ? tumSporcular.filter(s => s.ad_soyad.toLowerCase().includes(q)) : tumSporcular;
-  const div = document.getElementById('sporcuListesiDiv');
-  if (!filtreli || filtreli.length === 0) {
-    div.innerHTML = '<div class="bos-durum"><span class="ikon">👥</span><p>Henüz sporcu yok. + butonuyla ekle.</p></div>';
-    return;
-  }
-  div.innerHTML = filtreli.map(s => {
-    const yas = yasHesapla(s.dogum_tarihi);
-    return `<div class="sporcu-kart" onclick="sporcuProfilAc('${s.id}')">
-      <div class="sporcu-avatar">${basTaHarfler(s.ad_soyad)}</div>
-      <div class="sporcu-info">
-        <div class="sporcu-isim">${s.ad_soyad}</div>
-        <div class="sporcu-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || '—'}</div>
-      </div>
-      <div class="sporcu-ok">›</div>
-    </div>`;
-  }).join('');
-}
-
-function tabSec(tab, btn) {
-  document.querySelectorAll('#antrenorEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
-  if (btn) btn.classList.add('aktif');
-  var el = document.getElementById('tab-' + tab);
-  if (el) {
-    var divs = document.querySelectorAll('#antrenorEkrani .icerik > div');
-    divs.forEach(function(d) { d.style.display = 'none'; });
-    el.style.display = 'block';
-  }
-}
-
-// ── TÜM TESTLER ───────────────────────────────────────────────────────────
-async function testlerYukle() {
-  yukleniyor('tumTestlerDiv');
-  try {
-    const testler = await tumMotorikTestler();
-    if (!testler || testler.length === 0) {
-      document.getElementById('tumTestlerDiv').innerHTML = '<div class="bos-durum"><span class="ikon">📊</span><p>Henüz test yok</p></div>';
-      return;
-    }
-    document.getElementById('tumTestlerDiv').innerHTML = testler.map(t => {
-      const s = t.sporcular || {};
-      return `<div class="kart" onclick="sporcuProfilAc('${t.sporcu_id}')">
-        <div class="kart-baslik">👤 ${s.ad_soyad || '?'} <span style="font-weight:400;color:var(--gray-500);font-size:12px">${tarihFormatla(t.test_tarihi)}</span></div>
-        ${renderNormSatirlar(t, s)}
-      </div>`;
-    }).join('');
-  } catch (e) {
-    document.getElementById('tumTestlerDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
-  }
-}
-
-// ── TÜM ANKETLER ──────────────────────────────────────────────────────────
-async function anketlerYukle() {
-  yukleniyor('tumAnketlerDiv');
-  try {
-    const anketler = await tumAnketler();
-    if (!anketler || anketler.length === 0) {
-      document.getElementById('tumAnketlerDiv').innerHTML = '<div class="bos-durum"><span class="ikon">🧠</span><p>Henüz anket yok</p></div>';
-      return;
-    }
-    document.getElementById('tumAnketlerDiv').innerHTML = anketler.map(a => {
-      const p = psikolojiPuanlari(a);
-      const s = a.sporcular || {};
-      return `<div class="kart" onclick="sporcuProfilAc('${a.sporcu_id}')">
-        <div class="kart-baslik">👤 ${s.ad_soyad || '?'} <span style="font-weight:400;color:var(--gray-500);font-size:12px">${tarihFormatla(a.anket_tarihi)}</span></div>
-        ${renderPsikolojOzet(p)}
-      </div>`;
-    }).join('');
-  } catch (e) {
-    document.getElementById('tumAnketlerDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
-  }
-}
-
-// ── NORM SATIRLARI (görsel) ────────────────────────────────────────────────
-function renderNormSatirlar(test, sporcu) {
-  const yas = yasHesapla(sporcu.dogum_tarihi);
-  const cin = sporcu.cinsiyet || 'Erkek';
-  return Object.keys(TEST_ETIKETLERI).map(alan => {
-    const val = test[alan];
-    if (val === null || val === undefined) return '';
-    const et = TEST_ETIKETLERI[alan];
-    const { durum, renk, norm, oran } = testDurumu(alan, val, yas, cin);
-    const barRenk = renk === 'green' ? '#057a55' : renk === 'yellow' ? '#b45309' : renk === 'orange' ? '#e65100' : '#c81e1e';
-    const barYuzde = Math.min(oran || 80, 100);
-    return `<div class="test-satir">
-      <div class="test-ad">
-        <div style="font-size:13px;font-weight:500">${et.ad}</div>
-        <div class="ilerleme-kap"><div class="ilerleme-bar" style="width:${barYuzde}%;background:${barRenk}"></div></div>
-        <div style="font-size:10px;color:var(--gray-500);margin-top:2px">Norm: ${norm} ${et.birim}</div>
-      </div>
-      <div style="text-align:right;flex-shrink:0">
-        <div class="test-deger">${val} <span class="test-birim">${et.birim}</span></div>
-        <span class="badge badge-${renk === 'green' ? 'green' : renk === 'yellow' ? 'yellow' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function renderPsikolojOzet(p) {
-  if (!p) return '<p style="color:var(--gray-500);font-size:13px">Veri yok</p>';
-  const items = [
-    { k: 'bilisselKaygi', ad: 'Bilişsel Kaygı' },
-    { k: 'ozguven', ad: 'Özgüven' },
-    { k: 'gorevYon', ad: 'Görev Yon.' },
-    { k: 'kontrol', ad: 'Mental Kontrol' }
-  ];
-  return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${items.map(a => {
-    const val = p[a.k];
-    if (!val) return '';
-    const { durum, renk } = psikolojiBoyutDurumu(a.k, val);
-    return `<div style="background:var(--gray-50);border-radius:8px;padding:8px 10px">
-      <div style="font-size:11px;color:var(--gray-500)">${a.ad}</div>
-      <div style="font-size:16px;font-weight:700">${typeof val === 'number' ? val.toFixed(1) : val}</div>
-      <span class="badge badge-${renk === 'green' ? 'green' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
-    </div>`;
-  }).join('')}</div>`;
-}
-
-// ── GRAFİKLER ─────────────────────────────────────────────────────────────
-function grafikSporcuSecenekleriDoldur() {
-  const sel = document.getElementById('grafikSporcuSec');
-  sel.innerHTML = '<option value="">— Sporcu seçin —</option>';
-  (tumSporcular || []).forEach(s => {
-    sel.innerHTML += `<option value="${s.id}">${s.ad_soyad}</option>`;
+async function sporcuEkle(data) {
+  return await sbFetch('sporcular', {
+    method: 'POST',
+    body: JSON.stringify(data)
   });
 }
 
-async function grafikYukle() {
-  const id = document.getElementById('grafikSporcuSec').value;
-  if (!id) { document.getElementById('grafiklerDiv').innerHTML = ''; return; }
-  yukleniyor('grafiklerDiv');
-  try {
-    const [testler, anketler, sporcu] = await Promise.all([
-      motorikTestleriGetir(id), anketleriGetir(id), sporcuGetir(id)
-    ]);
-    renderGrafikler(testler, anketler, sporcu);
-  } catch (e) {
-    document.getElementById('grafiklerDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
-  }
-}
-
-function renderGrafikler(testler, anketler, sporcu, hedefDiv) {
-  hedefDiv = hedefDiv || 'grafiklerDiv';
-  Object.values(grafikInstances).forEach(c => c.destroy());
-  grafikInstances = {};
-
-  if (!testler || testler.length === 0) {
-    document.getElementById(hedefDiv).innerHTML = '<div class="bos-durum"><span class="ikon">📈</span><p>Test verisi yok</p></div>';
-    return;
-  }
-
-  const sirali = [...testler].reverse();
-  const etiketler = sirali.map(t => tarihFormatla(t.test_tarihi));
-  const renkler = ['#1a56db','#e65100','#057a55','#7e22ce','#0891b2','#65a30d'];
-  const motorikAlanlar = ['uzun_atlama_cm','sprint_30m_sn','beep_test_seviye','otur_uzan_cm','illinois_sn','el_dinamometre_kg'];
-
-  let html = '<div class="kart"><div class="kart-baslik">📊 Motorik Gelişim Grafikleri</div>';
-  motorikAlanlar.forEach(alan => { html += `<canvas id="chart_${alan}" height="160" style="margin-bottom:20px"></canvas>`; });
-  html += '</div>';
-
-  if (anketler && anketler.length > 0) {
-    html += '<div class="kart"><div class="kart-baslik">🧠 Psikolojik Profil (Radar)</div><canvas id="chart_psiko" height="300"></canvas></div>';
-  }
-  document.getElementById(hedefDiv).innerHTML = html;
-
-  motorikAlanlar.forEach((alan, i) => {
-    const canvas = document.getElementById(`chart_${alan}`);
-    if (!canvas) return;
-    const yas = yasHesapla(sporcu?.dogum_tarihi);
-    const cin = sporcu?.cinsiyet || 'Erkek';
-    const idx = normIndeksiHesapla(yas, cin);
-    const normVal = NORMLAR[alan]?.normlar[idx];
-    const veri = sirali.map(t => t[alan] ?? null);
-    grafikInstances[alan] = new Chart(canvas, {
-      type: 'line',
-      data: {
-        labels: etiketler,
-        datasets: [
-          { label: TEST_ETIKETLERI[alan]?.ad, data: veri, borderColor: renkler[i], backgroundColor: renkler[i]+'20', tension: 0.3, fill: true, pointRadius: 5 },
-          { label: 'Norm', data: etiketler.map(() => normVal), borderColor: '#d1d5db', borderDash: [5,5], pointRadius: 0, fill: false }
-        ]
-      },
-      options: { responsive: true, plugins: { legend: { position: 'top' } }, scales: { y: { beginAtZero: false } } }
-    });
+async function sporcuGuncelle(id, data) {
+  return await sbFetch(`sporcular?id=eq.${id}`, {
+    method: 'PATCH',
+    body: JSON.stringify(data)
   });
-
-  if (anketler && anketler.length > 0) {
-    const p = psikolojiPuanlari(anketler[0]);
-    const canvas = document.getElementById('chart_psiko');
-    if (canvas && p) {
-      grafikInstances['psiko'] = new Chart(canvas, {
-        type: 'radar',
-        data: {
-          labels: ['Özgüven','Görev Yon.','Mental Kontrol','Bağlılık','Meydan Okuma','Konsantrasyon'],
-          datasets: [{
-            label: 'Profil',
-            data: [(p.ozguven/36)*5, p.gorevYon, p.kontrol, p.baglilik, p.meydan, p.genisDissal],
-            borderColor: '#1a56db', backgroundColor: 'rgba(26,86,219,0.15)', pointBackgroundColor: '#1a56db'
-          }]
-        },
-        options: { responsive: true, scales: { r: { min: 0, max: 5, ticks: { stepSize: 1 } } } }
-      });
-    }
-  }
 }
 
+async function sporcuGiris(kullaniciAdi, sifre) {
+  const rows = await sbFetch(`sporcular?kullanici_adi=eq.${encodeURIComponent(kullaniciAdi)}&aktif=eq.true&select=*`);
+  if (!rows || rows.length === 0) throw new Error('Kullanıcı adı bulunamadı');
+  const sporcu = rows[0];
+  if (sporcu.sifre_hash !== sifre) throw new Error('Şifre hatalı');
+  return sporcu;
+}
 
-// ── BMI HESAPLAMA & WHO NORMLARI ──────────────────────────────────────────
-// WHO BMI-for-age persentil sınırları (yaş: 10-16, erkek ve kız)
-// [zayıf_ust(<5p), normal_ust(<85p), fazla_ust(<95p)] → üstü obez
-const WHO_BMI = {
-  Erkek: {
-    10: [13.7, 18.9, 21.5],
-    11: [14.1, 19.7, 22.5],
-    12: [14.5, 20.5, 23.5],
-    13: [15.0, 21.3, 24.5],
-    14: [15.5, 22.0, 25.3],
-    15: [16.0, 22.7, 26.0],
-    16: [16.5, 23.3, 26.7]
-  },
-  Kiz: {
-    10: [13.4, 19.0, 22.0],
-    11: [13.8, 19.9, 23.1],
-    12: [14.3, 20.8, 24.1],
-    13: [14.8, 21.6, 25.0],
-    14: [15.3, 22.3, 25.7],
-    15: [15.7, 22.9, 26.3],
-    16: [16.1, 23.4, 26.8]
-  }
+// ── MOTORİK TESTLER ───────────────────────────────────────────────────────
+async function motorikTestleriGetir(sporcuId) {
+  return await sbFetch(`motorik_testler?sporcu_id=eq.${sporcuId}&order=test_tarihi.desc&select=*`);
+}
+
+async function motorikTestEkle(data) {
+  return await sbFetch('motorik_testler', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+async function tumMotorikTestler() {
+  return await sbFetch('motorik_testler?order=test_tarihi.desc&select=*,sporcular(ad_soyad,cinsiyet,dogum_tarihi)');
+}
+
+// ── PSİKOLOJİK ANKETLER ──────────────────────────────────────────────────
+async function anketleriGetir(sporcuId) {
+  return await sbFetch(`psikoloji_anketler?sporcu_id=eq.${sporcuId}&order=anket_tarihi.desc&select=*`);
+}
+
+async function anketEkle(data) {
+  return await sbFetch('psikoloji_anketler', {
+    method: 'POST',
+    body: JSON.stringify(data)
+  });
+}
+
+async function tumAnketler() {
+  return await sbFetch('psikoloji_anketler?order=anket_tarihi.desc&select=*,sporcular(ad_soyad)');
+}
+
+// ── NORM & HESAPLAMA ──────────────────────────────────────────────────────
+const NORMLAR = {
+  uzun_atlama_cm:      { normlar: [140,130,155,143,168,152], yuksek_iyi: true  },
+  saglik_topu_cm:      { normlar: [350,290,420,340,490,380], yuksek_iyi: true  },
+  mekik_tekrar:        { normlar: [18,16,22,19,26,22],       yuksek_iyi: true  },
+  sprint_30m_sn:       { normlar: [5.4,5.8,5.0,5.4,4.7,5.1], yuksek_iyi: false },
+  illinois_sn:         { normlar: [18.5,19.5,17.2,18.3,16.2,17.5], yuksek_iyi: false },
+  flamingo_hata:       { normlar: [6,8,4,6,3,5],             yuksek_iyi: false },
+  otur_uzan_cm:        { normlar: [22,26,24,28,26,30],       yuksek_iyi: true  },
+  beep_test_seviye:    { normlar: [5.4,4.8,6.2,5.6,7.4,6.8], yuksek_iyi: true  },
+  cetvel_reaksiyon_cm: { normlar: [22,24,19,21,16,18],       yuksek_iyi: false },
+  dolyo_chagi_tekrar:  { normlar: [13,11,16,14,20,17],       yuksek_iyi: true  },
+  fskt_tekrar:         { normlar: [14,12,17,15,21,18],       yuksek_iyi: true  },
+  fskt_kdi:            { normlar: [20,20,18,18,15,15],       yuksek_iyi: false },
+  dck60_tekrar:        { normlar: [55,46,65,55,78,65],       yuksek_iyi: true  },
+  sinav_tekrar:        { normlar: [12,9,18,12,25,16],        yuksek_iyi: true  }
 };
 
-function hesaplaBMI(boy, kilo) {
-  if (!boy || !kilo) return null;
-  return Math.round((kilo / Math.pow(boy / 100, 2)) * 10) / 10;
+function normIndeksiHesapla(yas, cinsiyet) {
+  const e = cinsiyet === 'Erkek';
+  if (yas <= 12) return e ? 0 : 1;
+  if (yas <= 14) return e ? 2 : 3;
+  return e ? 4 : 5;
 }
 
-function bmiKategori(bmi, yas, cinsiyet) {
-  if (!bmi || !yas) return null;
-  var yasKey = Math.min(Math.max(Math.round(yas), 10), 16);
-  var cin = (cinsiyet === 'Kız') ? 'Kiz' : 'Erkek';
-  var sinirlar = WHO_BMI[cin] && WHO_BMI[cin][yasKey];
-  if (!sinirlar) return null;
-  if (bmi < sinirlar[0]) return { kategori: 'Zayıf', renk: 'blue' };
-  if (bmi < sinirlar[1]) return { kategori: 'Normal', renk: 'green' };
-  if (bmi < sinirlar[2]) return { kategori: 'Fazla Kilolu', renk: 'orange' };
-  return { kategori: 'Obez', renk: 'red' };
+function yasHesapla(dogumTarihi) {
+  if (!dogumTarihi) return 13;
+  const bugun = new Date();
+  const dogum = new Date(dogumTarihi);
+  let yas = bugun.getFullYear() - dogum.getFullYear();
+  const m = bugun.getMonth() - dogum.getMonth();
+  if (m < 0 || (m === 0 && bugun.getDate() < dogum.getDate())) yas--;
+  return yas;
 }
 
-function bmiUyariMetni(kategori) {
-  if (kategori === 'Fazla Kilolu') {
-    return {
-      metin: 'Kilonu kontrol etmek taekwondoda çok önemli. Fazla kilo taşımak hem tekme atarken seni yoruyor hem de elektronik sistemden daha az puan çıkmasına neden olabiliyor — çünkü daha fazla enerji harcayarak aynı sonucu almak zorunda kalıyorsun.',
-      tavsiye: '💡 Ne yapabilirsin: Antrenmanlarına düzenli katıl, şekerli ve yağlı yiyecekleri azalt. Antrenörünle veya bir beslenme uzmanıyla konuş.'
-    };
-  }
-  if (kategori === 'Obez') {
-    return {
-      metin: 'Kilonu yönetmek şu an en önemli önceliğin olmalı. Bu seviyedeki fazla kilo maçta seni çok erken yoruyor, tekme hızın ve gücün düşüyor. Rakibin aynı sıklette senden çok daha avantajlı konumda.',
-      tavsiye: '💡 Ne yapabilirsin: Bir sağlık uzmanı veya diyetisyenle görüşmeni şiddetle tavsiye ederiz. Antrenörünle birlikte bir plan yapın.'
-    };
-  }
-  return null;
+function testDurumu(alan, deger, yas, cinsiyet) {
+  if (deger === null || deger === undefined || deger === '') return { durum: '—', renk: 'gray' };
+  const conf = NORMLAR[alan];
+  if (!conf) return { durum: '—', renk: 'gray' };
+  const idx = normIndeksiHesapla(yas, cinsiyet);
+  const norm = conf.normlar[idx];
+  const oran = conf.yuksek_iyi ? (deger / norm) : (norm / deger);
+  let durum, renk;
+  if (oran >= 1.10)      { durum = '🟢 Üstün';    renk = 'green'; }
+  else if (oran >= 0.90) { durum = '🟡 Normal';   renk = 'yellow'; }
+  else if (oran >= 0.80) { durum = '🟠 Geliştir'; renk = 'orange'; }
+  else                   { durum = '🔴 Zayıf';    renk = 'red'; }
+  return { durum, renk, norm, oran: Math.round(oran * 100) };
 }
 
-function renderBMIKart(testler, sporcu) {
-  if (!testler || testler.length === 0) return '';
-  var yas = yasHesapla(sporcu.dogum_tarihi);
-  var cin = sporcu.cinsiyet || 'Erkek';
-  
-  // BMI geçmişi — boy/kilo olan testleri filtrele
-  var bmiGecmis = testler.filter(function(t) { return t.boy_cm && t.kilo_kg; });
-  if (bmiGecmis.length === 0) return '';
-  
-  var html = '<div class="kart"><div class="kart-baslik">⚖️ Boy · Kilo · BMI Geçmişi</div>';
-  
-  bmiGecmis.forEach(function(t) {
-    var bmi = hesaplaBMI(t.boy_cm, t.kilo_kg);
-    var kat = bmiKategori(bmi, yas, cin);
-    var barRenk = !kat ? '#gray' : kat.renk === 'green' ? '#057a55' : kat.renk === 'blue' ? '#1a56db' : kat.renk === 'orange' ? '#e65100' : '#c81e1e';
-    var badgeClass = !kat ? '' : kat.renk === 'green' ? 'green' : kat.renk === 'blue' ? 'blue' : kat.renk === 'orange' ? 'orange' : 'red';
-    var uyari = kat ? bmiUyariMetni(kat.kategori) : null;
-    var bgRenk = !kat ? '#f9fafb' : kat.renk === 'green' ? '#f0fdf4' : kat.renk === 'blue' ? '#eff6ff' : kat.renk === 'orange' ? '#fff7ed' : '#fef2f2';
-    
-    html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:center">';
-    html += '<span style="font-size:12px;color:var(--gray-500);font-weight:600">' + tarihFormatla(t.test_tarihi) + '</span>';
-    if (kat) html += '<span class="badge badge-' + badgeClass + '">' + kat.kategori + '</span>';
-    html += '</div>';
-    html += '<div style="display:flex;gap:16px;margin-top:6px">';
-    html += '<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--gray-800)">' + t.boy_cm + '</div><div style="font-size:10px;color:var(--gray-500)">Boy (cm)</div></div>';
-    html += '<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:var(--gray-800)">' + t.kilo_kg + '</div><div style="font-size:10px;color:var(--gray-500)">Kilo (kg)</div></div>';
-    html += '<div style="text-align:center"><div style="font-size:18px;font-weight:800;color:' + barRenk + '">' + (bmi || '—') + '</div><div style="font-size:10px;color:var(--gray-500)">BMI</div></div>';
-    html += '</div>';
-    if (uyari) {
-      html += '<div style="font-size:12px;color:var(--gray-700);margin-top:8px;padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
-      html += uyari.metin + '<br><br><span style="color:' + barRenk + ';font-weight:600">' + uyari.tavsiye + '</span>';
-      html += '</div>';
-    }
-    html += '</div>';
-  });
-  
-  html += '</div>';
-  return html;
-}
-
-// ── SPORCU PROFİL (ANT. GÖRÜNÜM) ─────────────────────────────────────────
-async function sporcuProfilAc(id) {
-  aktifSporcuId = id;
-  ekranGoster('sporcuProfilEkrani');
-  yukleniyor('profilBilgilerDiv');
-  yukleniyor('profilTestlerDiv');
-  yukleniyor('profilPsikolojiDiv');
-  yukleniyor('profilReceteDiv');
-  try {
-    const [sporcu, testler, anketler, antPsiko] = await Promise.all([
-      sporcuGetir(id), motorikTestleriGetir(id), anketleriGetir(id), antrenorPsikolojiGetir(id)
-    ]);
-    document.getElementById('profilBaslik').textContent = sporcu.ad_soyad;
-    window._aktifTestler = testler;
-    renderProfilHeader(sporcu);
-    renderProfilBilgiler(sporcu);
-    renderProfilTestler(testler, sporcu);
-    renderProfilPsikoloji(anketler, antPsiko);
-    renderRecete(testler, anketler, sporcu);
-    renderGrafikler(testler, anketler, sporcu, 'profilGrafiklerDiv');
-  } catch (e) {
-    bildirimGoster('Hata: ' + e.message);
-  }
-}
-
-function renderProfilHeader(s) {
-  const yas = yasHesapla(s.dogum_tarihi);
-  document.getElementById('profilHeaderDiv').innerHTML = `
-  <div class="profil-header">
-    <div class="profil-avatar-buyuk">${basTaHarfler(s.ad_soyad)}</div>
-    <div>
-      <div class="profil-isim">${s.ad_soyad}</div>
-      <div class="profil-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || '—'}</div>
-      <div class="profil-meta">${s.kulup_okul || ''}</div>
-    </div>
-    <button style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer" onclick="sporcuDuzModalAc('${s.id}')">Düzenle</button>
-  </div>`;
-}
-
-function renderProfilBilgiler(s) {
-  const yas = yasHesapla(s.dogum_tarihi);
-  const bilgiler = [
-    { etiket: 'Ad Soyad', deger: s.ad_soyad },
-    { etiket: 'Doğum Tarihi', deger: tarihFormatla(s.dogum_tarihi) },
-    { etiket: 'Yaş', deger: yas + ' yaş' },
-    { etiket: 'Cinsiyet', deger: s.cinsiyet || '—' },
-    { etiket: 'Boy', deger: s.boy_cm ? s.boy_cm + ' cm' : '—' },
-    { etiket: 'Kilo', deger: s.kilo_kg ? s.kilo_kg + ' kg' : '—' },
-    { etiket: 'Dan / Kuşak', deger: s.dan_kusak || '—' },
-    { etiket: 'Kulüp / Okul', deger: s.kulup_okul || '—' },
-    { etiket: 'Kullanıcı Adı', deger: s.kullanici_adi }
-  ];
-  const izinDurum = s.anket_izin;
-  document.getElementById('profilBilgilerDiv').innerHTML = `
-  <div class="kart">
-    ${bilgiler.map(b => `<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--gray-100)">
-      <span style="color:var(--gray-500);font-size:13px">${b.etiket}</span>
-      <span style="font-size:13px;font-weight:600">${b.deger || '—'}</span>
-    </div>`).join('')}
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0">
-      <div>
-        <div style="font-size:13px;font-weight:600">🧠 Anket İzni</div>
-        <div style="font-size:11px;color:var(--gray-500)">Sporcu psikoloji anketi doldurabilsin mi?</div>
-      </div>
-      <button onclick="anketIzniToggle('${s.id}', ${izinDurum})"
-        style="padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:${izinDurum ? '#def7ec' : '#fde8e8'};color:${izinDurum ? '#057a55' : '#c81e1e'}">
-        ${izinDurum ? '✅ Açık' : '🔒 Kapalı'}
-      </button>
-    </div>
-  </div>`;
-
-  // BMI kartı ekle
-  var bmiVal = hesaplaBMI(s.boy_cm, s.kilo_kg);
-  var bmiYas = yasHesapla(s.dogum_tarihi);
-  var bmiKatObj = bmiVal ? bmiKategori(bmiVal, bmiYas, s.cinsiyet) : null;
-  if (bmiVal && bmiKatObj) {
-    var bmiR = bmiKatObj.renk === 'green' ? '#057a55' : bmiKatObj.renk === 'blue' ? '#1a56db' : bmiKatObj.renk === 'orange' ? '#e65100' : '#c81e1e';
-    var bmiHtml = '<div class="kart" style="margin-top:8px">';
-    bmiHtml += '<div class="kart-baslik">⚖️ Vücut Kitle Endeksi (BMI)</div>';
-    bmiHtml += '<div style="display:flex;align-items:center;gap:16px;padding:8px 0">';
-    bmiHtml += '<div style="text-align:center;min-width:60px"><div style="font-size:28px;font-weight:800;color:' + bmiR + '">' + bmiVal + '</div><div style="font-size:11px;color:var(--gray-500)">BMI</div></div>';
-    bmiHtml += '<div style="flex:1"><div style="font-size:14px;font-weight:700;color:' + bmiR + '">' + bmiKatObj.kategori + '</div><div style="font-size:12px;color:var(--gray-500)">' + s.boy_cm + ' cm · ' + s.kilo_kg + ' kg</div></div>';
-    bmiHtml += '</div>';
-    var uyari = bmiUyariMetni(bmiKatObj.kategori);
-    if (uyari) {
-      var bgRenkU = bmiKatObj.renk === 'orange' ? '#fff7ed' : '#fef2f2';
-      bmiHtml += '<div style="font-size:12px;color:var(--gray-700);padding:8px 10px;background:' + bgRenkU + ';border-radius:8px;line-height:1.5">' + uyari.metin + '</div>';
-    }
-    bmiHtml += '</div>';
-    document.getElementById('profilBilgilerDiv').innerHTML += bmiHtml;
-  }
-}
-
-function renderProfilTestler(testler, sporcu) {
-  const div = document.getElementById('profilTestlerDiv');
-  const ekleBtn = `<button class="btn btn-primary" style="margin-bottom:12px" onclick="testEkleModalAc()">+ Test Ekle</button>`;
-
-  if (!testler || testler.length === 0) {
-    div.innerHTML = `<div class="bos-durum"><span class="ikon">📊</span><p>Henüz test sonucu yok</p></div>${ekleBtn}`;
-    return;
-  }
-
-  const enSon = testler[0];
-  const yas = yasHesapla(sporcu.dogum_tarihi);
-  const cin = sporcu.cinsiyet || 'Erkek';
-
-  // Özet istatistikler
-  const alanlar = Object.keys(TEST_ETIKETLERI);
-  const sonuclar = alanlar.map(alan => testDurumu(alan, enSon[alan], yas, cin));
-  const ustun  = sonuclar.filter(r => r.renk === 'green').length;
-  const normal = sonuclar.filter(r => r.renk === 'yellow').length;
-  const gelistir = sonuclar.filter(r => r.renk === 'orange').length;
-  const zayif  = sonuclar.filter(r => r.renk === 'red').length;
-  const toplam = sonuclar.filter(r => r.renk !== 'gray').length;
-
-  let html = `${ekleBtn}
-  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">
-    <div style="background:#def7ec;border-radius:10px;padding:10px;text-align:center">
-      <div style="font-size:22px;font-weight:800;color:#057a55">${ustun}</div>
-      <div style="font-size:10px;color:#057a55;font-weight:600">🟢 Üstün</div>
-    </div>
-    <div style="background:#fef3c7;border-radius:10px;padding:10px;text-align:center">
-      <div style="font-size:22px;font-weight:800;color:#b45309">${normal}</div>
-      <div style="font-size:10px;color:#b45309;font-weight:600">🟡 Normal</div>
-    </div>
-    <div style="background:#fff3e0;border-radius:10px;padding:10px;text-align:center">
-      <div style="font-size:22px;font-weight:800;color:#e65100">${gelistir}</div>
-      <div style="font-size:10px;color:#e65100;font-weight:600">🟠 Geliştir</div>
-    </div>
-    <div style="background:#fde8e8;border-radius:10px;padding:10px;text-align:center">
-      <div style="font-size:22px;font-weight:800;color:#c81e1e">${zayif}</div>
-      <div style="font-size:10px;color:#c81e1e;font-weight:600">🔴 Zayıf</div>
-    </div>
-  </div>
-
-  <div class="kart">
-    <div class="kart-baslik">📊 Son Test — ${tarihFormatla(enSon.test_tarihi)}
-      ${enSon.sonraki_test_tarihi ? `<span style="font-size:11px;color:var(--gray-500);font-weight:400;margin-left:8px">Sonraki: ${tarihFormatla(enSon.sonraki_test_tarihi)}</span>` : ''}
-    </div>
-    ${alanlar.map((alan, i) => {
-      const val = enSon[alan];
-      if (val === null || val === undefined) return '';
-      const et = TEST_ETIKETLERI[alan];
-      const { durum, renk, norm, oran } = testDurumu(alan, val, yas, cin);
-      const barRenk = renk === 'green' ? '#057a55' : renk === 'yellow' ? '#b45309' : renk === 'orange' ? '#e65100' : '#c81e1e';
-      const barYuzde = Math.min(oran || 80, 100);
-      const fark = NORMLAR[alan]?.yuksek_iyi ? (val - norm) : (norm - val);
-      const farkStr = fark >= 0 ? `+${Math.abs(fark).toFixed(1)}` : `-${Math.abs(fark).toFixed(1)}`;
-      const aciklama = TEST_ACIKLAMALAR[alan] ? TEST_ACIKLAMALAR[alan][renk] || '' : '';
-      return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-        <div class="test-satir" style="border-bottom:none;padding:0">
-          <span class="test-no" style="font-size:11px;color:var(--gray-500);width:18px;flex-shrink:0">${i+1}</span>
-          <div class="test-ad" style="flex:1">
-            <div style="font-size:13px;font-weight:500">${et.ad}</div>
-            <div class="ilerleme-kap" style="margin:3px 0">
-              <div class="ilerleme-bar" style="width:${barYuzde}%;background:${barRenk}"></div>
-            </div>
-            <div style="font-size:10px;color:var(--gray-500)">Norm: <b>${norm}</b> ${et.birim} · Fark: <b style="color:${barRenk}">${farkStr}</b></div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;min-width:90px">
-            <div style="font-size:15px;font-weight:700">${val} <span style="font-size:10px;color:var(--gray-500)">${et.birim}</span></div>
-            <span class="badge badge-${renk === 'green' ? 'green' : renk === 'yellow' ? 'yellow' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
-          </div>
-        </div>
-        ${aciklama ? `<div style="font-size:12px;color:var(--gray-600);margin-top:6px;padding:8px 10px;background:${renk === 'green' ? '#f0fdf4' : renk === 'yellow' ? '#fefce8' : renk === 'orange' ? '#fff7ed' : '#fef2f2'};border-radius:8px;line-height:1.5">${aciklama}</div>` : ''}
-      </div>`;
-    }).join('')}
-    ${enSon.notlar ? `<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-500)">📝 ${enSon.notlar}</div>` : ''}
-  </div>`;
-
-  if (testler.length > 1) {
-    html += '<div class="kart"><div class="kart-baslik">📋 Test Geçmişi</div>';
-    testler.slice(1).forEach(function(t) {
-      const ustunlar = alanlar.filter(k => { const r = testDurumu(k, t[k], yas, cin); return r.renk === 'green'; });
-      const zayiflar = alanlar.filter(k => { const r = testDurumu(k, t[k], yas, cin); return r.renk === 'red'; });
-      html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
-      html += '<div style="font-size:12px;font-weight:700;color:var(--gray-500);margin-bottom:6px">' + tarihFormatla(t.test_tarihi) + '</div>';
-      if (ustunlar.length > 0) {
-        html += '<div style="margin-bottom:4px"><span style="font-size:11px;color:#057a55;font-weight:600">🟢 Üstün: </span>';
-        html += '<span style="font-size:12px;color:var(--gray-700)">' + ustunlar.map(k => TEST_ETIKETLERI[k].ad).join(', ') + '</span></div>';
-      }
-      if (zayiflar.length > 0) {
-        html += '<div><span style="font-size:11px;color:#c81e1e;font-weight:600">🔴 Zayıf: </span>';
-        html += '<span style="font-size:12px;color:var(--gray-700)">' + zayiflar.map(k => TEST_ETIKETLERI[k].ad).join(', ') + '</span></div>';
-      }
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  div.innerHTML = html;
-}
-
-function renderProfilPsikoloji(anketler, antPsiko) {
-  const div = document.getElementById('profilPsikolojiDiv');
-  const ekleBtn = '<button class="btn btn-primary" style="margin-bottom:12px" onclick="antrenorGozlemFormuAc()">+ Gözlem Formu Doldur</button>';
-
-  // Liste görünümü için yardımcı
-  function psikoListeSatir(ad, val, durum, renk, max, ters, key) {
-    if (!val) return '';
-    const barRenk = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
-    const bgRenk = renk === 'green' ? '#f0fdf4' : renk === 'orange' ? '#fff7ed' : '#fef2f2';
-    const yuzde = ters ? Math.max(0, Math.min(100, (1 - val/max)*100)) : Math.min(100, (val/max)*100);
-    const aciklamaObj = key && typeof PSIKO_ACIKLAMALAR !== 'undefined' && PSIKO_ACIKLAMALAR[key] ? PSIKO_ACIKLAMALAR[key][renk] : null;
-    const aciklamaHTML = aciklamaObj ?
-      '<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">' +
-        aciklamaObj.metin +
-        '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklamaObj.tavsiye + '</span>' +
-      '</div>' : '';
-    return '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">' +
-      '<div class="test-satir" style="border-bottom:none;padding:0">' +
-        '<div style="flex:1">' +
-          '<div style="font-size:13px;font-weight:500">' + ad + '</div>' +
-          '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + yuzde + '%;background:' + barRenk + '"></div></div>' +
-        '</div>' +
-        '<div style="text-align:right;flex-shrink:0;min-width:90px">' +
-          '<div style="font-size:15px;font-weight:700">' + (val.toFixed ? val.toFixed(1) : val) + '</div>' +
-          '<span class="badge badge-' + (renk === 'green' ? 'green' : renk === 'orange' ? 'orange' : 'red') + '">' + durum + '</span>' +
-        '</div>' +
-      '</div>' +
-      aciklamaHTML +
-    '</div>';
-  }
-
-  let html = ekleBtn;
-
-  // SPORCU ANKETİ
-  if (anketler && anketler.length > 0) {
-    const p = psikolojiPuanlari(anketler[0]);
-    const boyutlar = [
-      { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı', max: 36, ters: true },
-      { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı',  max: 36, ters: true },
-      { k: 'ozguven',       ad: '💪 Özgüven',         max: 36, ters: false },
-      { k: 'gorevYon',      ad: '🎯 Görev Yönelimi',  max: 5,  ters: false },
-      { k: 'egoYon',        ad: '🏆 Ego Yönelimi',    max: 5,  ters: true },
-      { k: 'kontrol',       ad: '🧘 Mental Kontrol',  max: 5,  ters: false },
-      { k: 'baglilik',      ad: '🔗 Bağlılık',        max: 5,  ters: false },
-      { k: 'meydan',        ad: '⚡ Meydan Okuma',    max: 5,  ters: false },
-      { k: 'guven',         ad: '🛡 Güven',           max: 5,  ters: false },
-      { k: 'genisDissal',   ad: '👁 Geniş Dikkat',    max: 5,  ters: false },
-      { k: 'darDissal',     ad: '🎯 Dar Dikkat',      max: 5,  ters: false },
-      { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',  max: 5,  ters: true }
-    ];
-    // key = psikoloji boyutu adı (PSIKO_ACIKLAMALAR için)
-    html += '<div class="kart"><div class="kart-baslik">👤 Sporcu Öz-Bildirimi — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
-    boyutlar.forEach(function(b) {
-      const val = p[b.k];
-      if (!val) return;
-      const { durum, renk } = psikolojiBoyutDurumu(b.k, val);
-      html += psikoListeSatir(b.ad, val, durum, renk, b.max, b.ters, b.k);
-    });
-    html += '</div>';
-    if (anketler.length > 1) {
-      html += `<div class="kart"><div class="kart-baslik">📋 Sporcu Anket Geçmişi</div>
-        ${anketler.slice(1).map(a => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span><span class="gecmis-icerik">Anket dolduruldu</span></div>`).join('')}
-      </div>`;
-    }
-  } else {
-    html += '<div class="kart"><div class="kart-baslik">👤 Sporcu Öz-Bildirimi</div><div class="bos-durum" style="padding:20px 0"><span class="ikon" style="font-size:32px">📋</span><p>Sporcu henüz anket doldurmamış</p></div></div>';
-  }
-
-  // ANTRENÖR GÖZLEM FORMU SONUÇLARI
-  if (antPsiko && antPsiko.length > 0) {
-    const g = antPsiko[0];
-    const ag = antrenorPsikolojiPuanlari(g);
-    const gozlemBoyutlar = [
-      { k: 'kaygiGozlem',  ad: '😰 Kaygı Gözlemi', ters: true, max: 4 },
-      { k: 'gorevYonAnt',  ad: '🎯 Görev Yönelimi', ters: false, max: 5 },
-      { k: 'egoYonAnt',    ad: '🏆 Ego Yönelimi', ters: true, max: 5 },
-      { k: 'kontrolAnt',   ad: '🧘 Mental Kontrol', ters: false, max: 5 },
-      { k: 'baglilikAnt',  ad: '🔗 Bağlılık', ters: false, max: 5 },
-      { k: 'meyдanAnt',    ad: '⚡ Meydan Okuma', ters: false, max: 5 },
-      { k: 'guvenAnt',     ad: '🛡 Güven', ters: false, max: 5 },
-      { k: 'dikkatAnt',    ad: '👁 Güçlü Dikkat', ters: false, max: 5 },
-      { k: 'dikkatBozAnt', ad: '⚠️ Dikkat Bozukluğu', ters: true, max: 5 }
-    ];
-    html += '<div class="kart"><div class="kart-baslik">🏆 Antrenör Gözlemi — ' + tarihFormatla(g.gozlem_tarihi) + '</div>';
-    gozlemBoyutlar.forEach(function(b) {
-      const val = ag[b.k];
-      if (!val) return;
-      const iyi = b.ters ? val <= (b.max * 0.4) : val >= (b.max * 0.7);
-      const orta = b.ters ? val <= (b.max * 0.6) : val >= (b.max * 0.5);
-      const renk = iyi ? 'green' : orta ? 'orange' : 'red';
-      const durum = iyi ? '✅ İyi' : orta ? '⚠️ Orta' : '🔴 Gelişim';
-      html += psikoListeSatir(b.ad, val, durum, renk, b.max, b.ters, b.k);
-    });
-    if (g.antrenor_notu) html += '<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-700)">📝 ' + g.antrenor_notu + '</div>';
-    html += '</div>';
-    if (antPsiko.length > 1) {
-      html += `<div class="kart"><div class="kart-baslik">📋 Antrenör Gözlem Geçmişi</div>
-        ${antPsiko.slice(1).map(g2 => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(g2.gozlem_tarihi)}</span><span class="gecmis-icerik">Gözlem formu dolduruldu</span></div>`).join('')}
-      </div>`;
-    }
-  } else {
-    html += '<div class="kart"><div class="kart-baslik">🏆 Antrenör Gözlemi</div><div class="bos-durum" style="padding:20px 0"><span class="ikon" style="font-size:32px">👀</span><p>Henüz gözlem formu doldurulmamış</p></div></div>';
-  }
-
-  div.innerHTML = html;
-}
-
-// ── ANTRENÖR GÖZLEM FORMU ─────────────────────────────────────────────────
-function antrenorGozlemFormuAc() {
-  if (!aktifSporcuId) return;
-  const modal = document.getElementById('gozlemModal');
-  if (!modal) { antrenorGozlemModalOlustur(); return; }
-  document.getElementById('gozlemSporcuId').value = aktifSporcuId;
-  document.getElementById('gozlemTarih').value = new Date().toISOString().split('T')[0];
-  hataGizle('gozlemHata');
-  // Tüm butonları sıfırla
-  document.querySelectorAll('#gozlemModal .gozlem-btn').forEach(b => b.classList.remove('secili'));
-  document.getElementById('gozlemNot').value = '';
-  modalAc('gozlemModal');
-}
-
-function antrenorGozlemModalOlustur() {
-  // Kaygı soruları 0-4, diğerleri 1-5
-  const bolumler = [
-    { baslik: '🔵 Kaygı — Bilişsel Belirtiler', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlemlemedim','Hiç','Hafif','Belirgin','Çok Belirgin'], sorular: [
-      { k: 'kb1', metin: 'Yarış öncesi aşırı soru soruyor, onay arıyor.' },
-      { k: 'kb2', metin: 'Dikkatini toplamakta güçlük çekiyor, dağınık görünüyor.' },
-      { k: 'kb3', metin: 'Olumsuz konuşmalar yapıyor ("Kazanamam" vb.).' },
-      { k: 'kb4', metin: 'Hata yaptığında uzun süre toparlanamıyor.' },
-      { k: 'kb5', metin: 'Rakip/hakem hakkında aşırı endişeli konuşuyor.' }
-    ]},
-    { baslik: '🔵 Kaygı — Somatik Belirtiler', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlemlemedim','Hiç','Hafif','Belirgin','Çok Belirgin'], sorular: [
-      { k: 'ks1', metin: 'Isınmada kaslar aşırı gergin görünüyor.' },
-      { k: 'ks2', metin: 'Solunum hızlanmış veya düzensiz.' },
-      { k: 'ks3', metin: 'Ellerde titreme, yüzde solukluk/kızarıklık.' },
-      { k: 'ks4', metin: 'Sık tuvalete gidiyor veya mide bulantısı.' },
-      { k: 'ks5', metin: 'Hareketler koordinasyonunu kaybetmiş, sertleşmiş.' }
-    ]},
-    { baslik: '🔵 Kaygı — Davranış Belirtileri', renk: '#1a56db', scale: [0,1,2,3,4], labels: ['Gözlemlemedim','Hiç','Hafif','Belirgin','Çok Belirgin'], sorular: [
-      { k: 'kd1', metin: 'Antrenörden veya takımdan uzaklaşıyor.' },
-      { k: 'kd2', metin: 'Aşırı konuşkan veya tam tersine sessiz/donuk.' },
-      { k: 'kd3', metin: 'Hazırlık rutinini aksatıyor veya değiştiriyor.' },
-      { k: 'kd4', metin: 'Yarıştan kaçma davranışı gösteriyor.' },
-      { k: 'kd5', metin: 'Teknik uyarılara normalden farklı tepki veriyor.' }
-    ]},
-    { baslik: '🟣 Motivasyon — Görev Yönelimi', renk: '#7e22ce', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-      { k: 'mg1', metin: 'Antrenman içeriğini merak ederek sorar.' },
-      { k: 'mg2', metin: 'Hata yapınca tekrar dener, pes etmez.' },
-      { k: 'mg3', metin: 'Kendi performansından memnuniyet duyar.' },
-      { k: 'mg4', metin: 'Zorlu egzersizlerde çaba gösterir.' },
-      { k: 'mg5', metin: 'Gelişimini takip eder, geçmişiyle karşılaştırır.' }
-    ]},
-    { baslik: '🟣 Motivasyon — Ego Yönelimi', renk: '#7e22ce', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-      { k: 'me1', metin: 'Yalnızca kazandığında motive görünür.' },
-      { k: 'me2', metin: 'Sürekli başkalarıyla kıyaslar.' },
-      { k: 'me3', metin: 'Başarısızlıkta bahane üretir veya bırakmak ister.' },
-      { k: 'me4', metin: 'Zor egzersizlerden kaçar.' },
-      { k: 'me5', metin: 'Kaybedince sinirlenme, suçlama, ağlama tepkileri.' }
-    ]},
-    { baslik: '🟢 Mental Dayanıklılık — Kontrol', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-      { k: 'mk1', metin: 'Duygusal tepkileri uygun şekilde yönetiyor.' },
-      { k: 'mk2', metin: 'Ortam değişince paniğe kapılmadan uyum sağlıyor.' },
-      { k: 'mk3', metin: 'Stresli durumda sakin ve odaklı kalabiliyor.' }
-    ]},
-    { baslik: '🟢 Mental Dayanıklılık — Bağlılık & Meydan Okuma', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-      { k: 'mb1', metin: 'Zor antrenmanlarda çabadan vazgeçmiyor.' },
-      { k: 'mb2', metin: 'Uzun vadeli hedeflere bağlılığını koruyor.' },
-      { k: 'mb3', metin: 'Olumsuz koşullarda kararlılığını sürdürüyor.' },
-      { k: 'mm1', metin: 'Yeni ve zor egzersizleri istekle deniyor.' },
-      { k: 'mm2', metin: 'Yarışma baskısını fırsat olarak değerlendiriyor.' },
-      { k: 'mm3', metin: 'Başarısızlıktan sonra hızlı toparlanıyor.' }
-    ]},
-    { baslik: '🟢 Mental Dayanıklılık — Güven', renk: '#057a55', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-      { k: 'mgu1', metin: 'Baskı altında özgüveni korunuyor.' },
-      { k: 'mgu2', metin: 'Kendi teknik kararlarına güvenebiliyor.' },
-      { k: 'mgu3', metin: 'Zor anlarda kendi kapasitesine inancını yitirmiyor.' }
-    ]},
-    { baslik: '🟠 Konsantrasyon — Güçlü Dikkat', renk: '#e65100', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-      { k: 'kg1', metin: 'Açıklamaları ilk seferinde anlıyor ve uygulayabiliyor.' },
-      { k: 'kg2', metin: 'Çoklu uyarıcıyı eş zamanlı takip edebiliyor.' },
-      { k: 'kg3', metin: 'Uzun seansların sonunda bile odak kaybı yaşamıyor.' },
-      { k: 'kg4', metin: 'Hata sonrası hızlıca toparlanarak odaklı kalıyor.' },
-      { k: 'kg5', metin: 'Rakibin stratejisini ve vücut dilini okuyabiliyor.' }
-    ]},
-    { baslik: '🟠 Konsantrasyon — Dikkat Bozukluğu', renk: '#e65100', scale: [1,2,3,4,5], labels: ['Hiçbir Zaman','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-      { k: 'kboz1', metin: 'Uzun açıklamalarda dikkati dağılıyor.' },
-      { k: 'kboz2', metin: 'Seyirci/gürültü dikkatini kolayca bozuyor.' },
-      { k: 'kboz3', metin: 'Hata sonrası aynı hatayı tekrarlıyor.' },
-      { k: 'kboz4', metin: 'Yorgunlukta teknik hatalar belirgin artıyor.' },
-      { k: 'kboz5', metin: 'Kritik anlarda odak kaybı gözlemleniyor.' }
-    ]}
-  ];
-
-  let formHtml = `
-  <div id="gozlemModal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-handle"></div>
-      <div class="modal-baslik">👁 Antrenör Psikoloji Gözlem Formu</div>
-      <input type="hidden" id="gozlemSporcuId">
-      <div class="form-row">
-        <div class="form-grup">
-          <label class="form-etiket">Gözlem Tarihi *</label>
-          <input type="date" id="gozlemTarih" class="form-input">
-        </div>
-        <div class="form-grup">
-          <label class="form-etiket">Yaklaşan Yarış</label>
-          <input type="text" id="gozlemYaris" class="form-input" placeholder="Opsiyonel">
-        </div>
-      </div>`;
-
-  bolumler.forEach(bolum => {
-    formHtml += `
-    <div class="anket-alan" style="margin-bottom:10px">
-      <div class="anket-alan-baslik" onclick="anketBolumToggle(this)" style="border-left:4px solid ${bolum.renk}">
-        <span style="flex:1">${bolum.baslik}</span><span>▼</span>
-      </div>
-      <div class="anket-alan-icerik">
-        ${bolum.sorular.map(soru => `
-        <div class="soru" id="gsoru_${soru.k}">
-          <div class="soru-metin">${soru.metin}</div>
-          <div class="likert-secenekler">
-            ${bolum.scale.map((n, i) => `<button type="button" class="likert-btn gozlem-btn" data-key="${soru.k}" data-val="${n}" onclick="gozlemSec(this)" title="${bolum.labels[i].replace('\n',' ')}">${n}</button>`).join('')}
-          </div>
-          <div class="likert-etiketler">
-            <span>${bolum.labels[0].replace('\n',' ')}</span>
-            <span>${bolum.labels[bolum.labels.length-1].replace('\n',' ')}</span>
-          </div>
-        </div>`).join('')}
-      </div>
-    </div>`;
-  });
-
-  formHtml += `
-      <div class="form-grup" style="margin-top:12px">
-        <label class="form-etiket">Genel Gözlem Notu</label>
-        <textarea id="gozlemNot" class="form-input" rows="3" placeholder="Gözlemlerinizi yazın..."></textarea>
-      </div>
-      <div id="gozlemHata" class="hata-mesaji"></div>
-      <button class="btn btn-primary" onclick="gozlemKaydet()">Kaydet</button>
-      <button class="btn btn-outline" style="margin-top:8px" onclick="modalKapat('gozlemModal')">İptal</button>
-    </div>
-  </div>`;
-
-  document.body.insertAdjacentHTML('beforeend', formHtml);
-  document.getElementById('gozlemSporcuId').value = aktifSporcuId;
-  document.getElementById('gozlemTarih').value = new Date().toISOString().split('T')[0];
-  modalAc('gozlemModal');
-}
-
-let gozlemCevaplari = {};
-
-function gozlemSec(btn) {
-  const key = btn.dataset.key;
-  const val = parseInt(btn.dataset.val);
-  gozlemCevaplari[key] = val;
-  const soru = document.getElementById(`gsoru_${key}`);
-  if (soru) soru.querySelectorAll('.gozlem-btn').forEach(b => b.classList.toggle('secili', parseInt(b.dataset.val) === val));
-}
-
-async function gozlemKaydet() {
-  const sporcuId = document.getElementById('gozlemSporcuId').value;
-  const tarih = document.getElementById('gozlemTarih').value;
-  if (!tarih) { hataGoster('gozlemHata', 'Tarih gerekli'); return; }
-
-  const veri = {
-    sporcu_id: sporcuId,
-    gozlem_tarihi: tarih,
-    yaklasan_yaris: document.getElementById('gozlemYaris')?.value?.trim() || null,
-    antrenor_notu: document.getElementById('gozlemNot').value.trim() || null,
-    ...gozlemCevaplari
+function psikolojiPuanlari(anket) {
+  if (!anket) return null;
+  const s = (keys) => keys.reduce((t, k) => t + (parseInt(anket[k]) || 0), 0);
+  const avg = (keys) => {
+    const vals = keys.map(k => parseInt(anket[k])).filter(v => v > 0);
+    return vals.length ? (vals.reduce((a, b) => a + b, 0) / vals.length) : 0;
   };
-
-  try {
-    await antrenorPsikolojiEkle(veri);
-    gozlemCevaplari = {};
-    modalKapat('gozlemModal');
-    bildirimGoster('✅ Gözlem formu kaydedildi');
-    sporcuProfilAc(sporcuId);
-  } catch (e) {
-    hataGoster('gozlemHata', e.message || 'Kayıt hatası');
-  }
-}
-
-function renderRecete(testler, anketler, sporcu) {
-  const yas = yasHesapla(sporcu?.dogum_tarihi);
-  const cin = sporcu?.cinsiyet || 'Erkek';
-  let html = '';
-
-  if (testler && testler.length > 0) {
-    const test = testler[0];
-    const zayiflar = Object.keys(TEST_ETIKETLERI).filter(alan => {
-      const { renk } = testDurumu(alan, test[alan], yas, cin);
-      return renk === 'red' || renk === 'orange';
-    });
-    if (zayiflar.length > 0) {
-      html += `<div class="kart"><div class="kart-baslik">💊 Motorik Antrenman Reçetesi</div>
-      ${zayiflar.map(alan => {
-        const { durum } = testDurumu(alan, test[alan], yas, cin);
-        return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:13px;font-weight:600">${TEST_ETIKETLERI[alan].ad}</span>
-            <span class="badge badge-${durum.includes('🔴') ? 'red' : 'orange'}">${durum}</span>
-          </div>
-          <div style="font-size:12px;color:var(--gray-500)">${motorikReceteGetir(alan)}</div>
-        </div>`;
-      }).join('')}</div>`;
-    } else {
-      html += '<div class="kart"><div class="kart-baslik">💊 Motorik Reçete</div><div style="color:#057a55;padding:12px 0">✅ Tüm testler norm düzeyinde veya üzerinde!</div></div>';
-    }
-  }
-
-  if (anketler && anketler.length > 0) {
-    const p = psikolojiPuanlari(anketler[0]);
-    const gelisimler = Object.keys(p || {}).filter(k => {
-      const { renk } = psikolojiBoyutDurumu(k, p[k]);
-      return renk === 'red' || renk === 'orange';
-    });
-    if (gelisimler.length > 0) {
-      html += `<div class="kart"><div class="kart-baslik">🧠 Psikolojik Reçete</div>
-      ${gelisimler.map(k => {
-        const { durum } = psikolojiBoyutDurumu(k, p[k]);
-        return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:13px;font-weight:600">${psikolojiAlanAdi(k)}</span>
-            <span class="badge badge-${durum.includes('🔴') ? 'red' : 'orange'}">${durum}</span>
-          </div>
-          <div style="font-size:12px;color:var(--gray-500)">${psikolojiReceteGetir(k)}</div>
-        </div>`;
-      }).join('')}</div>`;
-    }
-  }
-
-  if (!html) html = '<div class="bos-durum"><span class="ikon">💊</span><p>Reçete için test ve anket verileri gerekli</p></div>';
-  document.getElementById('profilReceteDiv').innerHTML = html;
-}
-
-function motorikReceteGetir(alan) {
-  const r = {
-    uzun_atlama_cm: 'Box Jump 3x8, Squat Jump 3x10, Lunge Jump 3x8. Haftada 3 kez.',
-    saglik_topu_cm: 'Med-Ball Fırlatma 3x8, Plyometrik Push-Up 3x10. Haftada 3 kez.',
-    mekik_tekrar: 'Plank 3x30sn, Russian Twist 3x20, Mekik 3x25. Her gün.',
-    sprint_30m_sn: 'Uçuş Sprintleri 6-10x20-30m, Merdiven Drill 4x. Tam dinlenme.',
-    illinois_sn: 'Illinois x5, T-Drill 5x, 505 Çeviklik 6x. Haftada 3 kez.',
-    flamingo_hata: 'Tek ayak denge 3x30sn, BOSU Squat, gözler kapalı denge. Haftada 4 kez.',
-    otur_uzan_cm: 'PNF Esneme 3x30sn, Bacak sallamaları, dinamik esneme. Her gün.',
-    beep_test_seviye: 'Tempo koşu 20-40dk, Interval koşu 1:1. %65-80 maks. KAH.',
-    cember_koord_sn: 'Çember atlama 4-6 set, koordinasyon merdiveni. Haftada 3 kez.',
-    cetvel_reaksiyon_cm: 'Cetvel düşürme 5x5, renk komutu sprint 8x. Haftada 3 kez.',
-    el_dinamometre_kg: 'Hand Grip 3x30sn, Wrist Curls 3x15, Dead Hang 3x. Haftada 3 kez.',
-    wingate_wkg: 'Tabata Squat Jump, 30m All-Out Sprint x6. Tam dinlenme.'
+  return {
+    bilisselKaygi: s(['bk1','bk2','bk3','bk4','bk5','bk6','bk7','bk8','bk9']),
+    somatikKaygi:  s(['sk1','sk2','sk3','sk4','sk5','sk6','sk7','sk8','sk9']),
+    ozguven:       s(['og1','og2','og3','og4','og5','og6','og7','og8','og9']),
+    gorevYon:      avg(['g1','g2','g3','g4','g5','g6','g7']),
+    egoYon:        avg(['e1','e2','e3','e4','e5','e6']),
+    kontrol:       avg(['kon1','kon2','kon3']),
+    baglilik:      avg(['bag1','bag2','bag3']),
+    meydan:        avg(['mey1','mey2','mey3']),
+    guven:         avg(['guv1','guv2','guv3']),
+    genisDissal:   avg(['gd1','gd2','gd3','gd4']),
+    darDissal:     avg(['dd1','dd2','dd3','dd4']),
+    dikkatHatasi:  avg(['dh1','dh2','dh3','dh4'])
   };
-  return r[alan] || 'Antrenman planına eklenecek.';
 }
 
-function psikolojiAlanAdi(k) {
-  const a = { bilisselKaygi:'Bilişsel Kaygı', somatikKaygi:'Somatik Kaygı', ozguven:'Özgüven', gorevYon:'Görev Yönelimi', egoYon:'Ego Yönelimi', kontrol:'Mental Kontrol', baglilik:'Bağlılık', meydan:'Meydan Okuma', guven:'Güven', genisDissal:'Geniş Dikkat', darDissal:'Dar Dikkat', dikkatHatasi:'Dikkat Hatası' };
-  return a[k] || k;
-}
-
-function psikolojiReceteGetir(k) {
-  const r = {
-    bilisselKaygi: 'Bilişsel yeniden yapılandırma: "DUR" komutu + olumlu iç ses. Günlük 5dk Düşünce Günlüğü.',
-    somatikKaygi: 'Kutu Nefesi (4-4-4-4) + Progresif Kas Gevşemesi. Isınma öncesi 3dk, uyku öncesi 10dk.',
-    ozguven: 'Başarı Envanteri: 3 güçlü an yaz. Her antrenman sonu "bugün iyi yaptığım 1 şey" sorusu.',
-    egoYon: 'Süreç Hedefleme: "Ben vs Geçen Hafta Ben". Geri bildirimi süreç odaklı yap.',
-    kontrol: 'Duygu düzenleme: 10sn reset (nefes→odak→devam). Mindfulness 5dk/gün.',
-    baglilik: 'Uzun vadeli hedef planı. Zor seansları tamamlamayı ödüllendir.',
-    meydan: 'Kademeli zorluk artışı. "Ne öğrendim?" sorusu. Büyüme Anı günlüğü.',
-    guven: 'Yeterlilik geçmişi gözden geçirme. Zor anlarda destekleyici iç ses.',
-    genisDissal: 'Çoklu uyarıcı takip drilleri. Saha okuma egzersizleri. Haftada 2x.',
-    darDissal: 'Odak nokta belirli drilleri. Pre-performance rutini oluştur.',
-    dikkatHatasi: 'Odak Kelimesi antrenmanı. Park Et & Git tekniği. Günlük 5dk dikkat meditasyonu.'
+function psikolojiBoyutDurumu(alan, puan) {
+  const kurallar = {
+    bilisselKaygi: { esik: [18, 27], ters: true },
+    somatikKaygi:  { esik: [18, 27], ters: true },
+    ozguven:       { esik: [20, 28], ters: false },
+    gorevYon:      { esik: [3.0, 4.0], ters: false },
+    egoYon:        { esik: [2.5, 3.5], ters: true },
+    kontrol:       { esik: [3.0, 4.0], ters: false },
+    baglilik:      { esik: [3.0, 4.0], ters: false },
+    meydan:        { esik: [2.5, 3.5], ters: false },
+    guven:         { esik: [3.0, 4.0], ters: false },
+    genisDissal:   { esik: [3.0, 3.5], ters: false },
+    darDissal:     { esik: [3.0, 3.5], ters: false },
+    dikkatHatasi:  { esik: [2.0, 3.0], ters: true }
   };
-  return r[k] || 'Antrenör ile birlikte çalışılacak.';
+  const k = kurallar[alan];
+  if (!k || !puan) return { durum: '—', renk: 'gray' };
+  const iyi  = !k.ters ? puan >= k.esik[1] : puan <= k.esik[0];
+  const orta = !k.ters ? puan >= k.esik[0] : puan <= k.esik[1];
+  if (iyi)  return { durum: '✅ İyi',    renk: 'green' };
+  if (orta) return { durum: '⚠️ Orta',  renk: 'orange' };
+  return      { durum: '🔴 Gelişim', renk: 'red' };
 }
 
-function profilTabSec(tab, btn) {
-  document.querySelectorAll('#sporcuProfilEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
-  if (btn) btn.classList.add('aktif');
-  ['bilgiler','testler','psikoloji','recete','grafikler'].forEach(t => {
-    document.getElementById(`ptab-${t}`).style.display = t === tab ? 'block' : 'none';
+const TEST_ETIKETLERI = {
+  uzun_atlama_cm:      { ad: 'Durarak Uzun Atlama', birim: 'cm' },
+  saglik_topu_cm:      { ad: '2kg Top Fırlatma',    birim: 'cm' },
+  mekik_tekrar:        { ad: '30sn Mekik',           birim: 'tekrar' },
+  sprint_30m_sn:       { ad: '30m Sprint',           birim: 'sn' },
+  illinois_sn:         { ad: 'Illinois Çeviklik',    birim: 'sn' },
+  flamingo_hata:       { ad: 'Flamingo Denge',       birim: 'hata' },
+  otur_uzan_cm:        { ad: 'Otur-Uzan',            birim: 'cm' },
+  beep_test_seviye:    { ad: 'Beep Test',             birim: 'seviye' },
+  cetvel_reaksiyon_cm: { ad: 'Cetvel Reaksiyon',     birim: 'cm' },
+  dolyo_chagi_tekrar:  { ad: '10sn Dolyo Chagi',     birim: 'tekrar' },
+  fskt_tekrar:         { ad: 'FSKT (Tekme Hızı)',    birim: 'tekrar' },
+  fskt_kdi:            { ad: 'FSKT KDI',             birim: '%' },
+  dck60_tekrar:        { ad: '60sn DCK',              birim: 'tekrar' },
+  sinav_tekrar:        { ad: 'Maksimum Şınav',        birim: 'tekrar' }
+};
+
+// ── ANTRENÖR PSİKOLOJİ GÖZLEM ────────────────────────────────────────────
+async function antrenorPsikolojiGetir(sporcuId) {
+  return await sbFetch(`antrenor_psikoloji?sporcu_id=eq.${sporcuId}&order=gozlem_tarihi.desc&select=*`);
+}
+
+async function antrenorPsikolojiEkle(data) {
+  return await sbFetch('antrenor_psikoloji', {
+    method: 'POST',
+    body: JSON.stringify(data)
   });
 }
 
-// ── SPORCU EKLE / DÜZENLE ─────────────────────────────────────────────────
-function sporcuEklePanelAc() {
-  document.getElementById('sporcuModalBaslik').textContent = 'Sporcu Ekle';
-  document.getElementById('sporcuDuzId').value = '';
-  ['sAd','sKullaniciAdi','sSifre','sDogum','sBoy','sKilo','sDan','sKulup'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.value = '';
-  });
-  const sc = document.getElementById('sCinsiyet');
-  if (sc) sc.value = '';
-  hataGizle('sporcuModalHata');
-  modalAc('sporcuModal');
-}
-
-async function sporcuDuzModalAc(id) {
-  const sporcu = await sporcuGetir(id);
-  if (!sporcu) return;
-  document.getElementById('sporcuModalBaslik').textContent = 'Sporcu Düzenle';
-  document.getElementById('sporcuDuzId').value = id;
-  document.getElementById('sAd').value = sporcu.ad_soyad || '';
-  document.getElementById('sKullaniciAdi').value = sporcu.kullanici_adi || '';
-  document.getElementById('sSifre').value = sporcu.sifre_hash || '';
-  document.getElementById('sDogum').value = sporcu.dogum_tarihi || '';
-  document.getElementById('sCinsiyet').value = sporcu.cinsiyet || '';
-  document.getElementById('sBoy').value = sporcu.boy_cm || '';
-  document.getElementById('sKilo').value = sporcu.kilo_kg || '';
-  document.getElementById('sDan').value = sporcu.dan_kusak || '';
-  document.getElementById('sKulup').value = sporcu.kulup_okul || '';
-  hataGizle('sporcuModalHata');
-  modalAc('sporcuModal');
-}
-
-async function sporcuKaydet() {
-  const id = document.getElementById('sporcuDuzId').value;
-  const veri = {
-    ad_soyad: document.getElementById('sAd').value.trim(),
-    kullanici_adi: document.getElementById('sKullaniciAdi').value.trim(),
-    sifre_hash: document.getElementById('sSifre').value.trim(),
-    dogum_tarihi: document.getElementById('sDogum').value || null,
-    cinsiyet: document.getElementById('sCinsiyet').value || null,
-    boy_cm: parseFloat(document.getElementById('sBoy').value) || null,
-    kilo_kg: parseFloat(document.getElementById('sKilo').value) || null,
-    dan_kusak: document.getElementById('sDan').value.trim() || null,
-    kulup_okul: document.getElementById('sKulup').value.trim() || null
+function antrenorPsikolojiPuanlari(g) {
+  if (!g) return null;
+  const avg = (keys) => {
+    const vals = keys.map(k => parseInt(g[k])).filter(v => v > 0);
+    return vals.length ? +(vals.reduce((a,b) => a+b,0) / vals.length).toFixed(2) : 0;
   };
-  if (!veri.ad_soyad)      { hataGoster('sporcuModalHata', 'Ad soyad gerekli'); return; }
-  if (!veri.kullanici_adi) { hataGoster('sporcuModalHata', 'Kullanıcı adı gerekli'); return; }
-  if (!veri.sifre_hash)    { hataGoster('sporcuModalHata', 'Şifre gerekli'); return; }
-  try {
-    if (id) await sporcuGuncelle(id, veri);
-    else    await sporcuEkle(veri);
-    modalKapat('sporcuModal');
-    bildirimGoster(id ? '✅ Sporcu güncellendi' : '✅ Sporcu eklendi');
-    sporcularYukle();
-    if (id && aktifSporcuId === id) sporcuProfilAc(id);
-  } catch (e) {
-    hataGoster('sporcuModalHata', e.message || 'Kayıt hatası');
-  }
-}
-
-// ── TEST EKLE ─────────────────────────────────────────────────────────────
-function testEkleModalAc() {
-  if (!aktifSporcuId) { bildirimGoster('Önce bir sporcu seçin'); return; }
-  document.getElementById('testSporcuId').value = aktifSporcuId;
-  document.getElementById('tTarih').value = new Date().toISOString().split('T')[0];
-  document.getElementById('tSonrakiTarih').value = '';
-  ['t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
-   't_flamingo','t_otur_uzan','t_beep','t_cetvel','t_dolyo',
-   't_fskt_1','t_fskt_2','t_fskt_3','t_fskt_4','t_fskt_5','t_dck60','t_sinav','t_notlar']
-    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
-  hataGizle('testModalHata');
-  modalAc('testModal');
-}
-
-function fsktOnizle() {
-  var turlar = [1,2,3,4,5].map(function(i) {
-    return parseInt(document.getElementById('t_fskt_' + i).value) || 0;
-  });
-  var dolu = turlar.filter(function(v) { return v > 0; });
-  var div = document.getElementById('fsktOnizleDiv');
-  if (!div) return;
-  if (dolu.length < 5) {
-    div.textContent = dolu.length + '/5 tur girildi';
-    div.style.color = 'var(--gray-500)';
-    return;
-  }
-  var enIyi = Math.max.apply(null, turlar);
-  var toplam = turlar.reduce(function(a,b) { return a+b; }, 0);
-  var kdi = Math.round((1 - toplam / (enIyi * 5)) * 100 * 10) / 10;
-  div.innerHTML = 'En iyi: <b>' + enIyi + '</b> tekrar · KDI: <b style="color:' + (kdi <= 20 ? '#057a55' : '#c81e1e') + '">' + kdi + '%</b>';
-}
-
-function hesaplaFSKT() {
-  var turlar = [1,2,3,4,5].map(function(i) {
-    return parseInt(document.getElementById('t_fskt_' + i).value) || 0;
-  }).filter(function(v) { return v > 0; });
-  if (turlar.length === 0) return { fskt_tekrar: null, fskt_kdi: null };
-  var enIyi = Math.max.apply(null, turlar);
-  var toplam = turlar.reduce(function(a,b) { return a+b; }, 0);
-  var kdi = turlar.length === 5 ? Math.round((1 - toplam / (enIyi * 5)) * 100 * 10) / 10 : null;
-  return { fskt_tekrar: enIyi, fskt_kdi: kdi };
-}
-
-async function testKaydet() {
-  const sporcuId = document.getElementById('testSporcuId').value;
-  if (!sporcuId) { hataGoster('testModalHata', 'Sporcu seçilmedi'); return; }
-  const tarih = document.getElementById('tTarih').value;
-  if (!tarih) { hataGoster('testModalHata', 'Test tarihi gerekli'); return; }
-
-  const veri = {
-    sporcu_id: sporcuId,
-    test_tarihi: tarih,
-    sonraki_test_tarihi: document.getElementById('tSonrakiTarih').value || null,
-    uzun_atlama_cm:      parseFloat(document.getElementById('t_uzun_atlama').value) || null,
-    saglik_topu_cm:      parseFloat(document.getElementById('t_saglik_topu').value) || null,
-    mekik_tekrar:        parseInt(document.getElementById('t_mekik').value)          || null,
-    sprint_30m_sn:       parseFloat(document.getElementById('t_sprint').value)       || null,
-    illinois_sn:         parseFloat(document.getElementById('t_illinois').value)     || null,
-    flamingo_hata:       parseInt(document.getElementById('t_flamingo').value)        || null,
-    otur_uzan_cm:        parseFloat(document.getElementById('t_otur_uzan').value)    || null,
-    beep_test_seviye:    parseFloat(document.getElementById('t_beep').value)         || null,
-    cetvel_reaksiyon_cm: parseFloat(document.getElementById('t_cetvel').value)       || null,
-    dolyo_chagi_tekrar:  parseInt(document.getElementById('t_dolyo').value)           || null,
-    dck60_tekrar:        parseInt(document.getElementById('t_dck60').value)           || null,
-    sinav_tekrar:        parseInt(document.getElementById('t_sinav').value)           || null,
-    ...hesaplaFSKT(),
-    notlar: document.getElementById('t_notlar').value.trim() || null
+  return {
+    kaygiGozlem: avg(['kb1','kb2','kb3','kb4','kb5','ks1','ks2','ks3','ks4','ks5','kd1','kd2','kd3','kd4','kd5']),
+    gorevYonAnt: avg(['mg1','mg2','mg3','mg4','mg5']),
+    egoYonAnt:   avg(['me1','me2','me3','me4','me5']),
+    kontrolAnt:  avg(['mk1','mk2','mk3']),
+    baglilikAnt: avg(['mb1','mb2','mb3']),
+    meyданAnt:   avg(['mm1','mm2','mm3']),
+    guvenAnt:    avg(['mgu1','mgu2','mgu3']),
+    dikkatAnt:   avg(['kg1','kg2','kg3','kg4','kg5']),
+    dikkatBozAnt:avg(['kboz1','kboz2','kboz3','kboz4','kboz5'])
   };
-
-  try {
-    await motorikTestEkle(veri);
-    modalKapat('testModal');
-    bildirimGoster('✅ Test sonuçları kaydedildi');
-    sporcuProfilAc(sporcuId);
-  } catch (e) {
-    hataGoster('testModalHata', e.message || 'Kayıt hatası');
-  }
 }
 
-// ══════════════════════════════════════════════════════════════════════════
-//  SPORCU EKRANI
-// ══════════════════════════════════════════════════════════════════════════
-async function sporcuPanelAc() {
-  ekranGoster('sporcuEkrani');
-  const s = oturumKullanici;
-  document.getElementById('sporcuKullaniciAdi').textContent = s.ad_soyad || 'Profilim';
-  document.getElementById('sporcuKusak').textContent = s.dan_kusak || '';
-  renderSporcuProfil(s);
-  sporcuTestleriniYukle();
-}
+// Test açıklamaları — durum bazlı, taekwondo odaklı, çocuk dili
+const TEST_ACIKLAMALAR = {
 
-function renderSporcuProfil(s) {
-  const yas = yasHesapla(s.dogum_tarihi);
-  const bmi = hesaplaBMI(s.boy_cm, s.kilo_kg);
-  const bmiKat = bmi ? bmiKategori(bmi, yas, s.cinsiyet) : null;
-  const bmiRenk = !bmiKat ? '#6b7280' : bmiKat.renk === 'green' ? '#057a55' : bmiKat.renk === 'blue' ? '#1a56db' : bmiKat.renk === 'orange' ? '#e65100' : '#c81e1e';
-  const bmiUyari = bmiKat ? bmiUyariMetni(bmiKat.kategori) : null;
-  const bmiBg = !bmiKat ? '#f9fafb' : bmiKat.renk === 'green' ? '#f0fdf4' : bmiKat.renk === 'blue' ? '#eff6ff' : bmiKat.renk === 'orange' ? '#fff7ed' : '#fef2f2';
-
-  let html = `
-  <div class="profil-header" style="margin:-16px -16px 16px">
-    <div class="profil-avatar-buyuk">${basTaHarfler(s.ad_soyad)}</div>
-    <div>
-      <div class="profil-isim">${s.ad_soyad}</div>
-      <div class="profil-meta">${yas} yaş · ${s.cinsiyet || '—'}</div>
-      <div class="profil-meta">${s.dan_kusak || ''}</div>
-    </div>
-  </div>
-  <div class="istat-grid">
-    <div class="istat-kart"><div class="istat-sayi">${yas}</div><div class="istat-etiket">Yaş</div></div>
-    <div class="istat-kart"><div class="istat-sayi">${s.boy_cm || '—'}</div><div class="istat-etiket">Boy (cm)</div></div>
-    <div class="istat-kart"><div class="istat-sayi">${s.kilo_kg || '—'}</div><div class="istat-etiket">Kilo (kg)</div></div>
-    <div class="istat-kart"><div class="istat-sayi" style="color:${bmiRenk}">${bmi || '—'}</div><div class="istat-etiket">BMI</div></div>
-  </div>`;
-
-  // BMI uyarı metni
-  if (bmiUyari) {
-    html += `<div style="font-size:12px;color:var(--gray-700);margin-top:8px;padding:10px;background:${bmiBg};border-radius:10px;line-height:1.6">
-      <b style="color:${bmiRenk}">${bmiKat.kategori}</b><br>${bmiUyari.metin}<br><br>
-      <span style="color:${bmiRenk};font-weight:600">${bmiUyari.tavsiye}</span>
-    </div>`;
-  }
-
-  // Boy-kilo güncelleme formu
-  html += `<div class="kart" style="margin-top:12px">
-    <div class="kart-baslik">⚖️ Boy & Kilo Güncelle</div>
-    <div class="form-row">
-      <div class="form-grup">
-        <label class="form-etiket">Boy (cm)</label>
-        <input type="number" id="spBoy" class="form-input" value="${s.boy_cm || ''}" placeholder="160" step="0.1">
-      </div>
-      <div class="form-grup">
-        <label class="form-etiket">Kilo (kg)</label>
-        <input type="number" id="spKilo" class="form-input" value="${s.kilo_kg || ''}" placeholder="55" step="0.1">
-      </div>
-    </div>
-    <button class="btn btn-primary" style="margin-top:4px" onclick="sporcuBoyKiloGuncelle()">Kaydet</button>
-  </div>`;
-
-  document.getElementById('sporcuProfilDiv').innerHTML = html;
-}
-
-async function sporcuBoyKiloGuncelle() {
-  var boy = parseFloat(document.getElementById('spBoy').value) || null;
-  var kilo = parseFloat(document.getElementById('spKilo').value) || null;
-  if (!boy || !kilo) { bildirimGoster('Boy ve kilo giriniz'); return; }
-  try {
-    await sporcuGuncelle(oturumKullanici.id, { boy_cm: boy, kilo_kg: kilo });
-    oturumKullanici.boy_cm = boy;
-    oturumKullanici.kilo_kg = kilo;
-    bildirimGoster('✅ Boy ve kilo güncellendi');
-    renderSporcuProfil(oturumKullanici);
-  } catch(e) {
-    bildirimGoster('Hata: ' + e.message);
-  }
-}
-
-async function sporcuTestleriniYukle() {
-  try {
-    const testler = await motorikTestleriGetir(oturumKullanici.id);
-    renderSporcuTestler(testler, oturumKullanici);
-  } catch (e) {
-    document.getElementById('sporcuTestlerDiv').innerHTML = `<p style="color:red">${e.message}</p>`;
-  }
-}
-
-function renderSporcuTestler(testler, sporcu) {
-  if (!testler || testler.length === 0) {
-    document.getElementById('sporcuTestlerDiv').innerHTML = '<div class="bos-durum"><span class="ikon">📊</span><p>Henüz test sonucunuz yok. Antrenörünüz ekleyecek.</p></div>';
-    return;
-  }
-  const enSon = testler[0];
-  const yas = yasHesapla(sporcu.dogum_tarihi);
-  const cin = sporcu.cinsiyet || 'Erkek';
-
-  document.getElementById('sporcuTestlerDiv').innerHTML = `
-  <div class="kart">
-    <div class="kart-baslik">📊 Test Sonuçlarınız — ${tarihFormatla(enSon.test_tarihi)}</div>
-    ${Object.keys(TEST_ETIKETLERI).map((alan, i) => {
-      const val = enSon[alan];
-      if (val === null || val === undefined) return '';
-      const et = TEST_ETIKETLERI[alan];
-      const { durum, renk, norm, oran } = testDurumu(alan, val, yas, cin);
-      const barRenk = renk === 'green' ? '#057a55' : renk === 'yellow' ? '#b45309' : renk === 'orange' ? '#e65100' : '#c81e1e';
-      const aciklama = typeof TEST_ACIKLAMALAR !== 'undefined' && TEST_ACIKLAMALAR[alan] ? TEST_ACIKLAMALAR[alan][renk] || '' : '';
-      const bgRenk2 = renk === 'green' ? '#f0fdf4' : renk === 'yellow' ? '#fefce8' : renk === 'orange' ? '#fff7ed' : '#fef2f2';
-      return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-        <div class="test-satir" style="border-bottom:none;padding:0">
-          <span style="font-size:11px;color:var(--gray-500);width:18px;flex-shrink:0">${i+1}</span>
-          <div style="flex:1">
-            <div style="font-size:13px;font-weight:500">${et.ad}</div>
-            <div class="ilerleme-kap" style="margin:3px 0">
-              <div class="ilerleme-bar" style="width:${Math.min(oran||80,100)}%;background:${barRenk}"></div>
-            </div>
-            <div style="font-size:10px;color:var(--gray-500)">Norm: ${norm} ${et.birim}</div>
-          </div>
-          <div style="text-align:right;flex-shrink:0;min-width:80px">
-            <div style="font-size:14px;font-weight:700">${val} <span style="font-size:10px;color:var(--gray-500)">${et.birim}</span></div>
-            <span class="badge badge-${renk === 'green' ? 'green' : renk === 'yellow' ? 'yellow' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
-          </div>
-        </div>
-        ${aciklama ? `<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:${bgRenk2};border-radius:8px;line-height:1.6">${aciklama}</div>` : ''}
-      </div>`;
-    }).join('')}
-  </div>`;
-}
-
-function sporcuTabSec(tab, btn) {
-  document.querySelectorAll('#sporcuEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
-  if (btn) btn.classList.add('aktif');
-  ['profil','anketim','sonuclarim'].forEach(t => {
-    document.getElementById(`stab-${t}`).style.display = t === tab ? 'block' : 'none';
-  });
-  if (tab === 'anketim') anketIzinKontrol();
-  if (tab === 'sonuclarim') sporcuSonuclariniYukle();
-}
-
-
-
-// ── ANKET İZİN KONTROLÜ ───────────────────────────────────────────────────
-async function anketIzinKontrol() {
-  var div = document.getElementById('sporcuAnketDiv');
-  div.innerHTML = '<div class="yukleniyor"><div class="spinner"></div> Kontrol ediliyor...</div>';
-  try {
-    var rows = await sbFetch('sporcular?id=eq.' + oturumKullanici.id + '&select=anket_izin');
-    var izin = rows && rows[0] && rows[0].anket_izin;
-    if (izin) {
-      anketFormuHazirla();
-    } else {
-      div.innerHTML = '<div class="bos-durum"><span class="ikon">🔒</span><p>Anket şu an kapalı.</p><p style="font-size:12px;margin-top:8px;color:var(--gray-500)">Antrenörünüz anketi açtığında doldurabilirsiniz.</p></div>';
-    }
-  } catch(e) {
-    div.innerHTML = '<div class="bos-durum"><span class="ikon">🔒</span><p>Anket şu an kapalı.</p></div>';
-  }
-}
-
-// ── ANKET VERİSİ ──────────────────────────────────────────────────────────
-const ANKET_BOLUMLER = [
-  {
-    id: 'kaygi', renk: '#1a56db',
-    baslik: '🔵 Rekabet Kaygısı',
-    aciklama: 'Yarış öncesi nasıl hissettiğini 1-5 arasında işaretle.',
-    alt: [
-      { id: 'biliskel', baslik: 'Bilişsel Kaygı', labels: ['Hiç','Az','Orta','Çok','Fazla'], sorular: [
-        { k: 'bk1', metin: 'Yarışmada başarısız olacağım diye endişeleniyorum.' },
-        { k: 'bk2', metin: 'Rakibimin benden daha iyi performans göstereceğinden korkuyorum.' },
-        { k: 'bk3', metin: 'Hedeflerime ulaşıp ulaşamayacağımdan emin değilim.' },
-        { k: 'bk4', metin: 'Daha önce yaptığım hataları aklımdan çıkaramıyorum.' },
-        { k: 'bk5', metin: 'Yanlış bir hamle yaparsam ne olacağını düşünüyorum.' },
-        { k: 'bk6', metin: 'Antrenörümün hayal kırıklığına uğrayacağından endişeleniyorum.' },
-        { k: 'bk7', metin: 'Yarışma sırasında odaklanıp odaklanamayacağımı merak ediyorum.' },
-        { k: 'bk8', metin: 'Bugün kötü bir günüm olmasından korkuyorum.' },
-        { k: 'bk9', metin: 'Kendimden beklenenin altında kalacağım diye düşünüyorum.' }
-      ]},
-      { id: 'somatik', baslik: 'Somatik Kaygı', labels: ['Hiç','Az','Orta','Çok','Fazla'], sorular: [
-        { k: 'sk1', metin: 'Vücudum gergin ve kaslarım sıkışmış hissediyorum.' },
-        { k: 'sk2', metin: 'Kalbim normalden hızlı çarpıyor.' },
-        { k: 'sk3', metin: 'Midem bulanıyor veya karın ağrısı hissediyorum.' },
-        { k: 'sk4', metin: 'Ellerim titriyor veya terliyor.' },
-        { k: 'sk5', metin: 'Ağzım kuruyor, yutkunmakta güçlük çekiyorum.' },
-        { k: 'sk6', metin: 'Nefes almakta zorluk çektiğimi hissediyorum.' },
-        { k: 'sk7', metin: 'Bacaklarım yorgun veya ağır hissediyor.' },
-        { k: 'sk8', metin: 'Baş ağrım var ya da başım dönüyor.' },
-        { k: 'sk9', metin: 'Yarışmadan önce çok sık tuvalete çıkma ihtiyacı duyuyorum.' }
-      ]},
-      { id: 'ozguven', baslik: 'Özgüven', labels: ['Hiç','Az','Orta','Çok','Tam'], sorular: [
-        { k: 'og1', metin: 'Bu yarışmada iyi bir performans göstereceğimden eminim.' },
-        { k: 'og2', metin: 'Antrenmanlarda öğrendiklerimi sahaya yansıtabileceğime inanıyorum.' },
-        { k: 'og3', metin: 'Baskı altında doğru kararlar verebileceğimi düşünüyorum.' },
-        { k: 'og4', metin: 'Fiziksel olarak yarışmaya hazır olduğumu hissediyorum.' },
-        { k: 'og5', metin: 'Rakibimle başa çıkabileceğime inanıyorum.' },
-        { k: 'og6', metin: 'Zor bir durumda bile odağımı koruyabilirim.' },
-        { k: 'og7', metin: 'Kendime olan güvenim yüksek.' },
-        { k: 'og8', metin: 'Bu yarışmada başarılı olma kapasiteme inanıyorum.' },
-        { k: 'og9', metin: 'Takım arkadaşlarımın güvenine layık olduğumu hissediyorum.' }
-      ]}
-    ]
+  uzun_atlama_cm: {
+    green:  "Bacaklarından patlayıcı bir güç var. Tekmelerin hem hızlı hem sert geliyor, rakibin elektronik sistemden skor çıkarmak için düşünmek zorunda bile kalmıyor.",
+    yellow: "Bacak gücün yeterli ama daha sert tekme atabileceğin için çalışma payın var. Özellikle dolyo chagi ve yop chagide bu fark hissedilir.",
+    orange: "Tekmelerin şu an yeterince sert değil. Rakibin hogu yeleğini güçlü vuramıyorsan elektronik sistemden puan çıkmaz, maçı kazanmak zorlaşır.",
+    red:    "Bacak gücün yaşına göre oldukça düşük. Maçta tekme atıyorsun ama rakibine pek bir şey hissettirmiyorsun. Elektronik sistem skor vermez, hakem de etkilenmez."
   },
-  {
-    id: 'motivasyon', renk: '#7e22ce',
-    baslik: '🟣 Motivasyon Yönelimi',
-    aciklama: 'Sporda en çok başarılı hissederim... cümlesini tamamla.',
-    alt: [
-      { id: 'gorev', baslik: 'Görev Yönelimi', labels: ['Hiç','Hayır','Kararsız','Evet','Kesinlikle'], sorular: [
-        { k: 'g1', metin: '...yeni bir beceriyi öğrendiğimde ve bu çok çalışmamı gerektirdiğinde.' },
-        { k: 'g2', metin: '...kendim için belirlediğim bir hedefi gerçekleştirdiğimde.' },
-        { k: 'g3', metin: '...antrenmanlarımda normalden daha iyi yaptığımda.' },
-        { k: 'g4', metin: '...zor bir beceriyi çok çalışarak öğrendiğimde.' },
-        { k: 'g5', metin: '...işlerin doğru yapılmasını öğrendiğimde.' },
-        { k: 'g6', metin: '...diğer insanlar yapamasa da ben başardığımda.' },
-        { k: 'g7', metin: '...elimden gelenin en iyisini yaptığımı hissettiğimde.' }
-      ]},
-      { id: 'ego', baslik: 'Ego Yönelimi', labels: ['Hiç','Hayır','Kararsız','Evet','Kesinlikle'], sorular: [
-        { k: 'e1', metin: '...diğerlerinden daha iyi olduğumu gösterdiğimde.' },
-        { k: 'e2', metin: '...az çalışarak başkalarından daha iyi performans gösterdiğimde.' },
-        { k: 'e3', metin: '...takımdaki en iyisi olduğumda.' },
-        { k: 'e4', metin: '...başkalarının yapamadığını ben yapabildiğimde.' },
-        { k: 'e5', metin: '...sınıftaki veya takımdaki en iyisi olduğumda.' },
-        { k: 'e6', metin: '...diğerlerini yendiğimde.' }
-      ]}
-    ]
+
+  saglik_topu_cm: {
+    green:  "Gövden ve kolların güçlü. Rakibini ittirdiğinde veya pozisyon savaşında çok daha etkilisin, dengesini bozmak senin için kolay.",
+    yellow: "Gövde gücün iyi ama biraz daha geliştirirsen rakibini ittirme ve pozisyon almada çok daha etkili olursun.",
+    orange: "Rakibinle yakın mesafede mücadelede zorlanabilirsin. Gövde gücün düşük olunca onu itmek veya pozisyon almak senin için zor.",
+    red:    "Gövde ve kol gücün yaşına göre düşük. Yakın mesafe mücadelelerinde rakibin seni kolayca iter, sen onu itemezsin. Bu maçta ciddi dezavantaj."
   },
-  {
-    id: 'mental', renk: '#057a55',
-    baslik: '🟢 Mental Dayanıklılık',
-    aciklama: 'Spordaki deneyimlerini düşünerek yanıtla.',
-    alt: [
-      { id: 'kontrol', baslik: 'Kontrol', labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-        { k: 'kon1', metin: 'Zor anlarda duygularımı kontrol edebiliyorum.' },
-        { k: 'kon2', metin: 'Ne olursa olsun kendi kendimi sakinleştirebilirim.' },
-        { k: 'kon3', metin: 'Antrenman ve yarışın gidişatı üzerinde etkili olabileceğimi hissediyorum.' }
-      ]},
-      { id: 'baglilik', baslik: 'Bağlılık', labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-        { k: 'bag1', metin: 'Zorlu antrenmanlarda bırakmak istemesem de devam ederim.' },
-        { k: 'bag2', metin: 'Hedeflerim doğrultusunda antrenmanlarıma adarım.' },
-        { k: 'bag3', metin: 'Yorgun olsam bile antrenmanları atlamamaya çalışırım.' }
-      ]},
-      { id: 'meydan', baslik: 'Meydan Okuma', labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-        { k: 'mey1', metin: 'Yarışmalar ve zorluklar beni büyütür, korkutmaz.' },
-        { k: 'mey2', metin: 'Yeni ve zor durumları heyecanla karşılarım.' },
-        { k: 'mey3', metin: 'Başarısız olduğumda bunu bir öğrenme fırsatı olarak görürüm.' }
-      ]},
-      { id: 'guven', baslik: 'Güven', labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-        { k: 'guv1', metin: 'Başkalarının baskısına rağmen kendi kararlarımda duruyorum.' },
-        { k: 'guv2', metin: 'Geçmişteki hatalar şu anki performansımı etkilemiyor.' },
-        { k: 'guv3', metin: 'Zor anlarda bile başarabileceğime inanıyorum.' }
-      ]}
-    ]
+
+  mekik_tekrar: {
+    green:  "Karın kasların güçlü ve dayanıklı. Maç boyunca her tekme atışında gövden sağlam kalır, tekmelerin gücünü son ana kadar korursun.",
+    yellow: "Karın kasların yeterli ama maçın son dakikalarında tekmelerin biraz güçsüzleşebilir. Biraz daha çalışırsan son raundu da güçlü tamamlarsın.",
+    orange: "Maçın ortalarından itibaren tekmelerin giderek zayıflamaya başlar. Gövden yorulunca tekme atarken denge kaybı da yaşayabilirsin.",
+    red:    "Karın kasların yaşına göre zayıf. Maçın ilk raundundan sonra tekmelerin güçsüzleşir, denge kaybedersin ve rakibine kolay puan verirsin."
   },
-  {
-    id: 'konsantrasyon', renk: '#e65100',
-    baslik: '🟠 Konsantrasyon & Dikkat',
-    aciklama: 'Spordaki dikkat alışkanlıklarını dürüstçe işaretle.',
-    alt: [
-      { id: 'genisDissal', baslik: 'Geniş Dikkat', labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-        { k: 'gd1', metin: 'Sahadaki birden fazla rakibi veya durumu aynı anda takip edebiliyorum.' },
-        { k: 'gd2', metin: 'Hakem ve ortam değişikliklerini çabuk fark ediyorum.' },
-        { k: 'gd3', metin: 'Rakibimin vücut dilini yarış içinde okuyabiliyorum.' },
-        { k: 'gd4', metin: 'Sahada olup biteni geniş perspektifle görmeyi seviyorum.' }
-      ]},
-      { id: 'darDissal', baslik: 'Dar Dikkat', labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-        { k: 'dd1', metin: 'Rakibimle karşılaştığımda tüm dikkatimi ona verebiliyorum.' },
-        { k: 'dd2', metin: 'Kritik anlarda tek bir hedefe odaklanmakta zorlanmıyorum.' },
-        { k: 'dd3', metin: 'Belirli bir tekmeyi yaparken odağım dağılmıyor.' },
-        { k: 'dd4', metin: 'Önemli anlarda gereksiz şeyleri zihnimden uzaklaştırabiliyorum.' }
-      ]},
-      { id: 'dikkatHatasi', baslik: 'Dikkat Hatası (Düşük puan iyi)', labels: ['Hiç','Nadiren','Bazen','Sıklıkla','Her Zaman'], sorular: [
-        { k: 'dh1', metin: 'Yarışma sırasında aklım dağılıyor ve dikkatim başka yerlere gidiyor.' },
-        { k: 'dh2', metin: 'Öfke sonrası odağımı tekrar toplamakta güçlük çekiyorum.' },
-        { k: 'dh3', metin: 'Seyirci veya gürültü dikkatimi önemli ölçüde bozuyor.' },
-        { k: 'dh4', metin: 'Hata yaptığımda o hatayı düşünmeye devam ederek sonraki hamlemi etkiliyorum.' }
-      ]}
-    ]
+
+  sprint_30m_sn: {
+    green:  "Sahada çok hızlısın. Rakibine ani baskı yaparken o henüz hazırlanmadan tekmeyi atabilirsin. Bu hız maçta büyük avantaj.",
+    yellow: "Hızın iyi. Rakibine baskı yapabilirsin ama en hızlı rakiplerine karşı biraz daha çalışman gerekebilir.",
+    orange: "Rakibine baskı yapıp hızlı yaklaşmakta zorlanabilirsin. Ani hareketlerinde rakibin senden önce pozisyon alabilir.",
+    red:    "Sahada yavaş kalıyorsun. Hızlı rakipler seni kolayca geçer, sen onlara yetişemezsin. Pozisyon almak ve tekme atmak için fırsat bulamayabilirsin."
+  },
+
+  illinois_sn: {
+    green:  "Sahada çok çeviksin. Rakibinden kaçmak, açı almak ve aniden yön değiştirmek senin için kolay. Rakibin seni köşeye sıkıştıramaz.",
+    yellow: "Çevikliğin iyi. Ama çok hızlı rakiplere karşı yön değiştirirken biraz geç kalabilirsin.",
+    orange: "Yön değiştirirken biraz yavaş kalıyorsun. Rakibin seni köşeye sıkıştırabilir veya savunmasını geçmekte zorlanabilirsin.",
+    red:    "Sahada hantal görünüyorsun. Rakibin kolayca açı alır, sen onu takip edemezsin. Maçta çok zor pozisyonlara düşebilirsin."
+  },
+
+  flamingo_hata: {
+    green:  "Dengen mükemmel. Tekme atarken hiç sendelemiyorsun, her vuruş tam güçle ve dengeli geliyor. Elektronik sistem senin vuruşlarını iyi algılar.",
+    yellow: "Dengen yeterli ama zaman zaman tekme atarken hafif sarsılma olabilir. Bu vuruş gücünü biraz düşürür.",
+    orange: "Tekme atarken dengeyi kaybetme riski taşıyorsun. Bu hem vuruş gücünü hem de güvenliğini etkiler. Elektronik sistemden daha az skor çıkar.",
+    red:    "Dengen yaşına göre zayıf. Tekme atarken sık sık sendeliyorsun. Bu vuruş gücünü direkt olarak düşürür, elektronik sistem yeterli vuruş gücü algılayamaz ve skor vermez."
+  },
+
+  otur_uzan_cm: {
+    green:  "Çok esneksin. Yüksek tekme atmak senin için kolay, bacaklarını rahatça kaldırabilirsin. Sakatlanma riskin de düşük.",
+    yellow: "Esnekliğin yeterli ama biraz daha çalışırsan daha yüksek tekme atabilir ve daha az zorlanırsın.",
+    orange: "Yüksek tekme atmakta zorlanabilirsin. Bacaklarını çok yukarı kaldırmaya çalışırsan kas gerilmesi hissedebilirsin.",
+    red:    "Esnekliğin düşük. Kafa hizasında tekme atmak sana çok zor geliyor ve sakatlık riski taşıyor. Rakibin bu açığını kullanabilir."
+  },
+
+  beep_test_seviye: {
+    green:  "Maçın son saniyesine kadar aynı hızda tekme atabilirsin. Rakibin yorulurken sen hâlâ güçlüsün — bu sana büyük avantaj sağlar.",
+    yellow: "Maç boyunca enerjini iyi yönetebilirsin. Ama en güçlü rakiplerine karşı son rauntta hafif zorlanabilirsin.",
+    orange: "Son rauntta hafif yorgunluk hissedebilirsin. Tekmelerin biraz yavaşlar ama tamamen bitmezsin.",
+    red:    "Maçın son raundunda çok çabuk yorulursun. Rakibin hâlâ güçlüyken sen nefes nefese kalırsın, tekme atmak yerine sadece savunmaya geçersin. Bu da rakibine kolay puan alma fırsatı verir."
+  },
+
+  cetvel_reaksiyon_cm: {
+    green:  "Rakibinin hamlelerini çok hızlı fark ediyorsun. Tekme gelmeden önce bloğunu yapabilir veya karşı atak yapabilirsin.",
+    yellow: "Tepki hızın iyi. Ama çok hızlı rakiplere karşı bazen bir adım geç kalabilirsin.",
+    orange: "Rakibinin hareketlerine geç tepki veriyorsun. Bu özellikle hızlı kombinasyonlarda seni savunmasız bırakır.",
+    red:    "Tepki hızın düşük. Rakibin tekme atarken sen hâlâ ne yapacağına karar veriyorsun. Maçta çok sayı yiyebilirsin."
+  },
+
+  dolyo_chagi_tekrar: {
+    green:  "10 saniyede çok fazla tekme atabiliyorsun. Bu hem hızın hem de teknik koordinasyonunun iyi olduğunu gösteriyor. Rakibini tekme yağmuruna tutabilirsin.",
+    yellow: "Tekme hızın iyi ama biraz daha çalışırsan 10 saniyede daha fazla dolyo chagi atabilirsin.",
+    orange: "10 saniyede attığın tekme sayısı yaşına göre az. Rakibine baskı yaparken yeterince hızlı kombinasyon yapamıyorsun.",
+    red:    "Tekme hızın yaşına göre düşük. Rakibin 10 saniyede senden çok daha fazla tekme atar. Kombinasyon mücadelelerinde geride kalırsın."
+  },
+
+  fskt_tekrar: {
+    green:  "Tek seferde çok güçlü tekme atabiliyorsun. Maçta ilk temaslarda rakibini baskı altına alabilirsin.",
+    yellow: "En iyi setinde iyi bir tekme hızın var. Bunu maç boyunca korumak önemli.",
+    orange: "En iyi setinde attığın tekme sayısı yaşına göre biraz düşük. Daha hızlı kombinasyonlar çalışman gerekiyor.",
+    red:    "En iyi setinde bile yaşına göre az tekme atıyorsun. Rakibin her turda senden daha fazla tekme atar."
+  },
+
+  fskt_kdi: {
+    green:  "Maç boyunca tekme hızını koruyorsun. İlk raunddaki gibi son raundu da güçlü tamamlarsın. Rakibin yorulurken sen hâlâ aynı hızdasın.",
+    yellow: "Yoruldukça tekme hızın biraz düşüyor ama çok büyük bir fark değil. Son raundu biraz daha zinde tamamlayabilirsin.",
+    orange: "İlk turla son tur arasında büyük fark var. Maçın başında iyi başlıyorsun ama sonunda tekme hızın belirgin şekilde düşüyor.",
+    red:    "Çok çabuk yoruluyorsun. İlk raunddaki güçlü tekmeleri son rauntta atamıyorsun. Rakibin bunu fark eder ve son raundu baskıyla geçirir."
+  },
+
+  dck60_tekrar: {
+    green:  "60 saniye boyunca yüksek tempoda tekme atabiliyorsun. Bu bir maç raunduna yakın süre. Maç boyunca sürekli baskı kurabilirsin.",
+    yellow: "60 saniye boyunca iyi bir tempo tutabiliyorsun. Ama en zorlu maçlarda son saniyelerde biraz düşüş yaşayabilirsin.",
+    orange: "60 saniyenin son bölümünde tekme sayın belirgin şekilde düşüyor. Uzun soluklu mücadelelerde zorlanırsın.",
+    red:    "60 saniye boyunca yüksek tempo tutamıyorsun. Maç boyunca sürekli yüksek hız gerektiren durumlarda erken bitiyorsun. Rakibin bunu fark eder."
+  },
+
+  sinav_tekrar: {
+    green:  "Üst vücudun güçlü. Maçta rakibini ittirdiğinde veya düştükten sonra hızla kalktığında bu güç sana avantaj sağlar.",
+    yellow: "Üst vücut gücün iyi. Biraz daha çalışırsan yakın mesafe mücadelelerinde çok daha etkili olursun.",
+    orange: "Üst vücut gücün biraz düşük. Rakibinle yakın temasta veya düşüp kalkmalarda zorlanabilirsin.",
+    red:    "Üst vücut gücün yaşına göre düşük. Maçta yakın mesafe mücadelelerinde rakibin seni kolayca iter, sen onu itemezsin."
   }
-];
 
-// ── ANKET FORMU ───────────────────────────────────────────────────────────
-function anketFormuHazirla() {
-  aktifAnketCevaplari = {};
-  let html = '<div style="margin-bottom:16px"><div class="form-row">';
-  html += '<div class="form-grup"><label class="form-etiket">Yaklaşan yarış</label>';
-  html += '<input type="text" id="anketYaris" class="form-input" placeholder="Bölge Şampiyonası..."></div>';
-  html += '<div class="form-grup"><label class="form-etiket">Kaç gün kaldı?</label>';
-  html += '<input type="number" id="anketGun" class="form-input" placeholder="7"></div>';
-  html += '</div></div>';
+};
 
-  ANKET_BOLUMLER.forEach(function(bolum) {
-    html += '<div class="anket-alan">';
-    html += '<div class="anket-alan-baslik" onclick="anketBolumToggle(this)" style="border-left:4px solid ' + bolum.renk + '">';
-    html += '<span style="flex:1">' + bolum.baslik + '</span><span>▼</span></div>';
-    html += '<div class="anket-alan-icerik">';
-    html += '<p style="font-size:12px;color:var(--gray-500);margin-bottom:14px">' + bolum.aciklama + '</p>';
-    bolum.alt.forEach(function(alt) {
-      html += '<div style="margin-bottom:20px">';
-      html += '<div style="font-size:13px;font-weight:700;color:var(--gray-700);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--gray-200)">' + alt.baslik + '</div>';
-      alt.sorular.forEach(function(soru) {
-        html += '<div class="soru" id="soru_' + soru.k + '">';
-        html += '<div class="soru-metin">' + soru.metin + '</div>';
-        html += '<div class="likert-secenekler">';
-        [1,2,3,4,5].forEach(function(n) {
-          html += '<button type="button" class="likert-btn" data-key="' + soru.k + '" data-val="' + n + '" onclick="likertSec(this)">' + n + '</button>';
-        });
-        html += '</div>';
-        html += '<div class="likert-etiketler"><span>' + alt.labels[0] + '</span><span>' + alt.labels[4] + '</span></div>';
-        html += '</div>';
-      });
-      html += '</div>';
-    });
-    html += '</div></div>';
-  });
+const PSIKO_ACIKLAMALAR = {
 
-  html += '<div style="margin-top:16px">';
-  html += '<div class="form-grup"><label class="form-etiket">Notun var mı?</label>';
-  html += '<textarea id="anketNot" class="form-input" rows="3" placeholder="Aklından geçenler..."></textarea></div>';
-  html += '<div id="anketHata" class="hata-mesaji"></div>';
-  html += '<button class="btn btn-primary" onclick="anketGonder()">Anketi Gönder</button>';
-  html += '</div>';
-
-  document.getElementById('sporcuAnketDiv').innerHTML = html;
-}
-
-function anketBolumToggle(el) {
-  var icerik = el.nextElementSibling;
-  var ok = el.querySelector('span:last-child');
-  var gizli = icerik.style.display === 'none';
-  icerik.style.display = gizli ? 'block' : 'none';
-  ok.textContent = gizli ? '▼' : '▶';
-}
-
-function likertSec(btn) {
-  var key = btn.dataset.key;
-  var val = parseInt(btn.dataset.val);
-  aktifAnketCevaplari[key] = val;
-  var soru = document.getElementById('soru_' + key);
-  if (soru) {
-    soru.querySelectorAll('.likert-btn').forEach(function(b) {
-      b.classList.toggle('secili', parseInt(b.dataset.val) === val);
-    });
-  }
-}
-
-async function anketGonder() {
-  var tumSorular = ANKET_BOLUMLER.flatMap(function(b) {
-    return b.alt.flatMap(function(a) { return a.sorular.map(function(s) { return s.k; }); });
-  });
-  var eksikler = tumSorular.filter(function(k) { return !aktifAnketCevaplari[k]; });
-  if (eksikler.length > 8) {
-    hataGoster('anketHata', eksikler.length + ' soru yanıtsız. Lütfen tüm soruları yanıtla.');
-    return;
-  }
-  var yaris = document.getElementById('anketYaris').value.trim();
-  var gun = parseInt(document.getElementById('anketGun').value);
-  var not = document.getElementById('anketNot').value.trim();
-  var veri = Object.assign({
-    sporcu_id: oturumKullanici.id,
-    anket_tarihi: new Date().toISOString().split('T')[0],
-    yaklasan_yaris: yaris || null,
-    yarisa_gun: gun || null,
-    sporcu_notu: not || null
-  }, aktifAnketCevaplari);
-
-  try {
-    await anketEkle(veri);
-    var p = psikolojiPuanlari(veri);
-    var tamamHtml = '<div class="tamamlandi-ekrani">';
-    tamamHtml += '<span class="tamamlandi-ikon">🎉</span>';
-    tamamHtml += '<div class="tamamlandi-baslik">Anket Tamamlandı!</div>';
-    tamamHtml += '<div class="tamamlandi-metin">Yanıtların kaydedildi. Antrenörün sonuçları inceleyecek.</div>';
-    if (p) tamamHtml += renderPsikolojOzet(p);
-    tamamHtml += '</div>';
-    document.getElementById('sporcuAnketDiv').innerHTML = tamamHtml;
-  } catch (e) {
-    hataGoster('anketHata', e.message || 'Gönderme hatası');
-  }
-}
-
-// ── SPORCU SONUÇLARI ──────────────────────────────────────────────────────
-async function sporcuSonuclariniYukle() {
-  yukleniyor('sporcuSonuclarDiv');
-  try {
-    var sonuclar = await Promise.all([
-      motorikTestleriGetir(oturumKullanici.id),
-      anketleriGetir(oturumKullanici.id)
-    ]);
-    var testler = sonuclar[0];
-    var anketler = sonuclar[1];
-    var sporcu = oturumKullanici;
-    var yas = yasHesapla(sporcu.dogum_tarihi);
-    var cin = sporcu.cinsiyet || 'Erkek';
-    var html = '';
-
-    // MOTORİK TEST SONUÇLARI
-    if (testler && testler.length > 0) {
-      var enSon = testler[0];
-      var alanlar = Object.keys(TEST_ETIKETLERI);
-      var ozet = alanlar.map(function(alan) { return testDurumu(alan, enSon[alan], yas, cin); });
-      var ustun = ozet.filter(function(r) { return r.renk === 'green'; }).length;
-      var normal = ozet.filter(function(r) { return r.renk === 'yellow'; }).length;
-      var gelistir = ozet.filter(function(r) { return r.renk === 'orange'; }).length;
-      var zayif = ozet.filter(function(r) { return r.renk === 'red'; }).length;
-
-      html += '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:12px">';
-      html += '<div style="background:#def7ec;border-radius:10px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:#057a55">' + ustun + '</div><div style="font-size:10px;color:#057a55;font-weight:600">🟢 Üstün</div></div>';
-      html += '<div style="background:#fef3c7;border-radius:10px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:#b45309">' + normal + '</div><div style="font-size:10px;color:#b45309;font-weight:600">🟡 Normal</div></div>';
-      html += '<div style="background:#fff3e0;border-radius:10px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:#e65100">' + gelistir + '</div><div style="font-size:10px;color:#e65100;font-weight:600">🟠 Geliştir</div></div>';
-      html += '<div style="background:#fde8e8;border-radius:10px;padding:10px;text-align:center"><div style="font-size:22px;font-weight:800;color:#c81e1e">' + zayif + '</div><div style="font-size:10px;color:#c81e1e;font-weight:600">🔴 Zayıf</div></div>';
-      html += '</div>';
-
-      html += '<div class="kart"><div class="kart-baslik">📊 Motorik Test Sonuçlarım — ' + tarihFormatla(enSon.test_tarihi) + '</div>';
-      alanlar.forEach(function(alan, i) {
-        var val = enSon[alan];
-        if (val === null || val === undefined) return;
-        var et = TEST_ETIKETLERI[alan];
-        var r = testDurumu(alan, val, yas, cin);
-        var barRenk = r.renk === 'green' ? '#057a55' : r.renk === 'yellow' ? '#b45309' : r.renk === 'orange' ? '#e65100' : '#c81e1e';
-        var fark = NORMLAR[alan].yuksek_iyi ? (val - r.norm) : (r.norm - val);
-        var farkStr = fark >= 0 ? ('+' + Math.abs(fark).toFixed(1)) : ('-' + Math.abs(fark).toFixed(1));
-        var aciklamaObj2 = typeof TEST_ACIKLAMALAR !== 'undefined' && TEST_ACIKLAMALAR[alan] ? TEST_ACIKLAMALAR[alan][r.renk] : null;
-        var bgRenk3 = r.renk === 'green' ? '#f0fdf4' : r.renk === 'yellow' ? '#fefce8' : r.renk === 'orange' ? '#fff7ed' : '#fef2f2';
-        html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
-        html += '<div class="test-satir" style="border-bottom:none;padding:0">';
-        html += '<span style="font-size:11px;color:var(--gray-500);width:18px;flex-shrink:0">' + (i+1) + '</span>';
-        html += '<div style="flex:1"><div style="font-size:13px;font-weight:500">' + et.ad + '</div>';
-        html += '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + Math.min(r.oran||80,100) + '%;background:' + barRenk + '"></div></div>';
-        html += '<div style="font-size:10px;color:var(--gray-500)">Norm: ' + r.norm + ' ' + et.birim + ' · Fark: <b style="color:' + barRenk + '">' + farkStr + '</b></div></div>';
-        html += '<div style="text-align:right;flex-shrink:0;min-width:80px">';
-        html += '<div style="font-size:14px;font-weight:700">' + val + ' <span style="font-size:10px;color:var(--gray-500)">' + et.birim + '</span></div>';
-        html += '<span class="badge badge-' + (r.renk === 'green' ? 'green' : r.renk === 'yellow' ? 'yellow' : r.renk === 'orange' ? 'orange' : 'red') + '">' + r.durum + '</span>';
-        html += '</div></div>';
-        if (aciklamaObj2) {
-          html += '<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:' + bgRenk3 + ';border-radius:8px;line-height:1.6">' + aciklamaObj2 + '</div>';
-        }
-        html += '</div>';
-      });
-      html += '</div>';
+  bilisselKaygi: {
+    green: {
+      metin: "Maç öncesi kafan sakin ve odaklı. Olumsuz düşünceler seni ele geçirmiyor, rakibini değil yapacaklarını düşünüyorsun. Bu seni sahada çok daha etkili yapıyor.",
+      tavsiye: "💡 Bunu korumak için: Maç öncesi aynı rutini tekrarla. Neyin seni sakinleştirdiğini biliyorsun, ona güven."
+    },
+    orange: {
+      metin: "Zaman zaman 'ya kaybedersem' gibi düşünceler aklına geliyor ama bunları kenara itebiliyorsun. Büyük maçlarda bu düşünceler biraz daha güçlenebilir.",
+      tavsiye: "💡 Ne yapabilirsin: Olumsuz bir düşünce gelince 'dur' de içinden ve hemen bir sonraki hamleye odaklan. Kafanı geçmişe veya geleceğe değil şu ana getir."
+    },
+    orange2: {
+      metin: "Maçtan önce kafanda oldukça fazla olumsuz düşünce var. 'Başaramam', 'rakibim çok iyi' gibi düşünceler seni maça başlamadan yoruyor.",
+      tavsiye: "💡 Ne yapabilirsin: Maçtan önce sadece bir sonraki hamleye odaklan. 'Kazanacak mıyım?' yerine 'şu an ne yapmalıyım?' diye sor kendine."
+    },
+    red: {
+      metin: "Maçtan önce kafan çok fazla olumsuz düşüncelerle dolu. 'Kaybederim', 'başaramam' gibi düşünceler seni maça başlamadan yoruyor. Rakibini düşünmek yerine kafan kendi korkularınla meşgul olunca sahada konsantrasyonun dağılıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Maçtan önce sadece bir sonraki hamleye odaklan. 'Kazanacak mıyım?' yerine 'şu an ne yapmalıyım?' diye sor kendine. Antrenörünle bunu konuş."
     }
+  },
 
-    // PSİKOLOJİ SONUÇLARI — sporcu + antrenör ortalaması
-    if (anketler && anketler.length > 0) {
-      var sp = psikolojiPuanlari(anketler[0]);
-      // Antrenör gözlem verisi de çek
-      var antData = null;
-      try { var antRows = await antrenorPsikolojiGetir(oturumKullanici.id); antData = antRows && antRows[0] ? antrenorPsikolojiPuanlari(antRows[0]) : null; } catch(e2) {}
-
-      // Sporcu boyutları — antrenörden eşleşen boyut varsa ortalamasını al
-      var boyutlar = [
-        { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı', antK: 'kaygiGozlem', max: 36, ters: true },
-        { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı',  antK: null,           max: 36, ters: true },
-        { k: 'ozguven',       ad: '💪 Özgüven',         antK: null,           max: 36, ters: false },
-        { k: 'gorevYon',      ad: '🎯 Görev Yönelimi',  antK: 'gorevYonAnt', max: 5,  ters: false },
-        { k: 'egoYon',        ad: '🏆 Ego Yönelimi',    antK: 'egoYonAnt',   max: 5,  ters: true },
-        { k: 'kontrol',       ad: '🧘 Mental Kontrol',  antK: 'kontrolAnt',  max: 5,  ters: false },
-        { k: 'baglilik',      ad: '🔗 Bağlılık',        antK: 'baglilikAnt', max: 5,  ters: false },
-        { k: 'meydan',        ad: '⚡ Meydan Okuma',    antK: null,           max: 5,  ters: false },
-        { k: 'guven',         ad: '🛡 Güven',           antK: 'guvenAnt',    max: 5,  ters: false },
-        { k: 'genisDissal',   ad: '👁 Geniş Dikkat',    antK: 'dikkatAnt',   max: 5,  ters: false },
-        { k: 'darDissal',     ad: '🎯 Dar Dikkat',      antK: null,           max: 5,  ters: false },
-        { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',  antK: 'dikkatBozAnt',max: 5,  ters: true }
-      ];
-
-      html += '<div class="kart"><div class="kart-baslik">🧠 Psikolojik Profilim — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
-      boyutlar.forEach(function(b) {
-        var spVal = sp[b.k];
-        if (!spVal) return;
-        // Antrenör puanını normalize et (aynı 0-max skalaya çek) ve ortalamasını al
-        var finalVal = spVal;
-        var kaynak = 'Öz-bildirim';
-        if (antData && b.antK && antData[b.antK]) {
-          var antVal = antData[b.antK];
-          // Antrenör puanını sporcu skalasına normalize et
-          var antNorm = (antVal / (b.ters ? 4 : 5)) * b.max;
-          finalVal = (spVal + antNorm) / 2;
-          kaynak = 'Ortalama';
-        }
-        var r = psikolojiBoyutDurumu(b.k, finalVal);
-        var barRenk = r.renk === 'green' ? '#057a55' : r.renk === 'orange' ? '#e65100' : '#c81e1e';
-        var bgRenk = r.renk === 'green' ? '#f0fdf4' : r.renk === 'orange' ? '#fff7ed' : '#fef2f2';
-        var yuzde = b.ters ? Math.max(0, Math.min(100, (1 - finalVal/b.max)*100)) : Math.min(100, (finalVal/b.max)*100);
-        var aciklamaObj = typeof PSIKO_ACIKLAMALAR !== 'undefined' && PSIKO_ACIKLAMALAR[b.k] ? PSIKO_ACIKLAMALAR[b.k][r.renk] : null;
-        html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
-        html += '<div class="test-satir" style="border-bottom:none;padding:0">';
-        html += '<div style="flex:1">';
-        html += '<div style="font-size:13px;font-weight:500">' + b.ad + '</div>';
-        html += '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + yuzde + '%;background:' + barRenk + '"></div></div>';
-        html += '<div style="font-size:10px;color:var(--gray-500)">' + kaynak + '</div>';
-        html += '</div>';
-        html += '<div style="text-align:right;flex-shrink:0;min-width:90px">';
-        html += '<div style="font-size:14px;font-weight:700">' + (finalVal.toFixed ? finalVal.toFixed(1) : finalVal) + '</div>';
-        html += '<span class="badge badge-' + (r.renk === 'green' ? 'green' : r.renk === 'orange' ? 'orange' : 'red') + '">' + r.durum + '</span>';
-        html += '</div></div>';
-        if (aciklamaObj) {
-          html += '<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
-          html += aciklamaObj.metin;
-          html += '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklamaObj.tavsiye + '</span>';
-          html += '</div>';
-        }
-        html += '</div>';
-      });
-      html += '</div>';
+  somatikKaygi: {
+    green: {
+      metin: "Vücudun maç öncesi sakin. Kalbin çok hızlı çarpmıyor, ellerin titiremiyor, miyen bulanmıyor. Bu fiziksel sakinlik sahada çok daha iyi hareket etmeni sağlıyor.",
+      tavsiye: "💡 Bunu korumak için: Maç öncesi ısınmana dikkat et. Vücudun bu sakinliği hazır olduğunun işareti."
+    },
+    orange: {
+      metin: "Maç öncesi biraz kalp hızlanması veya gerginlik hissediyorsun ama bu çok abartılı değil. Hafif bir heyecan aslında seni daha dikkatli yapar.",
+      tavsiye: "💡 Ne yapabilirsin: Maça girmeden önce 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 3 kez tekrarla. Vücudun sakinleşir."
+    },
+    orange2: {
+      metin: "Maç öncesi vücudunda belirgin gerginlik hissediyorsun. Kalbin hızlı çarpıyor, ellerinde titreme olabiliyor. Bu sahaya çıkmadan önce enerjinin büyük kısmını tüketiyor.",
+      tavsiye: "💡 Ne yapabilirsin: Maça girmeden önce 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 3 kez tekrarla. Vücudun sakinleşir."
+    },
+    red: {
+      metin: "Maç öncesi vücudun çok güçlü tepkiler veriyor. Mide bulantısı, titreme, baş dönmesi gibi belirtiler var. Bu kadar yoğun bedensel gerginlik sahaya güçsüz çıkmanı sağlıyor, enerjin maç başlamadan tükeniyor.",
+      tavsiye: "💡 Ne yapabilirsin: Maça girmeden önce 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 5 kez tekrarla. Antrenörünle bu konuyu konuş, sana yardımcı olabilir."
     }
+  },
 
-    if (!html) html = '<div class="bos-durum"><span class="ikon">📋</span><p>Henüz sonuç yok</p></div>';
-    document.getElementById('sporcuSonuclarDiv').innerHTML = html;
-  } catch (e) {
-    document.getElementById('sporcuSonuclarDiv').innerHTML = '<p style="color:red">' + e.message + '</p>';
-  }
-}
+  ozguven: {
+    green: {
+      metin: "Kendine çok güveniyorsun. Sahaya güçlü çıkıyorsun, zor anlarda bile 'yapabilirim' diyorsun. Rakibine baktığında 'bunu yapabilirim' hissediyorsun. Bu his seni rakibinden bir adım önde tutuyor.",
+      tavsiye: "💡 Bunu korumak için: Her antrenman sonrası iyi yaptığın bir şeyi aklında tut. Güvenin bu birikimlerin üzerine inşa ediliyor."
+    },
+    orange: {
+      metin: "Kendine genel olarak güveniyorsun ama zor maçlarda veya güçlü rakiplere karşı biraz sarsılabiliyor. Çoğu zaman iyi hissediyorsun ama bazı anlarda şüpheye düşüyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanda iyi yaptığın 3 şeyi aklında tut. Sahaya çıkarken 'bunu antrenmanımda yaptım, burada da yaparım' de."
+    },
+    orange2: {
+      metin: "Kendine yeterince güvenmiyorsun. Özellikle güçlü rakiplere karşı veya maç başlamadan önce 'beceremem' hissi geliyor. Bu his seni sahada yapabileceğinden daha az denemeni sağlıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanda iyi yaptığın 3 şeyi aklında tut. Sahaya çıkarken 'bunu antrenmanımda yaptım, burada da yaparım' de."
+    },
+    red: {
+      metin: "Kendine güvenmiyorsun. Sahaya çıkmadan önce bile 'beceremem' hissediyorsun. Bu his sahada seni frenliyor, yapabileceğin teknikleri bile denemekten kaçınıyorsun. Rakibin bunu fark edebilir.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanda iyi yaptığın 3 şeyi yaz ve maçtan önce oku. Sahaya çıkarken 'bunu antrenmanımda yaptım, burada da yaparım' de. Antrenörünle bu konuyu konuş."
+    }
+  },
 
-// ── ANKET İZNİ TOGGLE ─────────────────────────────────────────────────────
-async function anketIzniToggle(sporcuId, mevcutDurum) {
-  try {
-    await sporcuGuncelle(sporcuId, { anket_izin: !mevcutDurum });
-    bildirimGoster(mevcutDurum ? '🔒 Anket kapatıldı' : '✅ Anket açıldı');
-    sporcuProfilAc(sporcuId);
-  } catch(e) {
-    bildirimGoster('Hata: ' + e.message);
+  gorevYon: {
+    green: {
+      metin: "Sporu doğru nedenden yapıyorsun — öğrenmek ve gelişmek için. Rakibini yenmekten çok kendi gelişimini takip ediyorsun. Bu yaklaşım seni uzun vadede çok daha iyi bir sporcu yapar.",
+      tavsiye: "💡 Bunu korumak için: Her antrenman sonrası 'bugün ne öğrendim?' diye sor kendine. Bu soruyu sormaya devam ettiğin sürece gelişmeye devam edersin."
+    },
+    orange: {
+      metin: "Genel olarak gelişmeye odaklısın ama bazen 'başkalarından iyi miyim?' diye düşünüyorsun. Bu normal ama rakibini değil kendini geçmeye çalıştığında çok daha hızlı gelişirsin.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenman hedefini sadece kendine koy. 'Bu hafta dolyo chagi'mi geçen haftadan hızlı atacağım' gibi. Rakibini değil geçen haftaki kendini geç."
+    },
+    orange2: {
+      metin: "Zaman zaman gelişmeye odaklanıyorsun ama çoğunlukla başkalarıyla karşılaştırıyorsun kendini. Kaybettiğinde veya arkadaşın senden iyiyken motivasyonun düşüyor.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenman hedefini sadece kendine koy. 'Bu hafta dolyo chagi'mi geçen haftadan hızlı atacağım' gibi. Rakibini değil geçen haftaki kendini geç."
+    },
+    red: {
+      metin: "Gelişmekten çok başkalarından iyi olmaya odaklanıyorsun. Kaybettiğinde veya başkasının senden iyi olduğunu gördüğünde motivasyonun tamamen çöküyor. Bu seni kırılgan yapıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Sadece dün yaptığın şeyi bugün biraz daha iyi yap. Başkasını değil, dünkü kendini geç. Antrenörünle bu konuyu konuş."
+    }
+  },
+
+  egoYon: {
+    green: {
+      metin: "Başkalarından üstün görünmek seni fazla meşgul etmiyor. Bu çok sağlıklı. Kaybettiğinde de motivasyonunu koruyabiliyorsun, zor antrenmanlardan kaçmıyorsun.",
+      tavsiye: "💡 Bunu korumak için: Kazanmaktan çok öğrenmeye odaklanmaya devam et. Bu yaklaşım seni uzun vadede çok daha güçlü yapar."
+    },
+    orange: {
+      metin: "Zaman zaman başkalarıyla kıyaslamak istiyorsun. Biraz rekabetçi olmak normal ve iyi, ama bunu çok fazla düşünürsen kaybettiğinde çok sarsılabilirsin.",
+      tavsiye: "💡 Ne yapabilirsin: Rakibini yenmekten çok kendi en iyi performansını sergilemeye odaklan. Sonuç skor tablosunda değil, sahada ne yaptığında."
+    },
+    orange2: {
+      metin: "Başkalarından iyi görünmek seni oldukça meşgul ediyor. Kaybettiğinde çok sinirleniyor veya üzülüyorsun. Zor egzersizlerden kaçınıyor, güçlü göründüğün şeylere yöneliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Kaybetmek utanılacak bir şey değil, öğrenme fırsatı. Kaybettiğinde 'neden kaybettim?' diye sor, 'berbat biri miyim?' diye değil."
+    },
+    red: {
+      metin: "Başkalarından üstün görünmek senin için çok önemli. Kaybettiğinde ya da birinin senden iyi olduğunu gördüğünde çok sert tepkiler veriyorsun. Bu seni zor antrenmanlarda kırılgan yapıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Kaybetmek utanılacak bir şey değil, öğrenme fırsatı. En iyi sporcular en çok kaybeden ve bundan en çok öğrenenlerdir. Antrenörünle bu konuyu konuş."
+    }
+  },
+
+  kontrol: {
+    green: {
+      metin: "Zor anlarda kendini sakinleştirebiliyorsun. Sayı yesen bile paniklemiyorsun, stresli durumlarda kafan çalışmaya devam ediyor. Bu maçta çok büyük avantaj.",
+      tavsiye: "💡 Bunu korumak için: Stresli anlarda ne yaptığını fark et ve aynı şeyi yapmaya devam et. Kendi sakinleşme yöntemini biliyorsun."
+    },
+    orange: {
+      metin: "Çoğu zaman kendini kontrol edebiliyorsun ama çok stresli anlarda biraz sarsılabiliyor. Büyük maçlarda veya art arda sayı yediğinde kontrolünü kaybedebilirsin.",
+      tavsiye: "💡 Ne yapabilirsin: Sayı yediğinde hemen 3 derin nefes al. Sadece 3 nefes. Sonra tekrar sahaya dön, geçmişi düşünme."
+    },
+    orange2: {
+      metin: "Duygularını kontrol etmekte zorlanıyorsun. Maçta bir şeyler ters gittiğinde, sayı yediğinde veya ortam değiştiğinde bunalıma girebiliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Sayı yediğinde hemen 3 derin nefes al. Sadece 3 nefes. Sonra tekrar sahaya dön, geçmişi düşünme."
+    },
+    red: {
+      metin: "Maçta bir şeyler ters gittiğinde kendini sakinleştiremiyorsun. Sayı yediğinde panikleyebiliyorsun ve bu panik sonraki hamlelerde de hata yapmanı sağlıyor. Rakibin bunu fark ederse seni daha çok baskı altına alır.",
+      tavsiye: "💡 Ne yapabilirsin: Sayı yediğinde hemen 3 derin nefes al. Sadece 3 nefes. Sonra tekrar sahaya dön. Antrenörünle bunu çalış."
+    }
+  },
+
+  baglilik: {
+    green: {
+      metin: "Zorlu antrenmanlarda bile bırakmıyorsun. Yorgun veya isteksiz olsana bile antrenmanına geliyorsun. Bu kararlılık seni diğer sporculardan ayıran en önemli şey.",
+      tavsiye: "💡 Bunu korumak için: Zor bir antrenmandan sonra 'bugün de yaptım' de kendine. Bu his seni bir sonraki zorluğa da hazırlar."
+    },
+    orange: {
+      metin: "Genel olarak bağlısın ama çok zorlandığında veya yorulduğunda 'bugün geçsem mi?' diye düşünebiliyorsun. Çoğu zaman devam ediyorsun, bu iyi.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanı bırakmak istediğinde sadece 5 dakika daha yap de kendine. Çoğu zaman o 5 dakika geçer ve devam edersin."
+    },
+    orange2: {
+      metin: "Zorlu anlarda devam etmekte zorlanıyorsun. Yorulduğunda veya antrenman çok zorlaştığında pes etmeyi düşünebiliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanı bırakmak istediğinde sadece 5 dakika daha yap de kendine. Bitirdiğinde kendini çok daha iyi hissedeceksin."
+    },
+    red: {
+      metin: "Zorlu antrenmanlarda devam etmekte çok zorlanıyorsun. Zor egzersizleri atlıyor veya erken bitiriyorsun. Maçta dayanıklılık güç gerektiren anlarda bu eksiklik ortaya çıkacak.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanı bırakmak istediğinde sadece 5 dakika daha yap de kendine. Her tamamladığın zor antrenman seni bir sonraki maça daha hazır kılıyor."
+    }
+  },
+
+  meydan: {
+    green: {
+      metin: "Zorlukları sever ve onları fırsat olarak görüyorsun. Güçlü rakiplerle karşılaşmak, zor egzersizler yapmak seni heyecanlandırıyor. Bu yaklaşım seni her maçta daha da güçlü yapıyor.",
+      tavsiye: "💡 Bunu korumak için: Her zorlu maçtan sonra 'bu beni ne öğretti?' diye sor. Bu soruyu sormaya devam ettiğin sürece gelişmeye devam edersin."
+    },
+    orange: {
+      metin: "Çoğu zaman zorluklarla baş edebiliyorsun ama çok büyük bir engelle karşılaşınca biraz çekilebiliyorsun. Hataları öğrenme fırsatı olarak görebiliyorsun ama her seferinde değil.",
+      tavsiye: "💡 Ne yapabilirsin: Bir sonraki kaybettiğinde 'bu maçtan ne öğrendim?' diye yaz. Cevabı bulmak seni bir sonraki maça daha hazır yapar."
+    },
+    orange2: {
+      metin: "Zorluklardan biraz kaçıyorsun. Zor egzersizleri veya güçlü rakipleri düşününce isteksizleşebiliyorsun. Kaybetmek veya başarısız olmak seni çok etkiliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Bir sonraki kaybettiğinde 'bu maçtan ne öğrendim?' diye yaz. Her kayıp bir ders. En iyi sporcular en çok kaybeden ve bundan öğrenenlerdir."
+    },
+    red: {
+      metin: "Zorluklardan kaçıyorsun. Zor egzersizleri veya güçlü rakipleri gördüğünde çekiliyorsun. Başarısızlık seni çok uzun süre etkiliyor ve bir sonraki denemeyi engelliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Bir sonraki kaybettiğinde 'bu maçtan ne öğrendim?' diye yaz ve antrenörüne göster. Her zorluk seni daha güçlü yapar — ama ancak kaçmazsan."
+    }
+  },
+
+  guven: {
+    green: {
+      metin: "Kendi kararlarına ve yeteneklerine güveniyorsun. Baskı altında bile 'yapabilirim' diyebiliyorsun. Geçmişteki hatalar seni durduramıyor, ilerlemeye devam ediyorsun.",
+      tavsiye: "💡 Bunu korumak için: Zor bir antrenmandan veya maçtan sonra 'bugün ne iyi yaptım?' diye sor. Güvenin bu birikimlerin üzerine inşa ediliyor."
+    },
+    orange: {
+      metin: "Genel olarak kendine güveniyorsun ama çok baskılı anlarda veya art arda hata yaptığında sarsılabiliyorsun. Çoğu zaman toparlanabiliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Hata yaptığında 'oldu, geçti' de ve bir sonraki hamleye odaklan. Geçmiş hatayı düşünmek sadece yeni hatalar yapmana yol açar."
+    },
+    orange2: {
+      metin: "Kendine yeterince güvenmiyorsun. Özellikle baskı anlarında veya hata yaptıktan sonra 'beceremiyorum' hissi geliyor. Bu his seni frenliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Hata yaptığında 'oldu, geçti' de ve bir sonraki hamleye odaklan. Antrenmanında iyi yaptığın şeyleri aklında tut, onlar gerçek."
+    },
+    red: {
+      metin: "Kendinle ilgili çok olumsuz düşünceler var. Hata yaptığında veya baskı altında kaldığında 'hiçbir şey yapamıyorum' hissine kapılıyorsun. Bu his maçta seni dondurabilir.",
+      tavsiye: "💡 Ne yapabilirsin: Her antrenman sonrası iyi yaptığın bir şeyi yaz. Küçük de olsa. Bu liste büyüdükçe kendine olan güvenin de büyüyecek. Antrenörünle konuş."
+    }
+  },
+
+  genisDissal: {
+    green: {
+      metin: "Sahada geniş bir görüş alanın var. Rakibini, hakemi ve sahayı aynı anda takip edebiliyorsun. Rakibinin stratejisini okuyabiliyor ve buna göre hamle yapabiliyorsun.",
+      tavsiye: "💡 Bunu korumak için: Maçta sadece bir noktaya değil, tüm sahaya bakma alışkanlığını koru. Bu farkındalık seni her zaman bir adım önde tutar."
+    },
+    orange: {
+      metin: "Çoğu zaman sahayı iyi okuyorsun ama çok stresli anlarda veya yorulduğunda dikkat alanın daralabiliyor. Tüm sahayı görmek yerine sadece rakibine odaklanıyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Maçta zaman zaman gözlerini rakibinden bir an için ayır, sahayı tara. Bu alışkanlık zamanla otomatik hale gelir."
+    },
+    orange2: {
+      metin: "Sahayı okumakta zorlanıyorsun. Sadece önündeki rakibe bakıyorsun, diğer detayları kaçırıyorsun. Hakem kararları veya ortam değişiklikleri seni şaşırtabiliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenman maçlarında sadece rakibine değil, tüm sahaya bakmayı dene. Ne kadar çok şey fark ettiğini görünce şaşıracaksın."
+    },
+    red: {
+      metin: "Sahada çevreni yeterince göremiyorsun. Sadece önündekilere odaklanıyorsun, rakibinin stratejisini okuyamıyorsun. Bu maçta sürprizlere karşı savunmasız kalmanı sağlıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenman maçlarında sadece rakibine değil, tüm sahaya bakmayı dene. Antrenörüne 'sahayı daha iyi nasıl okurum?' diye sor."
+    }
+  },
+
+  darDissal: {
+    green: {
+      metin: "Kritik anlarda tüm dikkatini bir noktaya toplayabiliyorsun. Rakibinle karşı karşıya geldiğinde başka hiçbir şey aklına gelmiyor, sadece o an var. Bu odak seni çok tehlikeli yapıyor.",
+      tavsiye: "💡 Bunu korumak için: Bu odağı antrenmanlarda da uygula. Bir tekniği yaparken sadece o tekniğe odaklan."
+    },
+    orange: {
+      metin: "Çoğu zaman iyi odaklanabiliyorsun ama bazen dikkatini dağıtan şeyler olabiliyor. Önemli anlarda genellikle toparlayabiliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Her tekme atmadan önce bir an dur ve sadece hedefe bak. Bu küçük duraksamayı alışkanlık haline getir."
+    },
+    orange2: {
+      metin: "Kritik anlarda odaklanmakta zorlanıyorsun. Rakibinle karşı karşıya geldiğinde aklına başka şeyler gelebiliyor. Bu en önemli anlarda hata yapmanı sağlıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Her tekme atmadan önce bir an dur ve sadece hedefe bak. Zihnini sadece o ana getir."
+    },
+    red: {
+      metin: "Önemli anlarda dikkatini toplayamıyorsun. Rakibinle karşı karşıya geldiğinde kafan dağılıyor, başka düşünceler geliyor. Bu maçın en kritik anlarını kaçırmanı sağlıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Her tekme atmadan önce bir an dur ve sadece hedefe bak. Antrenörüne 'odaklanmakta zorlanıyorum' de, birlikte çalışabilirsiniz."
+    }
+  },
+
+  dikkatHatasi: {
+    green: {
+      metin: "Dikkatini çok iyi kontrol edebiliyorsun. Maç sırasında aklın dağılmıyor, hata yaptıktan sonra bile hızla toparlanıyorsun. Seyirci gürültüsü veya zorluklar seni etkilemiyor.",
+      tavsiye: "💡 Bunu korumak için: Bu odağı korumak için her hatadan sonra 'oldu, geçti, bir sonrakine bak' de. Bu alışkanlığın seni diğerlerinden ayırıyor."
+    },
+    orange: {
+      metin: "Genellikle dikkatini iyi koruyorsun ama öfkelendiğinde veya art arda hata yaptığında odağın biraz dağılabiliyor. Toparlanabiliyorsun ama zaman alıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Dikkatinin dağıldığını fark ettiğinde 'dur' de içinden ve bir derin nefes al. Sonra bir sonraki hamleye bak."
+    },
+    orange2: {
+      metin: "Dikkatini kaybetmek senin için sık yaşanan bir durum. Bir hata yaptığında veya gürültülü bir ortamda odaklanmakta zorlanıyorsun. Bu maçta zincirleme hata yapmanı sağlayabiliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Dikkatinin dağıldığını fark ettiğinde 'dur' de içinden ve bir derin nefes al. Hata yaptıktan sonra eski hatayı değil bir sonraki hamleyi düşün."
+    },
+    red: {
+      metin: "Dikkatini toplamakta ciddi zorlanıyorsun. Seyirciler, gürültü veya daha önce yaptığın bir hata aklında dolaşmaya devam ediyor. Maçta rakibine odaklanman gereken anlarda kafan başka yerlerde oluyor.",
+      tavsiye: "💡 Ne yapabilirsin: Dikkatinin dağıldığını fark ettiğinde 'dur' de içinden ve bir derin nefes al. Antrenörüne bu durumu anlat, birlikte çalışabilirsiniz."
+    }
   }
-}
+
+};
+
+const ANTRENOR_PSIKO_ACIKLAMALAR = {
+
+  kaygiGozlem: {
+    green: {
+      metin: "Sporcu maç öncesi ve maç sırasında sakin görünüyor. Gerginlik belirtileri yok, beden dili rahat ve kontrollü. Bu seviyedeki sakinlik yüksek performansla doğrudan ilişkili.",
+      tavsiye: "💡 Antrenör notu: Bu durumu korumak için maç öncesi rutini aynı tut. Sporcu ne yapıyorsa işe yarıyor — değiştirme."
+    },
+    orange: {
+      metin: "Sporcuda hafif kaygı belirtileri gözlemliyorsun. Zaman zaman gerginlik, huzursuzluk veya dikkat dağınıklığı olabiliyor ama maçı yönetebiliyorlar.",
+      tavsiye: "💡 Antrenör notu: Maç öncesi kısa bir sohbet yap. 'Bugün nasılsın?' diye sor. Baskı uygulamak yerine güven ver. Isınma rutinini düzenli ve sakin tut."
+    },
+    orange2: {
+      metin: "Belirgin kaygı belirtileri var. Maç öncesi aşırı hareketlilik, sessizleşme veya konsantrasyon güçlüğü gözlemliyorsun. Bu durum sahada hata oranını artırabilir.",
+      tavsiye: "💡 Antrenör notu: Maç öncesi sporcuyu yalnız bırak, kalabalıktan uzaklaştır. Derin nefes egzersizi yaptır. 'Sen bunu yapabilirsin' yerine 'Şu an sadece bir sonraki hamleyi düşün' de."
+    },
+    red: {
+      metin: "Ciddi kaygı belirtileri gözlemliyorsun. Sporcu maça odaklanamıyor, gerginlik fiziğine yansıyor ve performansı olumsuz etkileniyor. Bu durumda maçtan önce müdahale gerekebilir.",
+      tavsiye: "💡 Antrenör notu: Sporcuyu sessiz bir yere al, 4-4-4 nefes tekniği uygulat (4 saniye al, 4 tut, 4 ver). 'Kaybetsek ne olur?' sorusu yerine 'Şu an yapman gereken tek şey ne?' diye sor. Bu durumun tekrarlanması halinde sporcu psikoloğuyla görüşmeyi düşün."
+    }
+  },
+
+  gorevYonAnt: {
+    green: {
+      metin: "Sporcu antrenmanlarda gelişmeye ve öğrenmeye odaklı. Hata yaptığında öğrenme fırsatı olarak değerlendiriyor, rakibini yenmekten çok tekniğini geliştirmeye çalışıyor.",
+      tavsiye: "💡 Antrenör notu: Bu yaklaşımı destekle. Maç sonrası 'Kazandın mı?' yerine 'Bugün ne öğrendin?' diye sor. Bu sporcu uzun vadede çok daha hızlı gelişecek."
+    },
+    orange: {
+      metin: "Sporcu genel olarak gelişmeye odaklı ama zaman zaman sonuçlara takılabiliyor. Kaybettiğinde motivasyonu biraz düşebiliyor.",
+      tavsiye: "💡 Antrenör notu: Maç sonrası değerlendirmelerde sonuçtan önce performansı konuş. 'Bugün x tekniğin çok iyiydi' gibi somut geri bildirimler ver."
+    },
+    orange2: {
+      metin: "Sporcu çoğunlukla sonuç odaklı. Kaybettiğinde ya da beklentinin altında kaldığında motivasyon kaybı yaşıyor. Öğrenme sürecine sabrı düşük.",
+      tavsiye: "💡 Antrenör notu: Her antrenman için küçük, ulaşılabilir hedefler koy. 'Bu hafta dolyo chagi'ni 2 tekrar artır' gibi. Küçük başarılar güven ve motivasyonu yavaş yavaş geliştirir."
+    },
+    red: {
+      metin: "Sporcu neredeyse tamamen sonuç odaklı. Kaybetmek onu derinden etkiliyor, hata yaptığında çok sert tepki veriyor. Antrenmanı bir gelişim aracı olarak değil bir sınav olarak görüyor.",
+      tavsiye: "💡 Antrenör notu: Yüksek baskılı ortamlardan kaçın. Hata yaptığında tepkin çok önemli — sakin kal, düzeltici geri bildirim ver. 'Yanlış yaptın' yerine 'Bir daha dene, şöyle ol' de."
+    }
+  },
+
+  egoYonAnt: {
+    green: {
+      metin: "Sporcu başkalarından üstün görünme ihtiyacı hissetmiyor. Rekabet var ama sağlıklı sınırlar içinde. Kaybetmeyi kişisel bir yenilgi olarak almıyor.",
+      tavsiye: "💡 Antrenör notu: Bu dengeyi koru. Aşırı rekabetçi ortamlar veya sürekli karşılaştırmalar bu dengeyi bozabilir."
+    },
+    orange: {
+      metin: "Hafif ego yönelimi var. Zaman zaman rakibini yenmek veya takımda en iyi olmak önemli geliyor. Genellikle kontrol altında ama büyük maçlarda baskı yaratabilir.",
+      tavsiye: "💡 Antrenör notu: Grup antrenmanlarında sporcuları kıyaslamaktan kaçın. Her sporcunun kendi gelişim eğrisini takip etmesini teşvik et."
+    },
+    orange2: {
+      metin: "Ego yönelimi belirgin. Rakibinden iyi görünmek çok önemli. Kaybettiğinde ya da bir arkadaşı daha iyi performans gösterdiğinde sert tepkiler veriyor.",
+      tavsiye: "💡 Antrenör notu: Takım içi sıralamalardan ve sürekli karşılaştırmalardan kaçın. Sporcuya kendi önceki performansıyla kıyaslama fırsatı ver. 'Geçen haftaki senin rekabetçin bu hafta sensin' anlayışını yerleştir."
+    },
+    red: {
+      metin: "Çok yüksek ego yönelimi. Kaybetmek veya başkasının daha iyi olması bu sporcuyu ciddi şekilde etkiliyor. Antrenmanı bırakma, motivasyon kaybı veya takım içi çatışma riski var.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuyla birebir konuşmalar yap. 'Sen neden taekwondo yapıyorsun?' diye sor ve dinle. Uzun vadeli sporculuk kimliğini geliştirmeye odaklan. Gerekirse sporcu psikoloğuyla görüşmeyi öner."
+    }
+  },
+
+  kontrolAnt: {
+    green: {
+      metin: "Sporcu zor anlarda kendini toparlamayı biliyor. Sayı yediğinde, hata yaptığında veya maç aleyhine döndüğünde paniklemeden devam edebiliyor.",
+      tavsiye: "💡 Antrenör notu: Bu özelliği antrenmanlarında da pekiştir. Bilerek zorlu senaryolar yarat ve sporcunun sakin kalma pratiği yapmasına fırsat ver."
+    },
+    orange: {
+      metin: "Çoğu zaman kendini kontrol edebiliyor ama çok baskılı anlarda sarsılabiliyor. Önemli maçlarda ya da art arda hata yaptığında dikkat dağılması yaşanabiliyor.",
+      tavsiye: "💡 Antrenör notu: Antrenman sırasında yüksek baskı simülasyonları uygula. Örneğin 'Son 30 saniye, 2 puan gerideyiz' senaryoları ile alıştırmalar yap."
+    },
+    orange2: {
+      metin: "Duygusal kontrol zorluğu var. Olumsuz anlarda tepkileri performansını etkiliyor. Sayı yediğinde veya hata yaptığında toparlanmak zaman alıyor.",
+      tavsiye: "💡 Antrenör notu: Maç sırasında kısa 'reset' ritüelleri öğret. Mesela her sayı sonrası bir nefes alıp hazır pozisyona dönmek. Bu küçük ritüeller zamanla otomatikleşir."
+    },
+    red: {
+      metin: "Ciddi duygusal kontrol güçlüğü gözlemliyorsun. Stresli anlarda performans belirgin şekilde düşüyor, tepkiler bazen aşırıya kaçabiliyor. Bu durum maç disiplinine de zarar verebilir.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuyla acele etme, baskı yapma. Küçük adımlarla ilerle. Nefes tekniklerini antrenmanın her günkü rutinine ekle. Sporcu psikoloğuyla görüşme ciddi bir seçenek olarak düşünülmeli."
+    }
+  },
+
+  baglilikAnt: {
+    green: {
+      metin: "Sporcu antrenmanlarına kararlı ve tutarlı biçimde katılıyor. Zorlu seanslardan kaçmıyor, hedeflerine bağlı kalıyor. Bu tutarlılık performans gelişiminin en güvenilir göstergesi.",
+      tavsiye: "💡 Antrenör notu: Bu bağlılığı ödüllendir — maddi değil, sözlü. 'Bugün çok kararlı çalıştın' gibi geri bildirimler motivasyonu korur."
+    },
+    orange: {
+      metin: "Genel olarak bağlı ama zaman zaman antrenman kaçırma veya zorlu egzersizlerden çekilme eğilimi olabiliyor. Özellikle yorgun veya motivasyonu düşük dönemlerde dikkat gerekiyor.",
+      tavsiye: "💡 Antrenör notu: Motivasyon düşüşü yaşadığında neden sorusunu sor. Bazen dış nedenler (okul stresi, aile durumu) antrenmana yansır. Anlayışlı ol ama hedefleri hatırlat."
+    },
+    orange2: {
+      metin: "Bağlılık sorunları var. Antrenmanları sık atlıyor veya zorlu bölümlerde erken çıkıyor. Bu durum fiziksel gelişimi yavaşlatıyor ve teknik kalıcılığı engelliyor.",
+      tavsiye: "💡 Antrenör notu: Kısa vadeli somut hedefler koy. Uzun vadeli hedefler bu sporcuya uzak geliyor olabilir. 'Bu hafta 3 antrenman' gibi mini hedefler daha etkili olabilir."
+    },
+    red: {
+      metin: "Ciddi bağlılık eksikliği. Sporcunun antrenmanlarla bağı zayıf, motivasyon çok düşük. Bu hızla bir bırakma sürecine dönüşebilir.",
+      tavsiye: "💡 Antrenör notu: Sporcu neden taekwondoda olduğunu unutmuş olabilir. Birebir bir konuşma yap — ne istiyor, neden burada, ne onu burada tutabilir? Cevapları dinle ve onlarla birlikte bir yol çiz."
+    }
+  },
+
+  meyдanAnt: {
+    green: {
+      metin: "Sporcu zorlukları kucaklıyor. Zor antrenmanlar, güçlü rakipler veya yeni teknikler onu heyecanlandırıyor. Başarısızlıktan ders çıkarma kapasitesi yüksek.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuya daha zorlu görevler ver, rahat bölgesinin dışına çıkmasına fırsat yarat. Gelişimi hızlandırabilirsin."
+    },
+    orange: {
+      metin: "Çoğunlukla zorluklara açık ama çok büyük engellerle karşılaşınca biraz çekilebiliyor. Başarısızlıkları her zaman yapıcı değerlendiremeyebiliyor.",
+      tavsiye: "💡 Antrenör notu: Kaybedilen maçları sonra birlikte analiz et. 'Bugün nereyi geliştirmemiz gerekiyor?' sorusu 'Neden kaybettik?' sorusundan çok daha yapıcı."
+    },
+    orange2: {
+      metin: "Zorluklardan kaçınma eğilimi belirgin. Zor antrenmanlardan, güçlü rakiplerden ya da yeni tekniklerden çekinebiliyor. Başarısızlık korkusu gelişimi yavaşlatıyor.",
+      tavsiye: "💡 Antrenör notu: Küçük başarılar üzerine inşa et. Sporcuyu başarabileceği zorluklarla karşılaştır önce. Her küçük başarı meydan okuma cesaretini artırır."
+    },
+    red: {
+      metin: "Zorluklardan belirgin şekilde kaçıyor. Zor antrenmanları, güçlü rakipleri veya hata yapma riskini içeren durumları aktif olarak reddediyor. Bu uzun vadede büyük bir gelişim engeli.",
+      tavsiye: "💡 Antrenör notu: Baskı uygulama — daha da kaçmasına neden olur. Güvenli bir ortam yarat. Hata yaparken tepkin nasıl? Eğer sen de sert tepki veriyorsan bu korkuyu besliyor olabilirsin. Sabırla, adım adım."
+    }
+  },
+
+  guvenAnt: {
+    green: {
+      metin: "Sporcu kendine güveniyor ve bu maça yansıyor. Zor anlarda bile 'yapabilirim' tutumunu koruyabiliyor. Hatalar onu uzun süre etkilemiyor.",
+      tavsiye: "💡 Antrenör notu: Bu güveni besle. Sporcu iyi bir şey yaptığında hemen ve somut olarak söyle. Güven sürekli yenilenmesi gereken bir enerji kaynağı."
+    },
+    orange: {
+      metin: "Genel olarak kendine güveniyor ama baskı anlarında veya art arda hata yaptığında sarsılabiliyor. Büyük maçlarda veya güçlü rakipler karşısında destek gerekebilir.",
+      tavsiye: "💡 Antrenör notu: Maçtan önce kısa bir 'güç konuşması' yap. Sporcunun iyi yaptığı 2-3 şeyi hatırlat. Somut ve gerçek olmalı — abartı işe yaramaz."
+    },
+    orange2: {
+      metin: "Kendine güven eksikliği performansını etkiliyor. Denemekten çekiniyor, teknik bildiği halde uygulamakta tereddüt ediyor. 'Yapamam' hissi sık geliyor.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuyu başarabileceği durumlarla sık buluştur. Her küçük başarıyı sesli olarak ödüllendir. Eleştirilerini sandviç tekniğiyle ver: iyi → gelişim alanı → iyi."
+    },
+    red: {
+      metin: "Ciddi özgüven eksikliği gözlemliyorsun. Sporcu kendini çok olumsuz değerlendiriyor, her hatada derin bir hayal kırıklığına giriyor. Bu döngü kırılmazsa bırakma riski artıyor.",
+      tavsiye: "💡 Antrenör notu: Performans değerlendirmelerini bir süre için tamamen durdur. Sadece 'sahaya çıkmak' ve 'denemek' üzerine odaklan. Sporcu psikoloğuyla görüşme bu noktada çok önemli."
+    }
+  },
+
+  dikkatAnt: {
+    green: {
+      metin: "Sahada dikkat kalitesi yüksek. Rakibini iyi okuyor, çevresel değişimlere hızlı adapte oluyor. Hem geniş hem dar odaklanmayı gerektiğinde kullanabiliyor.",
+      tavsiye: "💡 Antrenör notu: Bu özelliği taktik antrenmanlarıyla daha da geliştir. Çoklu uyaran içeren egzersizler ekle."
+    },
+    orange: {
+      metin: "Dikkat kalitesi genel olarak iyi ama yorulduğunda veya stres altında odak dağılması olabiliyor. Uzun maçların sonunda ya da yüksek baskı altında tepki gecikmesi gözlemlenebiliyor.",
+      tavsiye: "💡 Antrenör notu: Antrenmanın yorucu bölümlerine taktik egzersizler ekle. Yorgunluk altında dikkat pratiği maçın gerçek koşullarına hazırlar."
+    },
+    orange2: {
+      metin: "Dikkat kontrolünde güçlük var. Sahada zaman zaman odağını kaybediyor, rakibinin hareketlerini kaçırabiliyor. Bu hem savunmada hem hücumda gecikmelere yol açıyor.",
+      tavsiye: "💡 Antrenör notu: Kısa süreli yoğun odak egzersizleri ekle. Örneğin 'Sadece şu anda rakibinin sağ omzuna bak' gibi tek nokta odak çalışmaları dikkat kapasitesini artırır."
+    },
+    red: {
+      metin: "Sahada dikkat kontrolü çok zayıf. Rakibinden bağımsız faktörler (seyirci, gürültü, önceki hata) sahaya yansıyor. Maç içi anlık kararlar tutarsız.",
+      tavsiye: "💡 Antrenör notu: Dikkat sorunları bazen kaygı veya uyku ile ilişkili olabilir. Sporcunun genel yaşam durumunu da değerlendir. Antrenman dışında da gözlemle. Gerekirse profesyonel destek öner."
+    }
+  },
+
+  dikkatBozAnt: {
+    green: {
+      metin: "Sahada dikkat bozukluğu gözlemlemiyorsun. Sporcu maç sırasında dış etkenlere rağmen odağını koruyabiliyor. Hata sonrası toparlanma hızlı.",
+      tavsiye: "💡 Antrenör notu: Bu konsantrasyonu korumak için maç öncesi rutini istikrarlı tut. Rutin bozulursa odak da bozulabilir."
+    },
+    orange: {
+      metin: "Ara sıra dikkat bozulması oluyor. Özellikle hata sonrası ya da seyirci tepkilerine karşı zaman zaman odak kaybı yaşıyor. Genellikle toparlanabiliyor.",
+      tavsiye: "💡 Antrenör notu: Maç sırasında köşe molalarında kısa ve net talimatlar ver. Uzun açıklamalar dikkat dağıtır. 'Sol tekme, sağ açı' gibi kısa komutlar daha etkili."
+    },
+    orange2: {
+      metin: "Dikkat bozukluğu maçı etkiliyor. Hata yaptıktan sonra o hatayı kovalıyor, bir sonraki hamleye geçemez oluyor. Gürültülü ortamlar veya yoğun seyirci baskısı performansı olumsuz etkiliyor.",
+      tavsiye: "💡 Antrenör notu: 'Oldu, bitti, şimdi ne?' tekniğini öğret. Hata yaptığında sporcuya baktığında başını sallama veya kısa bir jest yap — bu 'reset' sinyali işe yarar."
+    },
+    red: {
+      metin: "Ciddi dikkat bozukluğu. Bir hata tüm maçı etkiliyor. Seyirci, gürültü veya rakibin provokasyonları odağı tamamen dağıtabiliyor. Bu sahada zincirleme hataya dönüşüyor.",
+      tavsiye: "💡 Antrenör notu: Bu sporcuyu önce düşük baskılı ortamlarda yarıştır. Kalabalık ve yüksek baskılı ortamlara kademeli olarak alıştır. Sporcu psikoloğu bu konuda somut teknikler öğretebilir."
+    }
+  }
+
+};
