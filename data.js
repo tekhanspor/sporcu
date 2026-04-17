@@ -105,10 +105,10 @@ const NORMLAR = {
   flamingo_hata:       { normlar: [6,8,4,6,3,5],             yuksek_iyi: false },
   otur_uzan_cm:        { normlar: [22,26,24,28,26,30],       yuksek_iyi: true  },
   beep_test_seviye:    { normlar: [5.4,4.8,6.2,5.6,7.4,6.8], yuksek_iyi: true  },
-  cember_koord_sn:     { normlar: [12.5,13,11.2,11.8,10,10.8], yuksek_iyi: false },
   cetvel_reaksiyon_cm: { normlar: [22,24,19,21,16,18],       yuksek_iyi: false },
-  el_dinamometre_kg:   { normlar: [20,17,28,22,36,27],       yuksek_iyi: true  },
-  wingate_wkg:         { normlar: [7.5,6.8,8.2,7.4,9,8.2],  yuksek_iyi: true  }
+  dolyo_chagi_tekrar:  { normlar: [13,11,16,14,20,17],       yuksek_iyi: true  },
+  fskt_tekrar:         { normlar: [14,12,17,15,21,18],       yuksek_iyi: true  },
+  dck60_tekrar:        { normlar: [55,46,65,55,78,65],       yuksek_iyi: true  }
 };
 
 function normIndeksiHesapla(yas, cinsiyet) {
@@ -199,10 +199,10 @@ const TEST_ETIKETLERI = {
   flamingo_hata:       { ad: 'Flamingo Denge',       birim: 'hata' },
   otur_uzan_cm:        { ad: 'Otur-Uzan',            birim: 'cm' },
   beep_test_seviye:    { ad: 'Beep Test',             birim: 'seviye' },
-  cember_koord_sn:     { ad: 'Çember Koordinasyon',  birim: 'sn' },
   cetvel_reaksiyon_cm: { ad: 'Cetvel Reaksiyon',     birim: 'cm' },
-  el_dinamometre_kg:   { ad: 'El Dinamometresi',     birim: 'kg' },
-  wingate_wkg:         { ad: 'Wingate 30sn',         birim: 'W/kg' }
+  dolyo_chagi_tekrar:  { ad: '10sn Dolyo Chagi',     birim: 'tekrar' },
+  fskt_tekrar:         { ad: 'FSKT (Tekme Hızı)',    birim: 'tekrar' },
+  dck60_tekrar:        { ad: '60sn DCK',              birim: 'tekrar' }
 };
 
 // ── ANTRENÖR PSİKOLOJİ GÖZLEM ────────────────────────────────────────────
