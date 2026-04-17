@@ -150,8 +150,6 @@ function tabSec(tab, btn) {
     document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
   document.getElementById('fabBtn').style.display = tab === 'sporcular' ? 'flex' : 'none';
-  if (tab === 'testler') testlerYukle();
-  if (tab === 'anketler') anketlerYukle();
   if (tab === 'grafikler') grafikSporcuSecenekleriDoldur();
 }
 
@@ -483,7 +481,25 @@ function renderProfilTestler(testler, sporcu) {
 
 function renderProfilPsikoloji(anketler, antPsiko) {
   const div = document.getElementById('profilPsikolojiDiv');
-  const ekleBtn = `<button class="btn btn-primary" style="margin-bottom:12px" onclick="antrenorGozlemFormuAc()">+ Gözlem Formu Doldur</button>`;
+  const ekleBtn = '<button class="btn btn-primary" style="margin-bottom:12px" onclick="antrenorGozlemFormuAc()">+ Gözlem Formu Doldur</button>';
+
+  // Liste görünümü için yardımcı
+  function psikoListeSatir(ad, val, durum, renk, max, ters) {
+    if (!val) return '';
+    const barRenk = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
+    const normVal = max;
+    const yuzde = ters ? Math.max(0, Math.min(100, (1 - val/max)*100)) : Math.min(100, (val/max)*100);
+    return '<div class="test-satir">' +
+      '<div style="flex:1">' +
+        '<div style="font-size:13px;font-weight:500">' + ad + '</div>' +
+        '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + yuzde + '%;background:' + barRenk + '"></div></div>' +
+      '</div>' +
+      '<div style="text-align:right;flex-shrink:0;min-width:90px">' +
+        '<div style="font-size:15px;font-weight:700">' + (val.toFixed ? val.toFixed(1) : val) + '</div>' +
+        '<span class="badge badge-' + (renk === 'green' ? 'green' : renk === 'orange' ? 'orange' : 'red') + '">' + durum + '</span>' +
+      '</div>' +
+    '</div>';
+  }
 
   let html = ekleBtn;
 
@@ -491,35 +507,27 @@ function renderProfilPsikoloji(anketler, antPsiko) {
   if (anketler && anketler.length > 0) {
     const p = psikolojiPuanlari(anketler[0]);
     const boyutlar = [
-      { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı' },
-      { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı' },
-      { k: 'ozguven',       ad: '💪 Özgüven' },
-      { k: 'gorevYon',      ad: '🎯 Görev Yönelimi' },
-      { k: 'egoYon',        ad: '🏆 Ego Yönelimi' },
-      { k: 'kontrol',       ad: '🧘 Mental Kontrol' },
-      { k: 'baglilik',      ad: '🔗 Bağlılık' },
-      { k: 'meydan',        ad: '⚡ Meydan Okuma' },
-      { k: 'guven',         ad: '🛡 Güven' },
-      { k: 'genisDissal',   ad: '👁 Geniş Dikkat' },
-      { k: 'darDissal',     ad: '🎯 Dar Dikkat' },
-      { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası' }
+      { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı', max: 36, ters: true },
+      { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı',  max: 36, ters: true },
+      { k: 'ozguven',       ad: '💪 Özgüven',         max: 36, ters: false },
+      { k: 'gorevYon',      ad: '🎯 Görev Yönelimi',  max: 5,  ters: false },
+      { k: 'egoYon',        ad: '🏆 Ego Yönelimi',    max: 5,  ters: true },
+      { k: 'kontrol',       ad: '🧘 Mental Kontrol',  max: 5,  ters: false },
+      { k: 'baglilik',      ad: '🔗 Bağlılık',        max: 5,  ters: false },
+      { k: 'meydan',        ad: '⚡ Meydan Okuma',    max: 5,  ters: false },
+      { k: 'guven',         ad: '🛡 Güven',           max: 5,  ters: false },
+      { k: 'genisDissal',   ad: '👁 Geniş Dikkat',    max: 5,  ters: false },
+      { k: 'darDissal',     ad: '🎯 Dar Dikkat',      max: 5,  ters: false },
+      { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',  max: 5,  ters: true }
     ];
-    html += `<div class="kart">
-      <div class="kart-baslik">👤 Sporcu Öz-Bildirimi — ${tarihFormatla(anketler[0].anket_tarihi)}</div>
-      <div class="psiko-ozet-grid">
-        ${boyutlar.map(b => {
-          const val = p[b.k];
-          if (!val) return '';
-          const { durum, renk } = psikolojiBoyutDurumu(b.k, val);
-          const color = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
-          return `<div class="psiko-alan-kart">
-            <div class="psiko-alan-baslik">${b.ad}</div>
-            <div class="psiko-alan-puan" style="color:${color}">${val.toFixed ? val.toFixed(1) : val}</div>
-            <div class="psiko-alan-durum">${durum}</div>
-          </div>`;
-        }).join('')}
-      </div>
-    </div>`;
+    html += '<div class="kart"><div class="kart-baslik">👤 Sporcu Öz-Bildirimi — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
+    boyutlar.forEach(function(b) {
+      const val = p[b.k];
+      if (!val) return;
+      const { durum, renk } = psikolojiBoyutDurumu(b.k, val);
+      html += psikoListeSatir(b.ad, val, durum, renk, b.max, b.ters);
+    });
+    html += '</div>';
     if (anketler.length > 1) {
       html += `<div class="kart"><div class="kart-baslik">📋 Sporcu Anket Geçmişi</div>
         ${anketler.slice(1).map(a => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span><span class="gecmis-icerik">Anket dolduruldu</span></div>`).join('')}
@@ -544,26 +552,18 @@ function renderProfilPsikoloji(anketler, antPsiko) {
       { k: 'dikkatAnt',    ad: '👁 Güçlü Dikkat', ters: false, max: 5 },
       { k: 'dikkatBozAnt', ad: '⚠️ Dikkat Bozukluğu', ters: true, max: 5 }
     ];
-    html += `<div class="kart">
-      <div class="kart-baslik">🏆 Antrenör Gözlemi — ${tarihFormatla(g.gozlem_tarihi)}</div>
-      <div class="psiko-ozet-grid">
-        ${gozlemBoyutlar.map(b => {
-          const val = ag[b.k];
-          if (!val) return '';
-          const iyi = b.ters ? val <= (b.max * 0.4) : val >= (b.max * 0.7);
-          const orta = b.ters ? val <= (b.max * 0.6) : val >= (b.max * 0.5);
-          const renk = iyi ? 'green' : orta ? 'orange' : 'red';
-          const durum = iyi ? '✅ İyi' : orta ? '⚠️ Orta' : '🔴 Gelişim';
-          const color = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
-          return `<div class="psiko-alan-kart">
-            <div class="psiko-alan-baslik">${b.ad}</div>
-            <div class="psiko-alan-puan" style="color:${color}">${val}</div>
-            <div class="psiko-alan-durum">${durum}</div>
-          </div>`;
-        }).join('')}
-      </div>
-      ${g.antrenor_notu ? `<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-700)">📝 ${g.antrenor_notu}</div>` : ''}
-    </div>`;
+    html += '<div class="kart"><div class="kart-baslik">🏆 Antrenör Gözlemi — ' + tarihFormatla(g.gozlem_tarihi) + '</div>';
+    gozlemBoyutlar.forEach(function(b) {
+      const val = ag[b.k];
+      if (!val) return;
+      const iyi = b.ters ? val <= (b.max * 0.4) : val >= (b.max * 0.7);
+      const orta = b.ters ? val <= (b.max * 0.6) : val >= (b.max * 0.5);
+      const renk = iyi ? 'green' : orta ? 'orange' : 'red';
+      const durum = iyi ? '✅ İyi' : orta ? '⚠️ Orta' : '🔴 Gelişim';
+      html += psikoListeSatir(b.ad, val, durum, renk, b.max, b.ters);
+    });
+    if (g.antrenor_notu) html += '<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-700)">📝 ' + g.antrenor_notu + '</div>';
+    html += '</div>';
     if (antPsiko.length > 1) {
       html += `<div class="kart"><div class="kart-baslik">📋 Antrenör Gözlem Geçmişi</div>
         ${antPsiko.slice(1).map(g2 => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(g2.gozlem_tarihi)}</span><span class="gecmis-icerik">Gözlem formu dolduruldu</span></div>`).join('')}
