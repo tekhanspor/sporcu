@@ -108,6 +108,7 @@ const NORMLAR = {
   cetvel_reaksiyon_cm: { normlar: [22,24,19,21,16,18],       yuksek_iyi: false },
   dolyo_chagi_tekrar:  { normlar: [13,11,16,14,20,17],       yuksek_iyi: true  },
   fskt_tekrar:         { normlar: [14,12,17,15,21,18],       yuksek_iyi: true  },
+  fskt_kdi:            { normlar: [20,20,18,18,15,15],       yuksek_iyi: false },
   dck60_tekrar:        { normlar: [55,46,65,55,78,65],       yuksek_iyi: true  }
 };
 
@@ -202,6 +203,7 @@ const TEST_ETIKETLERI = {
   cetvel_reaksiyon_cm: { ad: 'Cetvel Reaksiyon',     birim: 'cm' },
   dolyo_chagi_tekrar:  { ad: '10sn Dolyo Chagi',     birim: 'tekrar' },
   fskt_tekrar:         { ad: 'FSKT (Tekme Hızı)',    birim: 'tekrar' },
+  fskt_kdi:            { ad: 'FSKT KDI',             birim: '%' },
   dck60_tekrar:        { ad: '60sn DCK',              birim: 'tekrar' }
 };
 
