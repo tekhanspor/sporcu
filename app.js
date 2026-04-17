@@ -146,11 +146,12 @@ function sporcuFiltrele() {
 function tabSec(tab, btn) {
   document.querySelectorAll('#antrenorEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
   if (btn) btn.classList.add('aktif');
-  ['sporcular','testler','anketler','grafikler'].forEach(t => {
-    document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
-  });
-  document.getElementById('fabBtn').style.display = tab === 'sporcular' ? 'flex' : 'none';
-  if (tab === 'grafikler') grafikSporcuSecenekleriDoldur();
+  var el = document.getElementById('tab-' + tab);
+  if (el) {
+    var divs = document.querySelectorAll('#antrenorEkrani .icerik > div');
+    divs.forEach(function(d) { d.style.display = 'none'; });
+    el.style.display = 'block';
+  }
 }
 
 // ── TÜM TESTLER ───────────────────────────────────────────────────────────
