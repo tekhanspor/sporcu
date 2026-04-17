@@ -342,3 +342,235 @@ const TEST_ACIKLAMALAR = {
   }
 
 };
+
+const PSIKO_ACIKLAMALAR = {
+
+  bilisselKaygi: {
+    green: {
+      metin: "Maç öncesi kafan sakin ve odaklı. Olumsuz düşünceler seni ele geçirmiyor, rakibini değil yapacaklarını düşünüyorsun. Bu seni sahada çok daha etkili yapıyor.",
+      tavsiye: "💡 Bunu korumak için: Maç öncesi aynı rutini tekrarla. Neyin seni sakinleştirdiğini biliyorsun, ona güven."
+    },
+    orange: {
+      metin: "Zaman zaman 'ya kaybedersem' gibi düşünceler aklına geliyor ama bunları kenara itebiliyorsun. Büyük maçlarda bu düşünceler biraz daha güçlenebilir.",
+      tavsiye: "💡 Ne yapabilirsin: Olumsuz bir düşünce gelince 'dur' de içinden ve hemen bir sonraki hamleye odaklan. Kafanı geçmişe veya geleceğe değil şu ana getir."
+    },
+    orange2: {
+      metin: "Maçtan önce kafanda oldukça fazla olumsuz düşünce var. 'Başaramam', 'rakibim çok iyi' gibi düşünceler seni maça başlamadan yoruyor.",
+      tavsiye: "💡 Ne yapabilirsin: Maçtan önce sadece bir sonraki hamleye odaklan. 'Kazanacak mıyım?' yerine 'şu an ne yapmalıyım?' diye sor kendine."
+    },
+    red: {
+      metin: "Maçtan önce kafan çok fazla olumsuz düşüncelerle dolu. 'Kaybederim', 'başaramam' gibi düşünceler seni maça başlamadan yoruyor. Rakibini düşünmek yerine kafan kendi korkularınla meşgul olunca sahada konsantrasyonun dağılıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Maçtan önce sadece bir sonraki hamleye odaklan. 'Kazanacak mıyım?' yerine 'şu an ne yapmalıyım?' diye sor kendine. Antrenörünle bunu konuş."
+    }
+  },
+
+  somatikKaygi: {
+    green: {
+      metin: "Vücudun maç öncesi sakin. Kalbin çok hızlı çarpmıyor, ellerin titiremiyor, miyen bulanmıyor. Bu fiziksel sakinlik sahada çok daha iyi hareket etmeni sağlıyor.",
+      tavsiye: "💡 Bunu korumak için: Maç öncesi ısınmana dikkat et. Vücudun bu sakinliği hazır olduğunun işareti."
+    },
+    orange: {
+      metin: "Maç öncesi biraz kalp hızlanması veya gerginlik hissediyorsun ama bu çok abartılı değil. Hafif bir heyecan aslında seni daha dikkatli yapar.",
+      tavsiye: "💡 Ne yapabilirsin: Maça girmeden önce 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 3 kez tekrarla. Vücudun sakinleşir."
+    },
+    orange2: {
+      metin: "Maç öncesi vücudunda belirgin gerginlik hissediyorsun. Kalbin hızlı çarpıyor, ellerinde titreme olabiliyor. Bu sahaya çıkmadan önce enerjinin büyük kısmını tüketiyor.",
+      tavsiye: "💡 Ne yapabilirsin: Maça girmeden önce 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 3 kez tekrarla. Vücudun sakinleşir."
+    },
+    red: {
+      metin: "Maç öncesi vücudun çok güçlü tepkiler veriyor. Mide bulantısı, titreme, baş dönmesi gibi belirtiler var. Bu kadar yoğun bedensel gerginlik sahaya güçsüz çıkmanı sağlıyor, enerjin maç başlamadan tükeniyor.",
+      tavsiye: "💡 Ne yapabilirsin: Maça girmeden önce 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 5 kez tekrarla. Antrenörünle bu konuyu konuş, sana yardımcı olabilir."
+    }
+  },
+
+  ozguven: {
+    green: {
+      metin: "Kendine çok güveniyorsun. Sahaya güçlü çıkıyorsun, zor anlarda bile 'yapabilirim' diyorsun. Rakibine baktığında 'bunu yapabilirim' hissediyorsun. Bu his seni rakibinden bir adım önde tutuyor.",
+      tavsiye: "💡 Bunu korumak için: Her antrenman sonrası iyi yaptığın bir şeyi aklında tut. Güvenin bu birikimlerin üzerine inşa ediliyor."
+    },
+    orange: {
+      metin: "Kendine genel olarak güveniyorsun ama zor maçlarda veya güçlü rakiplere karşı biraz sarsılabiliyor. Çoğu zaman iyi hissediyorsun ama bazı anlarda şüpheye düşüyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanda iyi yaptığın 3 şeyi aklında tut. Sahaya çıkarken 'bunu antrenmanımda yaptım, burada da yaparım' de."
+    },
+    orange2: {
+      metin: "Kendine yeterince güvenmiyorsun. Özellikle güçlü rakiplere karşı veya maç başlamadan önce 'beceremem' hissi geliyor. Bu his seni sahada yapabileceğinden daha az denemeni sağlıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanda iyi yaptığın 3 şeyi aklında tut. Sahaya çıkarken 'bunu antrenmanımda yaptım, burada da yaparım' de."
+    },
+    red: {
+      metin: "Kendine güvenmiyorsun. Sahaya çıkmadan önce bile 'beceremem' hissediyorsun. Bu his sahada seni frenliyor, yapabileceğin teknikleri bile denemekten kaçınıyorsun. Rakibin bunu fark edebilir.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanda iyi yaptığın 3 şeyi yaz ve maçtan önce oku. Sahaya çıkarken 'bunu antrenmanımda yaptım, burada da yaparım' de. Antrenörünle bu konuyu konuş."
+    }
+  },
+
+  gorevYon: {
+    green: {
+      metin: "Sporu doğru nedenden yapıyorsun — öğrenmek ve gelişmek için. Rakibini yenmekten çok kendi gelişimini takip ediyorsun. Bu yaklaşım seni uzun vadede çok daha iyi bir sporcu yapar.",
+      tavsiye: "💡 Bunu korumak için: Her antrenman sonrası 'bugün ne öğrendim?' diye sor kendine. Bu soruyu sormaya devam ettiğin sürece gelişmeye devam edersin."
+    },
+    orange: {
+      metin: "Genel olarak gelişmeye odaklısın ama bazen 'başkalarından iyi miyim?' diye düşünüyorsun. Bu normal ama rakibini değil kendini geçmeye çalıştığında çok daha hızlı gelişirsin.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenman hedefini sadece kendine koy. 'Bu hafta dolyo chagi'mi geçen haftadan hızlı atacağım' gibi. Rakibini değil geçen haftaki kendini geç."
+    },
+    orange2: {
+      metin: "Zaman zaman gelişmeye odaklanıyorsun ama çoğunlukla başkalarıyla karşılaştırıyorsun kendini. Kaybettiğinde veya arkadaşın senden iyiyken motivasyonun düşüyor.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenman hedefini sadece kendine koy. 'Bu hafta dolyo chagi'mi geçen haftadan hızlı atacağım' gibi. Rakibini değil geçen haftaki kendini geç."
+    },
+    red: {
+      metin: "Gelişmekten çok başkalarından iyi olmaya odaklanıyorsun. Kaybettiğinde veya başkasının senden iyi olduğunu gördüğünde motivasyonun tamamen çöküyor. Bu seni kırılgan yapıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Sadece dün yaptığın şeyi bugün biraz daha iyi yap. Başkasını değil, dünkü kendini geç. Antrenörünle bu konuyu konuş."
+    }
+  },
+
+  egoYon: {
+    green: {
+      metin: "Başkalarından üstün görünmek seni fazla meşgul etmiyor. Bu çok sağlıklı. Kaybettiğinde de motivasyonunu koruyabiliyorsun, zor antrenmanlardan kaçmıyorsun.",
+      tavsiye: "💡 Bunu korumak için: Kazanmaktan çok öğrenmeye odaklanmaya devam et. Bu yaklaşım seni uzun vadede çok daha güçlü yapar."
+    },
+    orange: {
+      metin: "Zaman zaman başkalarıyla kıyaslamak istiyorsun. Biraz rekabetçi olmak normal ve iyi, ama bunu çok fazla düşünürsen kaybettiğinde çok sarsılabilirsin.",
+      tavsiye: "💡 Ne yapabilirsin: Rakibini yenmekten çok kendi en iyi performansını sergilemeye odaklan. Sonuç skor tablosunda değil, sahada ne yaptığında."
+    },
+    orange2: {
+      metin: "Başkalarından iyi görünmek seni oldukça meşgul ediyor. Kaybettiğinde çok sinirleniyor veya üzülüyorsun. Zor egzersizlerden kaçınıyor, güçlü göründüğün şeylere yöneliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Kaybetmek utanılacak bir şey değil, öğrenme fırsatı. Kaybettiğinde 'neden kaybettim?' diye sor, 'berbat biri miyim?' diye değil."
+    },
+    red: {
+      metin: "Başkalarından üstün görünmek senin için çok önemli. Kaybettiğinde ya da birinin senden iyi olduğunu gördüğünde çok sert tepkiler veriyorsun. Bu seni zor antrenmanlarda kırılgan yapıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Kaybetmek utanılacak bir şey değil, öğrenme fırsatı. En iyi sporcular en çok kaybeden ve bundan en çok öğrenenlerdir. Antrenörünle bu konuyu konuş."
+    }
+  },
+
+  kontrol: {
+    green: {
+      metin: "Zor anlarda kendini sakinleştirebiliyorsun. Sayı yesen bile paniklemiyorsun, stresli durumlarda kafan çalışmaya devam ediyor. Bu maçta çok büyük avantaj.",
+      tavsiye: "💡 Bunu korumak için: Stresli anlarda ne yaptığını fark et ve aynı şeyi yapmaya devam et. Kendi sakinleşme yöntemini biliyorsun."
+    },
+    orange: {
+      metin: "Çoğu zaman kendini kontrol edebiliyorsun ama çok stresli anlarda biraz sarsılabiliyor. Büyük maçlarda veya art arda sayı yediğinde kontrolünü kaybedebilirsin.",
+      tavsiye: "💡 Ne yapabilirsin: Sayı yediğinde hemen 3 derin nefes al. Sadece 3 nefes. Sonra tekrar sahaya dön, geçmişi düşünme."
+    },
+    orange2: {
+      metin: "Duygularını kontrol etmekte zorlanıyorsun. Maçta bir şeyler ters gittiğinde, sayı yediğinde veya ortam değiştiğinde bunalıma girebiliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Sayı yediğinde hemen 3 derin nefes al. Sadece 3 nefes. Sonra tekrar sahaya dön, geçmişi düşünme."
+    },
+    red: {
+      metin: "Maçta bir şeyler ters gittiğinde kendini sakinleştiremiyorsun. Sayı yediğinde panikleyebiliyorsun ve bu panik sonraki hamlelerde de hata yapmanı sağlıyor. Rakibin bunu fark ederse seni daha çok baskı altına alır.",
+      tavsiye: "💡 Ne yapabilirsin: Sayı yediğinde hemen 3 derin nefes al. Sadece 3 nefes. Sonra tekrar sahaya dön. Antrenörünle bunu çalış."
+    }
+  },
+
+  baglilik: {
+    green: {
+      metin: "Zorlu antrenmanlarda bile bırakmıyorsun. Yorgun veya isteksiz olsana bile antrenmanına geliyorsun. Bu kararlılık seni diğer sporculardan ayıran en önemli şey.",
+      tavsiye: "💡 Bunu korumak için: Zor bir antrenmandan sonra 'bugün de yaptım' de kendine. Bu his seni bir sonraki zorluğa da hazırlar."
+    },
+    orange: {
+      metin: "Genel olarak bağlısın ama çok zorlandığında veya yorulduğunda 'bugün geçsem mi?' diye düşünebiliyorsun. Çoğu zaman devam ediyorsun, bu iyi.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanı bırakmak istediğinde sadece 5 dakika daha yap de kendine. Çoğu zaman o 5 dakika geçer ve devam edersin."
+    },
+    orange2: {
+      metin: "Zorlu anlarda devam etmekte zorlanıyorsun. Yorulduğunda veya antrenman çok zorlaştığında pes etmeyi düşünebiliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanı bırakmak istediğinde sadece 5 dakika daha yap de kendine. Bitirdiğinde kendini çok daha iyi hissedeceksin."
+    },
+    red: {
+      metin: "Zorlu antrenmanlarda devam etmekte çok zorlanıyorsun. Zor egzersizleri atlıyor veya erken bitiriyorsun. Maçta dayanıklılık güç gerektiren anlarda bu eksiklik ortaya çıkacak.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenmanı bırakmak istediğinde sadece 5 dakika daha yap de kendine. Her tamamladığın zor antrenman seni bir sonraki maça daha hazır kılıyor."
+    }
+  },
+
+  meydan: {
+    green: {
+      metin: "Zorlukları sever ve onları fırsat olarak görüyorsun. Güçlü rakiplerle karşılaşmak, zor egzersizler yapmak seni heyecanlandırıyor. Bu yaklaşım seni her maçta daha da güçlü yapıyor.",
+      tavsiye: "💡 Bunu korumak için: Her zorlu maçtan sonra 'bu beni ne öğretti?' diye sor. Bu soruyu sormaya devam ettiğin sürece gelişmeye devam edersin."
+    },
+    orange: {
+      metin: "Çoğu zaman zorluklarla baş edebiliyorsun ama çok büyük bir engelle karşılaşınca biraz çekilebiliyorsun. Hataları öğrenme fırsatı olarak görebiliyorsun ama her seferinde değil.",
+      tavsiye: "💡 Ne yapabilirsin: Bir sonraki kaybettiğinde 'bu maçtan ne öğrendim?' diye yaz. Cevabı bulmak seni bir sonraki maça daha hazır yapar."
+    },
+    orange2: {
+      metin: "Zorluklardan biraz kaçıyorsun. Zor egzersizleri veya güçlü rakipleri düşününce isteksizleşebiliyorsun. Kaybetmek veya başarısız olmak seni çok etkiliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Bir sonraki kaybettiğinde 'bu maçtan ne öğrendim?' diye yaz. Her kayıp bir ders. En iyi sporcular en çok kaybeden ve bundan öğrenenlerdir."
+    },
+    red: {
+      metin: "Zorluklardan kaçıyorsun. Zor egzersizleri veya güçlü rakipleri gördüğünde çekiliyorsun. Başarısızlık seni çok uzun süre etkiliyor ve bir sonraki denemeyi engelliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Bir sonraki kaybettiğinde 'bu maçtan ne öğrendim?' diye yaz ve antrenörüne göster. Her zorluk seni daha güçlü yapar — ama ancak kaçmazsan."
+    }
+  },
+
+  guven: {
+    green: {
+      metin: "Kendi kararlarına ve yeteneklerine güveniyorsun. Baskı altında bile 'yapabilirim' diyebiliyorsun. Geçmişteki hatalar seni durduramıyor, ilerlemeye devam ediyorsun.",
+      tavsiye: "💡 Bunu korumak için: Zor bir antrenmandan veya maçtan sonra 'bugün ne iyi yaptım?' diye sor. Güvenin bu birikimlerin üzerine inşa ediliyor."
+    },
+    orange: {
+      metin: "Genel olarak kendine güveniyorsun ama çok baskılı anlarda veya art arda hata yaptığında sarsılabiliyorsun. Çoğu zaman toparlanabiliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Hata yaptığında 'oldu, geçti' de ve bir sonraki hamleye odaklan. Geçmiş hatayı düşünmek sadece yeni hatalar yapmana yol açar."
+    },
+    orange2: {
+      metin: "Kendine yeterince güvenmiyorsun. Özellikle baskı anlarında veya hata yaptıktan sonra 'beceremiyorum' hissi geliyor. Bu his seni frenliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Hata yaptığında 'oldu, geçti' de ve bir sonraki hamleye odaklan. Antrenmanında iyi yaptığın şeyleri aklında tut, onlar gerçek."
+    },
+    red: {
+      metin: "Kendinle ilgili çok olumsuz düşünceler var. Hata yaptığında veya baskı altında kaldığında 'hiçbir şey yapamıyorum' hissine kapılıyorsun. Bu his maçta seni dondurabilir.",
+      tavsiye: "💡 Ne yapabilirsin: Her antrenman sonrası iyi yaptığın bir şeyi yaz. Küçük de olsa. Bu liste büyüdükçe kendine olan güvenin de büyüyecek. Antrenörünle konuş."
+    }
+  },
+
+  genisDissal: {
+    green: {
+      metin: "Sahada geniş bir görüş alanın var. Rakibini, hakemi ve sahayı aynı anda takip edebiliyorsun. Rakibinin stratejisini okuyabiliyor ve buna göre hamle yapabiliyorsun.",
+      tavsiye: "💡 Bunu korumak için: Maçta sadece bir noktaya değil, tüm sahaya bakma alışkanlığını koru. Bu farkındalık seni her zaman bir adım önde tutar."
+    },
+    orange: {
+      metin: "Çoğu zaman sahayı iyi okuyorsun ama çok stresli anlarda veya yorulduğunda dikkat alanın daralabiliyor. Tüm sahayı görmek yerine sadece rakibine odaklanıyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Maçta zaman zaman gözlerini rakibinden bir an için ayır, sahayı tara. Bu alışkanlık zamanla otomatik hale gelir."
+    },
+    orange2: {
+      metin: "Sahayı okumakta zorlanıyorsun. Sadece önündeki rakibe bakıyorsun, diğer detayları kaçırıyorsun. Hakem kararları veya ortam değişiklikleri seni şaşırtabiliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenman maçlarında sadece rakibine değil, tüm sahaya bakmayı dene. Ne kadar çok şey fark ettiğini görünce şaşıracaksın."
+    },
+    red: {
+      metin: "Sahada çevreni yeterince göremiyorsun. Sadece önündekilere odaklanıyorsun, rakibinin stratejisini okuyamıyorsun. Bu maçta sürprizlere karşı savunmasız kalmanı sağlıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Antrenman maçlarında sadece rakibine değil, tüm sahaya bakmayı dene. Antrenörüne 'sahayı daha iyi nasıl okurum?' diye sor."
+    }
+  },
+
+  darDissal: {
+    green: {
+      metin: "Kritik anlarda tüm dikkatini bir noktaya toplayabiliyorsun. Rakibinle karşı karşıya geldiğinde başka hiçbir şey aklına gelmiyor, sadece o an var. Bu odak seni çok tehlikeli yapıyor.",
+      tavsiye: "💡 Bunu korumak için: Bu odağı antrenmanlarda da uygula. Bir tekniği yaparken sadece o tekniğe odaklan."
+    },
+    orange: {
+      metin: "Çoğu zaman iyi odaklanabiliyorsun ama bazen dikkatini dağıtan şeyler olabiliyor. Önemli anlarda genellikle toparlayabiliyorsun.",
+      tavsiye: "💡 Ne yapabilirsin: Her tekme atmadan önce bir an dur ve sadece hedefe bak. Bu küçük duraksamayı alışkanlık haline getir."
+    },
+    orange2: {
+      metin: "Kritik anlarda odaklanmakta zorlanıyorsun. Rakibinle karşı karşıya geldiğinde aklına başka şeyler gelebiliyor. Bu en önemli anlarda hata yapmanı sağlıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Her tekme atmadan önce bir an dur ve sadece hedefe bak. Zihnini sadece o ana getir."
+    },
+    red: {
+      metin: "Önemli anlarda dikkatini toplayamıyorsun. Rakibinle karşı karşıya geldiğinde kafan dağılıyor, başka düşünceler geliyor. Bu maçın en kritik anlarını kaçırmanı sağlıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Her tekme atmadan önce bir an dur ve sadece hedefe bak. Antrenörüne 'odaklanmakta zorlanıyorum' de, birlikte çalışabilirsiniz."
+    }
+  },
+
+  dikkatHatasi: {
+    green: {
+      metin: "Dikkatini çok iyi kontrol edebiliyorsun. Maç sırasında aklın dağılmıyor, hata yaptıktan sonra bile hızla toparlanıyorsun. Seyirci gürültüsü veya zorluklar seni etkilemiyor.",
+      tavsiye: "💡 Bunu korumak için: Bu odağı korumak için her hatadan sonra 'oldu, geçti, bir sonrakine bak' de. Bu alışkanlığın seni diğerlerinden ayırıyor."
+    },
+    orange: {
+      metin: "Genellikle dikkatini iyi koruyorsun ama öfkelendiğinde veya art arda hata yaptığında odağın biraz dağılabiliyor. Toparlanabiliyorsun ama zaman alıyor.",
+      tavsiye: "💡 Ne yapabilirsin: Dikkatinin dağıldığını fark ettiğinde 'dur' de içinden ve bir derin nefes al. Sonra bir sonraki hamleye bak."
+    },
+    orange2: {
+      metin: "Dikkatini kaybetmek senin için sık yaşanan bir durum. Bir hata yaptığında veya gürültülü bir ortamda odaklanmakta zorlanıyorsun. Bu maçta zincirleme hata yapmanı sağlayabiliyor.",
+      tavsiye: "💡 Ne yapabilirsin: Dikkatinin dağıldığını fark ettiğinde 'dur' de içinden ve bir derin nefes al. Hata yaptıktan sonra eski hatayı değil bir sonraki hamleyi düşün."
+    },
+    red: {
+      metin: "Dikkatini toplamakta ciddi zorlanıyorsun. Seyirciler, gürültü veya daha önce yaptığın bir hata aklında dolaşmaya devam ediyor. Maçta rakibine odaklanman gereken anlarda kafan başka yerlerde oluyor.",
+      tavsiye: "💡 Ne yapabilirsin: Dikkatinin dağıldığını fark ettiğinde 'dur' de içinden ve bir derin nefes al. Antrenörüne bu durumu anlat, birlikte çalışabilirsiniz."
+    }
+  }
+
+};
