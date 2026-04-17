@@ -109,7 +109,8 @@ const NORMLAR = {
   dolyo_chagi_tekrar:  { normlar: [13,11,16,14,20,17],       yuksek_iyi: true  },
   fskt_tekrar:         { normlar: [14,12,17,15,21,18],       yuksek_iyi: true  },
   fskt_kdi:            { normlar: [20,20,18,18,15,15],       yuksek_iyi: false },
-  dck60_tekrar:        { normlar: [55,46,65,55,78,65],       yuksek_iyi: true  }
+  dck60_tekrar:        { normlar: [55,46,65,55,78,65],       yuksek_iyi: true  },
+  sinav_tekrar:        { normlar: [12,9,18,12,25,16],        yuksek_iyi: true  }
 };
 
 function normIndeksiHesapla(yas, cinsiyet) {
@@ -204,7 +205,8 @@ const TEST_ETIKETLERI = {
   dolyo_chagi_tekrar:  { ad: '10sn Dolyo Chagi',     birim: 'tekrar' },
   fskt_tekrar:         { ad: 'FSKT (Tekme Hızı)',    birim: 'tekrar' },
   fskt_kdi:            { ad: 'FSKT KDI',             birim: '%' },
-  dck60_tekrar:        { ad: '60sn DCK',              birim: 'tekrar' }
+  dck60_tekrar:        { ad: '60sn DCK',              birim: 'tekrar' },
+  sinav_tekrar:        { ad: 'Maksimum Şınav',        birim: 'tekrar' }
 };
 
 // ── ANTRENÖR PSİKOLOJİ GÖZLEM ────────────────────────────────────────────
@@ -237,3 +239,106 @@ function antrenorPsikolojiPuanlari(g) {
     dikkatBozAnt:avg(['kboz1','kboz2','kboz3','kboz4','kboz5'])
   };
 }
+
+// Test açıklamaları — durum bazlı, taekwondo odaklı, çocuk dili
+const TEST_ACIKLAMALAR = {
+
+  uzun_atlama_cm: {
+    green:  "Bacaklarından patlayıcı bir güç var. Tekmelerin hem hızlı hem sert geliyor, rakibin elektronik sistemden skor çıkarmak için düşünmek zorunda bile kalmıyor.",
+    yellow: "Bacak gücün yeterli ama daha sert tekme atabileceğin için çalışma payın var. Özellikle dolyo chagi ve yop chagide bu fark hissedilir.",
+    orange: "Tekmelerin şu an yeterince sert değil. Rakibin hogu yeleğini güçlü vuramıyorsan elektronik sistemden puan çıkmaz, maçı kazanmak zorlaşır.",
+    red:    "Bacak gücün yaşına göre oldukça düşük. Maçta tekme atıyorsun ama rakibine pek bir şey hissettirmiyorsun. Elektronik sistem skor vermez, hakem de etkilenmez."
+  },
+
+  saglik_topu_cm: {
+    green:  "Gövden ve kolların güçlü. Rakibini ittirdiğinde veya pozisyon savaşında çok daha etkilisin, dengesini bozmak senin için kolay.",
+    yellow: "Gövde gücün iyi ama biraz daha geliştirirsen rakibini ittirme ve pozisyon almada çok daha etkili olursun.",
+    orange: "Rakibinle yakın mesafede mücadelede zorlanabilirsin. Gövde gücün düşük olunca onu itmek veya pozisyon almak senin için zor.",
+    red:    "Gövde ve kol gücün yaşına göre düşük. Yakın mesafe mücadelelerinde rakibin seni kolayca iter, sen onu itemezsin. Bu maçta ciddi dezavantaj."
+  },
+
+  mekik_tekrar: {
+    green:  "Karın kasların güçlü ve dayanıklı. Maç boyunca her tekme atışında gövden sağlam kalır, tekmelerin gücünü son ana kadar korursun.",
+    yellow: "Karın kasların yeterli ama maçın son dakikalarında tekmelerin biraz güçsüzleşebilir. Biraz daha çalışırsan son raundu da güçlü tamamlarsın.",
+    orange: "Maçın ortalarından itibaren tekmelerin giderek zayıflamaya başlar. Gövden yorulunca tekme atarken denge kaybı da yaşayabilirsin.",
+    red:    "Karın kasların yaşına göre zayıf. Maçın ilk raundundan sonra tekmelerin güçsüzleşir, denge kaybedersin ve rakibine kolay puan verirsin."
+  },
+
+  sprint_30m_sn: {
+    green:  "Sahada çok hızlısın. Rakibine ani baskı yaparken o henüz hazırlanmadan tekmeyi atabilirsin. Bu hız maçta büyük avantaj.",
+    yellow: "Hızın iyi. Rakibine baskı yapabilirsin ama en hızlı rakiplerine karşı biraz daha çalışman gerekebilir.",
+    orange: "Rakibine baskı yapıp hızlı yaklaşmakta zorlanabilirsin. Ani hareketlerinde rakibin senden önce pozisyon alabilir.",
+    red:    "Sahada yavaş kalıyorsun. Hızlı rakipler seni kolayca geçer, sen onlara yetişemezsin. Pozisyon almak ve tekme atmak için fırsat bulamayabilirsin."
+  },
+
+  illinois_sn: {
+    green:  "Sahada çok çeviksin. Rakibinden kaçmak, açı almak ve aniden yön değiştirmek senin için kolay. Rakibin seni köşeye sıkıştıramaz.",
+    yellow: "Çevikliğin iyi. Ama çok hızlı rakiplere karşı yön değiştirirken biraz geç kalabilirsin.",
+    orange: "Yön değiştirirken biraz yavaş kalıyorsun. Rakibin seni köşeye sıkıştırabilir veya savunmasını geçmekte zorlanabilirsin.",
+    red:    "Sahada hantal görünüyorsun. Rakibin kolayca açı alır, sen onu takip edemezsin. Maçta çok zor pozisyonlara düşebilirsin."
+  },
+
+  flamingo_hata: {
+    green:  "Dengen mükemmel. Tekme atarken hiç sendelemiyorsun, her vuruş tam güçle ve dengeli geliyor. Elektronik sistem senin vuruşlarını iyi algılar.",
+    yellow: "Dengen yeterli ama zaman zaman tekme atarken hafif sarsılma olabilir. Bu vuruş gücünü biraz düşürür.",
+    orange: "Tekme atarken dengeyi kaybetme riski taşıyorsun. Bu hem vuruş gücünü hem de güvenliğini etkiler. Elektronik sistemden daha az skor çıkar.",
+    red:    "Dengen yaşına göre zayıf. Tekme atarken sık sık sendeliyorsun. Bu vuruş gücünü direkt olarak düşürür, elektronik sistem yeterli vuruş gücü algılayamaz ve skor vermez."
+  },
+
+  otur_uzan_cm: {
+    green:  "Çok esneksin. Yüksek tekme atmak senin için kolay, bacaklarını rahatça kaldırabilirsin. Sakatlanma riskin de düşük.",
+    yellow: "Esnekliğin yeterli ama biraz daha çalışırsan daha yüksek tekme atabilir ve daha az zorlanırsın.",
+    orange: "Yüksek tekme atmakta zorlanabilirsin. Bacaklarını çok yukarı kaldırmaya çalışırsan kas gerilmesi hissedebilirsin.",
+    red:    "Esnekliğin düşük. Kafa hizasında tekme atmak sana çok zor geliyor ve sakatlık riski taşıyor. Rakibin bu açığını kullanabilir."
+  },
+
+  beep_test_seviye: {
+    green:  "Maçın son saniyesine kadar aynı hızda tekme atabilirsin. Rakibin yorulurken sen hâlâ güçlüsün — bu sana büyük avantaj sağlar.",
+    yellow: "Maç boyunca enerjini iyi yönetebilirsin. Ama en güçlü rakiplerine karşı son rauntta hafif zorlanabilirsin.",
+    orange: "Son rauntta hafif yorgunluk hissedebilirsin. Tekmelerin biraz yavaşlar ama tamamen bitmezsin.",
+    red:    "Maçın son raundunda çok çabuk yorulursun. Rakibin hâlâ güçlüyken sen nefes nefese kalırsın, tekme atmak yerine sadece savunmaya geçersin. Bu da rakibine kolay puan alma fırsatı verir."
+  },
+
+  cetvel_reaksiyon_cm: {
+    green:  "Rakibinin hamlelerini çok hızlı fark ediyorsun. Tekme gelmeden önce bloğunu yapabilir veya karşı atak yapabilirsin.",
+    yellow: "Tepki hızın iyi. Ama çok hızlı rakiplere karşı bazen bir adım geç kalabilirsin.",
+    orange: "Rakibinin hareketlerine geç tepki veriyorsun. Bu özellikle hızlı kombinasyonlarda seni savunmasız bırakır.",
+    red:    "Tepki hızın düşük. Rakibin tekme atarken sen hâlâ ne yapacağına karar veriyorsun. Maçta çok sayı yiyebilirsin."
+  },
+
+  dolyo_chagi_tekrar: {
+    green:  "10 saniyede çok fazla tekme atabiliyorsun. Bu hem hızın hem de teknik koordinasyonunun iyi olduğunu gösteriyor. Rakibini tekme yağmuruna tutabilirsin.",
+    yellow: "Tekme hızın iyi ama biraz daha çalışırsan 10 saniyede daha fazla dolyo chagi atabilirsin.",
+    orange: "10 saniyede attığın tekme sayısı yaşına göre az. Rakibine baskı yaparken yeterince hızlı kombinasyon yapamıyorsun.",
+    red:    "Tekme hızın yaşına göre düşük. Rakibin 10 saniyede senden çok daha fazla tekme atar. Kombinasyon mücadelelerinde geride kalırsın."
+  },
+
+  fskt_tekrar: {
+    green:  "Tek seferde çok güçlü tekme atabiliyorsun. Maçta ilk temaslarda rakibini baskı altına alabilirsin.",
+    yellow: "En iyi setinde iyi bir tekme hızın var. Bunu maç boyunca korumak önemli.",
+    orange: "En iyi setinde attığın tekme sayısı yaşına göre biraz düşük. Daha hızlı kombinasyonlar çalışman gerekiyor.",
+    red:    "En iyi setinde bile yaşına göre az tekme atıyorsun. Rakibin her turda senden daha fazla tekme atar."
+  },
+
+  fskt_kdi: {
+    green:  "Maç boyunca tekme hızını koruyorsun. İlk raunddaki gibi son raundu da güçlü tamamlarsın. Rakibin yorulurken sen hâlâ aynı hızdasın.",
+    yellow: "Yoruldukça tekme hızın biraz düşüyor ama çok büyük bir fark değil. Son raundu biraz daha zinde tamamlayabilirsin.",
+    orange: "İlk turla son tur arasında büyük fark var. Maçın başında iyi başlıyorsun ama sonunda tekme hızın belirgin şekilde düşüyor.",
+    red:    "Çok çabuk yoruluyorsun. İlk raunddaki güçlü tekmeleri son rauntta atamıyorsun. Rakibin bunu fark eder ve son raundu baskıyla geçirir."
+  },
+
+  dck60_tekrar: {
+    green:  "60 saniye boyunca yüksek tempoda tekme atabiliyorsun. Bu bir maç raunduna yakın süre. Maç boyunca sürekli baskı kurabilirsin.",
+    yellow: "60 saniye boyunca iyi bir tempo tutabiliyorsun. Ama en zorlu maçlarda son saniyelerde biraz düşüş yaşayabilirsin.",
+    orange: "60 saniyenin son bölümünde tekme sayın belirgin şekilde düşüyor. Uzun soluklu mücadelelerde zorlanırsın.",
+    red:    "60 saniye boyunca yüksek tempo tutamıyorsun. Maç boyunca sürekli yüksek hız gerektiren durumlarda erken bitiyorsun. Rakibin bunu fark eder."
+  },
+
+  sinav_tekrar: {
+    green:  "Üst vücudun güçlü. Maçta rakibini ittirdiğinde veya düştükten sonra hızla kalktığında bu güç sana avantaj sağlar.",
+    yellow: "Üst vücut gücün iyi. Biraz daha çalışırsan yakın mesafe mücadelelerinde çok daha etkili olursun.",
+    orange: "Üst vücut gücün biraz düşük. Rakibinle yakın temasta veya düşüp kalkmalarda zorlanabilirsin.",
+    red:    "Üst vücut gücün yaşına göre düşük. Maçta yakın mesafe mücadelelerinde rakibin seni kolayca iter, sen onu itemezsin."
+  }
+
+};
