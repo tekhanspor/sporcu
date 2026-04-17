@@ -116,7 +116,6 @@ async function sporcularYukle() {
   try {
     tumSporcular = await sporcuListesi();
     sporcuFiltrele();
-    grafikSporcuSecenekleriDoldur();
   } catch (e) {
     document.getElementById('sporcuListesiDiv').innerHTML = `<div class="bos-durum"><span class="ikon">⚠️</span><p>${e.message}</p></div>`;
   }
@@ -475,19 +474,23 @@ function renderProfilTestler(testler, sporcu) {
   </div>`;
 
   if (testler.length > 1) {
-    html += `<div class="kart"><div class="kart-baslik">📋 Test Geçmişi</div>
-    ${testler.slice(1).map(t => {
-      const sonuclar2 = alanlar.map(k => testDurumu(k, t[k], yas, cin));
-      const u = sonuclar2.filter(r=>r.renk==='green').length;
-      const z = sonuclar2.filter(r=>r.renk==='red').length;
-      return `<div class="gecmis-item">
-        <span class="gecmis-tarih">${tarihFormatla(t.test_tarihi)}</span>
-        <span class="gecmis-icerik">
-          <span class="badge badge-green">${u} üstün</span>
-          ${z > 0 ? `<span class="badge badge-red" style="margin-left:4px">${z} zayıf</span>` : ''}
-        </span>
-      </div>`;
-    }).join('')}</div>`;
+    html += '<div class="kart"><div class="kart-baslik">📋 Test Geçmişi</div>';
+    testler.slice(1).forEach(function(t) {
+      const ustunlar = alanlar.filter(k => { const r = testDurumu(k, t[k], yas, cin); return r.renk === 'green'; });
+      const zayiflar = alanlar.filter(k => { const r = testDurumu(k, t[k], yas, cin); return r.renk === 'red'; });
+      html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+      html += '<div style="font-size:12px;font-weight:700;color:var(--gray-500);margin-bottom:6px">' + tarihFormatla(t.test_tarihi) + '</div>';
+      if (ustunlar.length > 0) {
+        html += '<div style="margin-bottom:4px"><span style="font-size:11px;color:#057a55;font-weight:600">🟢 Üstün: </span>';
+        html += '<span style="font-size:12px;color:var(--gray-700)">' + ustunlar.map(k => TEST_ETIKETLERI[k].ad).join(', ') + '</span></div>';
+      }
+      if (zayiflar.length > 0) {
+        html += '<div><span style="font-size:11px;color:#c81e1e;font-weight:600">🔴 Zayıf: </span>';
+        html += '<span style="font-size:12px;color:var(--gray-700)">' + zayiflar.map(k => TEST_ETIKETLERI[k].ad).join(', ') + '</span></div>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
   }
 
   div.innerHTML = html;
