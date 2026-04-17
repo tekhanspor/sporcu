@@ -505,20 +505,29 @@ function renderProfilPsikoloji(anketler, antPsiko) {
   const ekleBtn = '<button class="btn btn-primary" style="margin-bottom:12px" onclick="antrenorGozlemFormuAc()">+ Gözlem Formu Doldur</button>';
 
   // Liste görünümü için yardımcı
-  function psikoListeSatir(ad, val, durum, renk, max, ters) {
+  function psikoListeSatir(ad, val, durum, renk, max, ters, key) {
     if (!val) return '';
     const barRenk = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
-    const normVal = max;
+    const bgRenk = renk === 'green' ? '#f0fdf4' : renk === 'orange' ? '#fff7ed' : '#fef2f2';
     const yuzde = ters ? Math.max(0, Math.min(100, (1 - val/max)*100)) : Math.min(100, (val/max)*100);
-    return '<div class="test-satir">' +
-      '<div style="flex:1">' +
-        '<div style="font-size:13px;font-weight:500">' + ad + '</div>' +
-        '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + yuzde + '%;background:' + barRenk + '"></div></div>' +
+    const aciklamaObj = key && typeof PSIKO_ACIKLAMALAR !== 'undefined' && PSIKO_ACIKLAMALAR[key] ? PSIKO_ACIKLAMALAR[key][renk] : null;
+    const aciklamaHTML = aciklamaObj ?
+      '<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">' +
+        aciklamaObj.metin +
+        '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklamaObj.tavsiye + '</span>' +
+      '</div>' : '';
+    return '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">' +
+      '<div class="test-satir" style="border-bottom:none;padding:0">' +
+        '<div style="flex:1">' +
+          '<div style="font-size:13px;font-weight:500">' + ad + '</div>' +
+          '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + yuzde + '%;background:' + barRenk + '"></div></div>' +
+        '</div>' +
+        '<div style="text-align:right;flex-shrink:0;min-width:90px">' +
+          '<div style="font-size:15px;font-weight:700">' + (val.toFixed ? val.toFixed(1) : val) + '</div>' +
+          '<span class="badge badge-' + (renk === 'green' ? 'green' : renk === 'orange' ? 'orange' : 'red') + '">' + durum + '</span>' +
+        '</div>' +
       '</div>' +
-      '<div style="text-align:right;flex-shrink:0;min-width:90px">' +
-        '<div style="font-size:15px;font-weight:700">' + (val.toFixed ? val.toFixed(1) : val) + '</div>' +
-        '<span class="badge badge-' + (renk === 'green' ? 'green' : renk === 'orange' ? 'orange' : 'red') + '">' + durum + '</span>' +
-      '</div>' +
+      aciklamaHTML +
     '</div>';
   }
 
@@ -541,12 +550,13 @@ function renderProfilPsikoloji(anketler, antPsiko) {
       { k: 'darDissal',     ad: '🎯 Dar Dikkat',      max: 5,  ters: false },
       { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',  max: 5,  ters: true }
     ];
+    // key = psikoloji boyutu adı (PSIKO_ACIKLAMALAR için)
     html += '<div class="kart"><div class="kart-baslik">👤 Sporcu Öz-Bildirimi — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
     boyutlar.forEach(function(b) {
       const val = p[b.k];
       if (!val) return;
       const { durum, renk } = psikolojiBoyutDurumu(b.k, val);
-      html += psikoListeSatir(b.ad, val, durum, renk, b.max, b.ters);
+      html += psikoListeSatir(b.ad, val, durum, renk, b.max, b.ters, b.k);
     });
     html += '</div>';
     if (anketler.length > 1) {
@@ -581,7 +591,7 @@ function renderProfilPsikoloji(anketler, antPsiko) {
       const orta = b.ters ? val <= (b.max * 0.6) : val >= (b.max * 0.5);
       const renk = iyi ? 'green' : orta ? 'orange' : 'red';
       const durum = iyi ? '✅ İyi' : orta ? '⚠️ Orta' : '🔴 Gelişim';
-      html += psikoListeSatir(b.ad, val, durum, renk, b.max, b.ters);
+      html += psikoListeSatir(b.ad, val, durum, renk, b.max, b.ters, b.k);
     });
     if (g.antrenor_notu) html += '<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-700)">📝 ' + g.antrenor_notu + '</div>';
     html += '</div>';
@@ -1071,19 +1081,24 @@ function renderSporcuTestler(testler, sporcu) {
       const et = TEST_ETIKETLERI[alan];
       const { durum, renk, norm, oran } = testDurumu(alan, val, yas, cin);
       const barRenk = renk === 'green' ? '#057a55' : renk === 'yellow' ? '#b45309' : renk === 'orange' ? '#e65100' : '#c81e1e';
-      return `<div class="test-satir">
-        <span style="font-size:11px;color:var(--gray-500);width:18px;flex-shrink:0">${i+1}</span>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:500">${et.ad}</div>
-          <div class="ilerleme-kap" style="margin:3px 0">
-            <div class="ilerleme-bar" style="width:${Math.min(oran||80,100)}%;background:${barRenk}"></div>
+      const aciklama = typeof TEST_ACIKLAMALAR !== 'undefined' && TEST_ACIKLAMALAR[alan] ? TEST_ACIKLAMALAR[alan][renk] || '' : '';
+      const bgRenk2 = renk === 'green' ? '#f0fdf4' : renk === 'yellow' ? '#fefce8' : renk === 'orange' ? '#fff7ed' : '#fef2f2';
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
+        <div class="test-satir" style="border-bottom:none;padding:0">
+          <span style="font-size:11px;color:var(--gray-500);width:18px;flex-shrink:0">${i+1}</span>
+          <div style="flex:1">
+            <div style="font-size:13px;font-weight:500">${et.ad}</div>
+            <div class="ilerleme-kap" style="margin:3px 0">
+              <div class="ilerleme-bar" style="width:${Math.min(oran||80,100)}%;background:${barRenk}"></div>
+            </div>
+            <div style="font-size:10px;color:var(--gray-500)">Norm: ${norm} ${et.birim}</div>
           </div>
-          <div style="font-size:10px;color:var(--gray-500)">Norm: ${norm} ${et.birim}</div>
+          <div style="text-align:right;flex-shrink:0;min-width:80px">
+            <div style="font-size:14px;font-weight:700">${val} <span style="font-size:10px;color:var(--gray-500)">${et.birim}</span></div>
+            <span class="badge badge-${renk === 'green' ? 'green' : renk === 'yellow' ? 'yellow' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
+          </div>
         </div>
-        <div style="text-align:right;flex-shrink:0;min-width:80px">
-          <div style="font-size:14px;font-weight:700">${val} <span style="font-size:10px;color:var(--gray-500)">${et.birim}</span></div>
-          <span class="badge badge-${renk === 'green' ? 'green' : renk === 'yellow' ? 'yellow' : renk === 'orange' ? 'orange' : 'red'}">${durum}</span>
-        </div>
+        ${aciklama ? `<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:${bgRenk2};border-radius:8px;line-height:1.6">${aciklama}</div>` : ''}
       </div>`;
     }).join('')}
   </div>`;
@@ -1431,8 +1446,11 @@ async function sporcuSonuclariniYukle() {
         }
         var r = psikolojiBoyutDurumu(b.k, finalVal);
         var barRenk = r.renk === 'green' ? '#057a55' : r.renk === 'orange' ? '#e65100' : '#c81e1e';
+        var bgRenk = r.renk === 'green' ? '#f0fdf4' : r.renk === 'orange' ? '#fff7ed' : '#fef2f2';
         var yuzde = b.ters ? Math.max(0, Math.min(100, (1 - finalVal/b.max)*100)) : Math.min(100, (finalVal/b.max)*100);
-        html += '<div class="test-satir">';
+        var aciklamaObj = typeof PSIKO_ACIKLAMALAR !== 'undefined' && PSIKO_ACIKLAMALAR[b.k] ? PSIKO_ACIKLAMALAR[b.k][r.renk] : null;
+        html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div class="test-satir" style="border-bottom:none;padding:0">';
         html += '<div style="flex:1">';
         html += '<div style="font-size:13px;font-weight:500">' + b.ad + '</div>';
         html += '<div class="ilerleme-kap" style="margin:3px 0"><div class="ilerleme-bar" style="width:' + yuzde + '%;background:' + barRenk + '"></div></div>';
@@ -1442,6 +1460,13 @@ async function sporcuSonuclariniYukle() {
         html += '<div style="font-size:14px;font-weight:700">' + (finalVal.toFixed ? finalVal.toFixed(1) : finalVal) + '</div>';
         html += '<span class="badge badge-' + (r.renk === 'green' ? 'green' : r.renk === 'orange' ? 'orange' : 'red') + '">' + r.durum + '</span>';
         html += '</div></div>';
+        if (aciklamaObj) {
+          html += '<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
+          html += aciklamaObj.metin;
+          html += '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklamaObj.tavsiye + '</span>';
+          html += '</div>';
+        }
+        html += '</div>';
       });
       html += '</div>';
     }
