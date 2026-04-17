@@ -22,8 +22,8 @@
     </div>
 
     <div class="rol-secici">
-      <button class="rol-btn aktif" onclick="rolSec('antrenor')">🏆 Antrenör</button>
-      <button class="rol-btn" onclick="rolSec('sporcu')">👤 Sporcu</button>
+      <button class="rol-btn aktif" onclick="rolSec('antrenor', this)">🏆 Antrenör</button>
+      <button class="rol-btn" onclick="rolSec('sporcu', this)">👤 Sporcu</button>
     </div>
 
     <div id="loginHata" class="hata-mesaji"></div>
@@ -53,10 +53,10 @@
   </div>
 
   <div class="tab-nav">
-    <button class="tab-btn aktif" onclick="tabSec('sporcular')">👥 Sporcular</button>
-    <button class="tab-btn" onclick="tabSec('testler')">📊 Testler</button>
-    <button class="tab-btn" onclick="tabSec('anketler')">🧠 Anketler</button>
-    <button class="tab-btn" onclick="tabSec('grafikler')">📈 Grafikler</button>
+    <button class="tab-btn aktif" onclick=\"tabSec('sporcular', this)\">👥 Sporcular</button>
+    <button class="tab-btn" onclick=\"tabSec('testler', this)\">📊 Testler</button>
+    <button class="tab-btn" onclick=\"tabSec('anketler', this)\">🧠 Anketler</button>
+    <button class="tab-btn" onclick=\"tabSec('grafikler', this)\">📈 Grafikler</button>
   </div>
 
   <div class="icerik">
@@ -89,10 +89,10 @@
   </div>
   <div id="profilHeaderDiv"></div>
   <div class="tab-nav">
-    <button class="tab-btn aktif" onclick="profilTabSec('bilgiler')">Bilgiler</button>
-    <button class="tab-btn" onclick="profilTabSec('testler')">Motorik</button>
-    <button class="tab-btn" onclick="profilTabSec('psikoloji')">Psikoloji</button>
-    <button class="tab-btn" onclick="profilTabSec('recete')">Reçete</button>
+    <button class="tab-btn aktif" onclick=\"profilTabSec('bilgiler', this)\">Bilgiler</button>
+    <button class="tab-btn" onclick=\"profilTabSec('testler', this)\">Motorik</button>
+    <button class="tab-btn" onclick=\"profilTabSec('psikoloji', this)\">Psikoloji</button>
+    <button class="tab-btn" onclick=\"profilTabSec('recete', this)\">Reçete</button>
   </div>
   <div class="icerik">
     <div id="ptab-bilgiler"><div id="profilBilgilerDiv"></div></div>
@@ -112,10 +112,10 @@
     <button class="btn-icon" onclick="cikisYap()">⏏</button>
   </div>
   <div class="tab-nav">
-    <button class="tab-btn aktif" onclick="sporcuTabSec('profil')">👤 Profilim</button>
-    <button class="tab-btn" onclick="sporcuTabSec('testlerim')">📊 Testlerim</button>
-    <button class="tab-btn" onclick="sporcuTabSec('anketim')">🧠 Anket</button>
-    <button class="tab-btn" onclick="sporcuTabSec('sonuclarim')">📋 Sonuçlarım</button>
+    <button class="tab-btn aktif" onclick=\"sporcuTabSec('profil', this)\">👤 Profilim</button>
+    <button class="tab-btn" onclick=\"sporcuTabSec('testlerim', this)\">📊 Testlerim</button>
+    <button class="tab-btn" onclick=\"sporcuTabSec('anketim', this)\">🧠 Anket</button>
+    <button class="tab-btn" onclick=\"sporcuTabSec('sonuclarim', this)\">📋 Sonuçlarım</button>
   </div>
   <div class="icerik">
     <div id="stab-profil"><div id="sporcuProfilDiv"></div></div>
