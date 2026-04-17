@@ -70,10 +70,10 @@ function geriGit(ekranId) {
 }
 
 // ── GİRİŞ ─────────────────────────────────────────────────────────────────
-function rolSec(rol) {
+function rolSec(rol, btn) {
   aktifRol = rol;
   document.querySelectorAll('.rol-btn').forEach(b => b.classList.remove('aktif'));
-  event.target.classList.add('aktif');
+  if (btn) btn.classList.add('aktif');
   hataGizle('loginHata');
 }
 
@@ -143,9 +143,9 @@ function sporcuFiltrele() {
   }).join('');
 }
 
-function tabSec(tab) {
+function tabSec(tab, btn) {
   document.querySelectorAll('#antrenorEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
-  event.target.classList.add('aktif');
+  if (btn) btn.classList.add('aktif');
   ['sporcular','testler','anketler','grafikler'].forEach(t => {
     document.getElementById(`tab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
@@ -865,9 +865,9 @@ function psikolojiReceteGetir(k) {
   return r[k] || 'Antrenör ile birlikte çalışılacak.';
 }
 
-function profilTabSec(tab) {
+function profilTabSec(tab, btn) {
   document.querySelectorAll('#sporcuProfilEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
-  event.target.classList.add('aktif');
+  if (btn) btn.classList.add('aktif');
   ['bilgiler','testler','psikoloji','recete'].forEach(t => {
     document.getElementById(`ptab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
@@ -1057,9 +1057,9 @@ function renderSporcuTestler(testler, sporcu) {
   </div>`;
 }
 
-function sporcuTabSec(tab) {
+function sporcuTabSec(tab, btn) {
   document.querySelectorAll('#sporcuEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
-  event.target.classList.add('aktif');
+  if (btn) btn.classList.add('aktif');
   ['profil','testlerim','anketim','sonuclarim'].forEach(t => {
     document.getElementById(`stab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
