@@ -46,6 +46,7 @@
   <div class="tab-nav">
     <button class="tab-btn aktif" onclick="tabSec('sporcular', this)">👥 Sporcular</button>
     <button class="tab-btn" onclick="tabSec('yarisma', this)">🏆 Takvim</button>
+    <button class="tab-btn" onclick="tabSec('linkler', this)">🎬 Videolar</button>
   </div>
   <div class="icerik">
     <div id="tab-sporcular">
@@ -54,6 +55,9 @@
     </div>
     <div id="tab-yarisma" style="display:none">
       <div id="yarismaDiv"></div>
+    </div>
+    <div id="tab-linkler" style="display:none">
+      <div id="antrenorLinkDiv"></div>
     </div>
   </div>
   <button class="btn-fab" id="fabBtn" onclick="sporcuEklePanelAc()">+</button>
@@ -95,12 +99,14 @@
     <button class="tab-btn" onclick="sporcuTabSec('anketim', this)">🧠 Anket</button>
     <button class="tab-btn" onclick="sporcuTabSec('sonuclarim', this)">📋 Sonuçlarım</button>
     <button class="tab-btn" onclick="sporcuTabSec('takvim', this)">🏆 Takvim</button>
+    <button class="tab-btn" onclick="sporcuTabSec('linkler', this)">🎬 Videolar</button>
   </div>
   <div class="icerik">
     <div id="stab-profil"><div id="sporcuProfilDiv"></div></div>
     <div id="stab-anketim" style="display:none"><div id="sporcuAnketDiv"></div></div>
     <div id="stab-sonuclarim" style="display:none"><div id="sporcuSonuclarDiv"></div></div>
     <div id="stab-takvim" style="display:none"><div id="sporcuYarismaDiv"></div></div>
+    <div id="stab-linkler" style="display:none"><div id="sporcuLinkDiv"></div></div>
   </div>
 </div>
 
