@@ -1422,12 +1422,7 @@ const ANKET_BOLUMLER = [
 // ── ANKET FORMU ───────────────────────────────────────────────────────────
 function anketFormuHazirla() {
   aktifAnketCevaplari = {};
-  let html = '<div style="margin-bottom:16px"><div class="form-row">';
-  html += '<div class="form-grup"><label class="form-etiket">Yaklaşan yarış</label>';
-  html += '<input type="text" id="anketYaris" class="form-input" placeholder="Bölge Şampiyonası..."></div>';
-  html += '<div class="form-grup"><label class="form-etiket">Kaç gün kaldı?</label>';
-  html += '<input type="number" id="anketGun" class="form-input" placeholder="7"></div>';
-  html += '</div></div>';
+  let html = '';
 
   ANKET_BOLUMLER.forEach(function(bolum) {
     html += '<div class="anket-alan">';
