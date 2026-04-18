@@ -116,6 +116,13 @@ async function sporcularYukle() {
   yukleniyor('sporcuListesiDiv');
   try {
     tumSporcular = await sporcuListesi();
+    // Her sporcu için son test tarihini ekle
+    await Promise.all(tumSporcular.map(async function(s) {
+      try {
+        var testler = await motorikTestleriGetir(s.id);
+        s.son_test_tarihi = testler && testler.length > 0 ? testler[0].test_tarihi : null;
+      } catch(e) { s.son_test_tarihi = null; }
+    }));
     sporcuFiltrele();
   } catch (e) {
     document.getElementById('sporcuListesiDiv').innerHTML = `<div class="bos-durum"><span class="ikon">⚠️</span><p>${e.message}</p></div>`;
@@ -137,6 +144,7 @@ function sporcuFiltrele() {
       <div class="sporcu-info">
         <div class="sporcu-isim">${s.ad_soyad}</div>
         <div class="sporcu-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || '—'}</div>
+        <div style="margin-top:2px">${testHatirlaticiEkle(s, s.son_test_tarihi)}</div>
       </div>
       <div class="sporcu-ok">›</div>
     </div>`;
@@ -152,6 +160,8 @@ function tabSec(tab, btn) {
     divs.forEach(function(d) { d.style.display = 'none'; });
     el.style.display = 'block';
   }
+  if (tab === 'linkler') linkKutuphanesiniYukle('antrenorLinkDiv', true);
+  if (tab === 'yarisma') yarismaTakvimiYukle('yarismaDiv', true);
 }
 
 // ── TÜM TESTLER ───────────────────────────────────────────────────────────
@@ -1295,12 +1305,13 @@ function renderSporcuTestler(testler, sporcu) {
 function sporcuTabSec(tab, btn) {
   document.querySelectorAll('#sporcuEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
   if (btn) btn.classList.add('aktif');
-  ['profil','anketim','sonuclarim','takvim'].forEach(t => {
+  ['profil','anketim','sonuclarim','takvim','linkler'].forEach(t => {
     document.getElementById(`stab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'anketim') anketIzinKontrol();
   if (tab === 'sonuclarim') sporcuSonuclariniYukle();
   if (tab === 'takvim') yarismaTakvimiYukle('sporcuYarismaDiv', false);
+  if (tab === 'linkler') linkKutuphanesiniYukle('sporcuLinkDiv', false);
 }
 
 
@@ -1833,4 +1844,96 @@ async function yarismaKaldır(id) {
   } catch(e) {
     bildirimGoster('Hata: ' + e.message);
   }
+}
+
+// ── LİNK KÜTÜPHANESİ ─────────────────────────────────────────────────────
+async function linkKutuphanesiniYukle(hedefDiv, antrenorMod) {
+  var div = document.getElementById(hedefDiv);
+  if (!div) return;
+  div.innerHTML = '<div class="yukleniyor"><div class="spinner"></div></div>';
+  try {
+    var linkler = await linkleriGetir();
+    var bugun = new Date();
+    var html = '';
+
+    if (antrenorMod) {
+      html += '<div class="kart" style="margin-bottom:12px">';
+      html += '<div class="kart-baslik">+ Yeni Link Ekle</div>';
+      html += '<div class="form-grup"><label class="form-etiket">Başlık</label>';
+      html += '<input type="text" id="linkBaslik" class="form-input" placeholder="Dolyo Chagi Teknik Antrenmanı"></div>';
+      html += '<div class="form-grup"><label class="form-etiket">URL</label>';
+      html += '<input type="text" id="linkUrl" class="form-input" placeholder="https://youtube.com/..."></div>';
+      html += '<button class="btn btn-primary" onclick="linkKaydet()">Ekle</button>';
+      html += '</div>';
+    }
+
+    if (!linkler || linkler.length === 0) {
+      html += '<div class="bos-durum"><span class="ikon">🎬</span><p>Henüz video eklenmemiş.</p></div>';
+      div.innerHTML = html;
+      return;
+    }
+
+    html += '<div class="kart"><div class="kart-baslik">🎬 Video Kütüphanesi</div>';
+    linkler.forEach(function(l) {
+      var eklenme = new Date(l.olusturma_tarihi);
+      var farkGun = Math.floor((bugun - eklenme) / (1000 * 60 * 60 * 24));
+      var yeni = farkGun < 7;
+      var isYoutube = l.url.includes('youtube') || l.url.includes('youtu.be');
+      var thumbId = '';
+      if (isYoutube) {
+        var match = l.url.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
+        if (match) thumbId = match[1];
+      }
+
+      html += '<div style="display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--gray-100);align-items:center">';
+      if (thumbId) {
+        html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:80px;height:54px;object-fit:cover;border-radius:8px;flex-shrink:0">';
+      } else {
+        html += '<div style="width:80px;height:54px;background:var(--gray-100);border-radius:8px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:24px">🔗</div>';
+      }
+      html += '<div style="flex:1;min-width:0">';
+      html += '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">';
+      html += '<a href="' + l.url + '" target="_blank" style="font-size:13px;font-weight:600;color:var(--primary);text-decoration:none">' + l.baslik + '</a>';
+      if (yeni) html += '<span style="font-size:10px;font-weight:700;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:10px">YENİ</span>';
+      html += '</div>';
+      html += '<div style="font-size:11px;color:var(--gray-400);margin-top:2px">' + eklenme.toLocaleDateString('tr-TR') + '</div>';
+      html += '</div>';
+      if (antrenorMod) {
+        html += '<button onclick="linkSilBtn(\'' + l.id + '\')" style="background:none;border:none;color:var(--gray-300);cursor:pointer;font-size:20px;flex-shrink:0">×</button>';
+      }
+      html += '</div>';
+    });
+    html += '</div>';
+    div.innerHTML = html;
+  } catch(e) {
+    div.innerHTML = '<p style="color:red">' + e.message + '</p>';
+  }
+}
+
+async function linkKaydet() {
+  var baslik = document.getElementById('linkBaslik')?.value?.trim();
+  var url = document.getElementById('linkUrl')?.value?.trim();
+  if (!baslik || !url) { bildirimGoster('Başlık ve URL gerekli'); return; }
+  try {
+    await linkEkle({ baslik: baslik, url: url });
+    bildirimGoster('✅ Link eklendi');
+    linkKutuphanesiniYukle('antrenorLinkDiv', true);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function linkSilBtn(id) {
+  try {
+    await linkSil(id);
+    bildirimGoster('Link silindi');
+    linkKutuphanesiniYukle('antrenorLinkDiv', true);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+// ── TEST PERİYODU HATIRLATICI ─────────────────────────────────────────────
+function testHatirlaticiEkle(sporcu, sonTestTarihi) {
+  if (!sonTestTarihi) return '<span style="font-size:11px;color:#c81e1e">⚠️ Hiç test yok</span>';
+  var gun = Math.floor((new Date() - new Date(sonTestTarihi)) / (1000*60*60*24));
+  if (gun >= 56) return '<span style="font-size:11px;color:#c81e1e;font-weight:600">⚠️ ' + gun + ' gün önce</span>';
+  if (gun >= 42) return '<span style="font-size:11px;color:#e65100">⏰ ' + gun + ' gün önce</span>';
+  return '<span style="font-size:11px;color:var(--gray-400)">' + gun + ' gün önce</span>';
 }
