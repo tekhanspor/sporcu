@@ -109,6 +109,7 @@ function antrenorPanelAc() {
   ekranGoster('antrenorEkrani');
   document.getElementById('antrenorAdi').textContent = oturumKullanici.ad_soyad || '';
   sporcularYukle();
+  yarismaTakvimiYukle('yarismaDiv', true);
 }
 
 async function sporcularYukle() {
@@ -1072,7 +1073,6 @@ function testEkleModalAc() {
   if (!aktifSporcuId) { bildirimGoster('Önce bir sporcu seçin'); return; }
   document.getElementById('testSporcuId').value = aktifSporcuId;
   document.getElementById('tTarih').value = new Date().toISOString().split('T')[0];
-  document.getElementById('tSonrakiTarih').value = '';
   ['t_uzun_atlama','t_saglik_topu','t_mekik','t_sprint','t_illinois',
    't_flamingo','t_otur_uzan','t_beep','t_cetvel','t_dolyo',
    't_fskt_1','t_fskt_2','t_fskt_3','t_fskt_4','t_fskt_5','t_dck60','t_sinav','t_notlar']
@@ -1119,7 +1119,6 @@ async function testKaydet() {
   const veri = {
     sporcu_id: sporcuId,
     test_tarihi: tarih,
-    sonraki_test_tarihi: document.getElementById('tSonrakiTarih').value || null,
     uzun_atlama_cm:      parseFloat(document.getElementById('t_uzun_atlama').value) || null,
     saglik_topu_cm:      parseFloat(document.getElementById('t_saglik_topu').value) || null,
     mekik_tekrar:        parseInt(document.getElementById('t_mekik').value)          || null,
@@ -1277,11 +1276,12 @@ function renderSporcuTestler(testler, sporcu) {
 function sporcuTabSec(tab, btn) {
   document.querySelectorAll('#sporcuEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
   if (btn) btn.classList.add('aktif');
-  ['profil','anketim','sonuclarim'].forEach(t => {
+  ['profil','anketim','sonuclarim','takvim'].forEach(t => {
     document.getElementById(`stab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'anketim') anketIzinKontrol();
   if (tab === 'sonuclarim') sporcuSonuclariniYukle();
+  if (tab === 'takvim') yarismaTakvimiYukle('sporcuYarismaDiv', false);
 }
 
 
@@ -1497,14 +1497,12 @@ async function anketGonder() {
     hataGoster('anketHata', eksikler.length + ' soru yanıtsız. Lütfen tüm soruları yanıtla.');
     return;
   }
-  var yaris = document.getElementById('anketYaris').value.trim();
-  var gun = parseInt(document.getElementById('anketGun').value);
   var not = document.getElementById('anketNot').value.trim();
   var veri = Object.assign({
     sporcu_id: oturumKullanici.id,
     anket_tarihi: new Date().toISOString().split('T')[0],
-    yaklasan_yaris: yaris || null,
-    yarisa_gun: gun || null,
+    yaklasan_yaris: null,
+    yarisa_gun: null,
     sporcu_notu: not || null
   }, aktifAnketCevaplari);
 
@@ -1661,6 +1659,134 @@ async function anketIzniToggle(sporcuId, mevcutDurum) {
     await sporcuGuncelle(sporcuId, { anket_izin: !mevcutDurum });
     bildirimGoster(mevcutDurum ? '🔒 Anket kapatıldı' : '✅ Anket açıldı');
     sporcuProfilAc(sporcuId);
+  } catch(e) {
+    bildirimGoster('Hata: ' + e.message);
+  }
+}
+
+// ── YARIŞMA TAKVİMİ ──────────────────────────────────────────────────────
+async function yarismaTakvimiYukle(hedefDiv, antrenorMod) {
+  var div = document.getElementById(hedefDiv);
+  if (!div) return;
+  div.innerHTML = '<div class="yukleniyor"><div class="spinner"></div></div>';
+  try {
+    var yarislar = await yarismalariGetir();
+    var bugun = new Date();
+    bugun.setHours(0,0,0,0);
+
+    var html = '';
+
+    if (antrenorMod) {
+      html += '<button class="btn btn-primary" style="margin-bottom:12px" onclick="yarismaEkleFormAc()">+ Müsabaka Ekle</button>';
+    }
+
+    if (!yarislar || yarislar.length === 0) {
+      html += '<div class="bos-durum"><span class="ikon">🏆</span><p>Henüz müsabaka eklenmemiş.</p></div>';
+      div.innerHTML = html;
+      return;
+    }
+
+    // Gelecek ve geçmiş olarak ayır
+    var gelecek = yarislar.filter(function(y) { return new Date(y.tarih) >= bugun; });
+    var gecmis  = yarislar.filter(function(y) { return new Date(y.tarih) < bugun; });
+
+    if (gelecek.length > 0) {
+      html += '<div class="kart-baslik" style="margin-bottom:8px">📅 Yaklaşan Müsabakalar</div>';
+      gelecek.forEach(function(y) {
+        var tarihObj = new Date(y.tarih);
+        var kalanGun = Math.ceil((tarihObj - bugun) / (1000 * 60 * 60 * 24));
+        var renk = kalanGun <= 7 ? '#c81e1e' : kalanGun <= 30 ? '#e65100' : '#057a55';
+        var bg   = kalanGun <= 7 ? '#fef2f2' : kalanGun <= 30 ? '#fff7ed' : '#f0fdf4';
+
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + bg + ';border-radius:12px;margin-bottom:8px">';
+        html += '<div style="text-align:center;min-width:52px;background:white;border-radius:10px;padding:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">';
+        html += '<div style="font-size:18px;font-weight:800;color:' + renk + '">' + tarihObj.getDate() + '</div>';
+        html += '<div style="font-size:10px;color:var(--gray-500)">' + tarihObj.toLocaleString('tr-TR',{month:'short'}).toUpperCase() + '</div>';
+        html += '</div>';
+        html += '<div style="flex:1">';
+        html += '<div style="font-size:14px;font-weight:700;color:var(--gray-800)">' + y.musabaka_adi + '</div>';
+        if (y.yer) html += '<div style="font-size:12px;color:var(--gray-500)">📍 ' + y.yer + '</div>';
+        if (y.aciklama) html += '<div style="font-size:12px;color:var(--gray-600);margin-top:2px">' + y.aciklama + '</div>';
+        html += '</div>';
+        html += '<div style="text-align:right">';
+        html += '<div style="font-size:11px;font-weight:700;color:' + renk + '">' + kalanGun + ' gün</div>';
+        if (antrenorMod) {
+          html += '<button onclick="yarismaKaldır(\'' + y.id + '\')" style="margin-top:4px;background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:18px;line-height:1">×</button>';
+        }
+        html += '</div>';
+        html += '</div>';
+      });
+    }
+
+    if (gecmis.length > 0) {
+      html += '<div class="kart-baslik" style="margin:16px 0 8px;color:var(--gray-400)">📋 Geçmiş Müsabakalar</div>';
+      gecmis.slice().reverse().forEach(function(y) {
+        var tarihObj = new Date(y.tarih);
+        html += '<div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--gray-50);border-radius:10px;margin-bottom:6px;opacity:0.7">';
+        html += '<div style="text-align:center;min-width:52px;background:white;border-radius:10px;padding:6px">';
+        html += '<div style="font-size:16px;font-weight:800;color:var(--gray-400)">' + tarihObj.getDate() + '</div>';
+        html += '<div style="font-size:10px;color:var(--gray-400)">' + tarihObj.toLocaleString('tr-TR',{month:'short'}).toUpperCase() + '</div>';
+        html += '</div>';
+        html += '<div style="flex:1">';
+        html += '<div style="font-size:13px;font-weight:600;color:var(--gray-500)">' + y.musabaka_adi + '</div>';
+        if (y.yer) html += '<div style="font-size:11px;color:var(--gray-400)">📍 ' + y.yer + '</div>';
+        html += '</div>';
+        if (antrenorMod) {
+          html += '<button onclick="yarismaKaldır(\'' + y.id + '\')" style="background:none;border:none;color:var(--gray-300);cursor:pointer;font-size:18px;line-height:1">×</button>';
+        }
+        html += '</div>';
+      });
+    }
+
+    div.innerHTML = html;
+  } catch(e) {
+    div.innerHTML = '<p style="color:red">' + e.message + '</p>';
+  }
+}
+
+function yarismaEkleFormAc() {
+  var html = '<div class="kart" id="yarismaForm" style="margin-bottom:12px">';
+  html += '<div class="kart-baslik">+ Yeni Müsabaka</div>';
+  html += '<div class="form-row">';
+  html += '<div class="form-grup"><label class="form-etiket">Tarih *</label><input type="date" id="yfTarih" class="form-input"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Müsabaka Adı *</label><input type="text" id="yfAd" class="form-input" placeholder="Bölge Şampiyonası"></div>';
+  html += '</div>';
+  html += '<div class="form-row">';
+  html += '<div class="form-grup"><label class="form-etiket">Yer</label><input type="text" id="yfYer" class="form-input" placeholder="Samsun Spor Salonu"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Açıklama</label><input type="text" id="yfAciklama" class="form-input" placeholder="Opsiyonel not..."></div>';
+  html += '</div>';
+  html += '<div style="display:flex;gap:8px;margin-top:8px">';
+  html += '<button class="btn btn-primary" onclick="yarismaKaydet()">Kaydet</button>';
+  html += '<button class="btn btn-outline" onclick="yarismaTakvimiYukle(\'yarismaDiv\', true)">İptal</button>';
+  html += '</div></div>';
+
+  var div = document.getElementById('yarismaDiv');
+  div.innerHTML = html + div.innerHTML;
+}
+
+async function yarismaKaydet() {
+  var tarih = document.getElementById('yfTarih')?.value;
+  var ad = document.getElementById('yfAd')?.value?.trim();
+  if (!tarih || !ad) { bildirimGoster('Tarih ve müsabaka adı zorunlu'); return; }
+  try {
+    await yarismaEkle({
+      tarih: tarih,
+      musabaka_adi: ad,
+      yer: document.getElementById('yfYer')?.value?.trim() || null,
+      aciklama: document.getElementById('yfAciklama')?.value?.trim() || null
+    });
+    bildirimGoster('✅ Müsabaka eklendi');
+    yarismaTakvimiYukle('yarismaDiv', true);
+  } catch(e) {
+    bildirimGoster('Hata: ' + e.message);
+  }
+}
+
+async function yarismaKaldır(id) {
+  try {
+    await yarismaSil(id);
+    bildirimGoster('Müsabaka silindi');
+    yarismaTakvimiYukle('yarismaDiv', true);
   } catch(e) {
     bildirimGoster('Hata: ' + e.message);
   }
