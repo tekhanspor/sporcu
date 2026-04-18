@@ -948,6 +948,35 @@ function renderRecete(testler, anketler, sporcu) {
     }
   }
 
+  // SAHA PERFORMANS SKORLARI
+  if (anketler && anketler.length > 0) {
+    var sp = psikolojiPuanlari(anketler[0]);
+    var skorlar = sahaPerfSkorlari(sp);
+    if (skorlar) {
+      html += '<div class="kart"><div class="kart-baslik">🧠 Saha Performans Profili</div>';
+      Object.keys(SAHA_PERF_ANTRENOR).forEach(function(key) {
+        var tanim = SAHA_PERF_ANTRENOR[key];
+        var skor = skorlar[key];
+        if (skor === undefined) return;
+        var renk = sahaSkorRenk(skor, tanim.ters);
+        var aciklama = tanim[renk];
+        var barRenk = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
+        var bgRenk = renk === 'green' ? '#f0fdf4' : renk === 'orange' ? '#fff7ed' : '#fef2f2';
+        var gosterSkor = tanim.ters ? (100 - skor) : skor;
+        html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+        html += '<span style="font-size:13px;font-weight:600">' + tanim.baslik + '</span>';
+        html += '<span style="font-size:13px;font-weight:800;color:' + barRenk + '">' + gosterSkor + '</span>';
+        html += '</div>';
+        html += '<div class="ilerleme-kap" style="margin-bottom:8px"><div class="ilerleme-bar" style="width:' + gosterSkor + '%;background:' + barRenk + '"></div></div>';
+        html += '<div style="font-size:12px;color:var(--gray-700);padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
+        html += aciklama.metin + '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklama.tavsiye + '</span>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    }
+  }
+
   if (!html) html = '<div class="bos-durum"><span class="ikon">💊</span><p>Reçete için test ve anket verileri gerekli</p></div>';
   document.getElementById('profilReceteDiv').innerHTML = html;
 }
@@ -1629,6 +1658,35 @@ async function sporcuSonuclariniYukle() {
         html += '</div>';
       });
       html += '</div>';
+    }
+
+    // SAHA PERFORMANS SKORLARI — SPORCU VERSİYONU
+    if (anketler && anketler.length > 0) {
+      var sp2 = psikolojiPuanlari(anketler[0]);
+      var skorlar2 = sahaPerfSkorlari(sp2);
+      if (skorlar2) {
+        html += '<div class="kart"><div class="kart-baslik">🧠 Saha Performans Profilim</div>';
+        Object.keys(SAHA_PERF_SPORCU).forEach(function(key) {
+          var tanim = SAHA_PERF_SPORCU[key];
+          var skor = skorlar2[key];
+          if (skor === undefined) return;
+          var renk = sahaSkorRenk(skor, tanim.ters);
+          var aciklama = tanim[renk];
+          var barRenk = renk === 'green' ? '#057a55' : renk === 'orange' ? '#e65100' : '#c81e1e';
+          var bgRenk = renk === 'green' ? '#f0fdf4' : renk === 'orange' ? '#fff7ed' : '#fef2f2';
+          var gosterSkor = tanim.ters ? (100 - skor) : skor;
+          html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+          html += '<span style="font-size:13px;font-weight:600">' + tanim.baslik + '</span>';
+          html += '<span style="font-size:13px;font-weight:800;color:' + barRenk + '">' + gosterSkor + '</span>';
+          html += '</div>';
+          html += '<div class="ilerleme-kap" style="margin-bottom:8px"><div class="ilerleme-bar" style="width:' + gosterSkor + '%;background:' + barRenk + '"></div></div>';
+          html += '<div style="font-size:12px;color:var(--gray-700);padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
+          html += aciklama.metin + '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklama.tavsiye + '</span>';
+          html += '</div></div>';
+        });
+        html += '</div>';
+      }
     }
 
     if (!html) html = '<div class="bos-durum"><span class="ikon">📋</span><p>Henüz sonuç yok</p></div>';
