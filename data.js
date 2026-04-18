@@ -96,21 +96,25 @@ async function tumAnketler() {
 }
 
 // ── NORM & HESAPLAMA ──────────────────────────────────────────────────────
+// Normlar — TKD sporcusu bazlı (10-16 yaş, Erkek/Kız)
+// Format: [E10-12, K10-12, E13-14, K13-14, E15-16, K15-16]
+// Kaynaklar: Xu et al.2025, Da Silva Santos 2016-2019, Nikolaidis et al.2016,
+//            Eurofit TKD sporcusu düzeltmeli, elite-nonelite TKD karşılaştırmaları
 const NORMLAR = {
-  uzun_atlama_cm:      { normlar: [140,130,155,143,168,152], yuksek_iyi: true  },
-  saglik_topu_cm:      { normlar: [350,290,420,340,490,380], yuksek_iyi: true  },
-  mekik_tekrar:        { normlar: [18,16,22,19,26,22],       yuksek_iyi: true  },
-  sprint_30m_sn:       { normlar: [5.4,5.8,5.0,5.4,4.7,5.1], yuksek_iyi: false },
-  illinois_sn:         { normlar: [18.5,19.5,17.2,18.3,16.2,17.5], yuksek_iyi: false },
-  flamingo_hata:       { normlar: [6,8,4,6,3,5],             yuksek_iyi: false },
-  otur_uzan_cm:        { normlar: [22,26,24,28,26,30],       yuksek_iyi: true  },
-  beep_test_seviye:    { normlar: [5.4,4.8,6.2,5.6,7.4,6.8], yuksek_iyi: true  },
-  cetvel_reaksiyon_cm: { normlar: [22,24,19,21,16,18],       yuksek_iyi: false },
-  dolyo_chagi_tekrar:  { normlar: [13,11,16,14,20,17],       yuksek_iyi: true  },
-  fskt_tekrar:         { normlar: [14,12,17,15,21,18],       yuksek_iyi: true  },
-  fskt_kdi:            { normlar: [20,20,18,18,15,15],       yuksek_iyi: false },
-  dck60_tekrar:        { normlar: [55,46,65,55,78,65],       yuksek_iyi: true  },
-  sinav_tekrar:        { normlar: [12,9,18,12,25,16],        yuksek_iyi: true  }
+  uzun_atlama_cm:      { normlar: [155,143,172,158,188,168], yuksek_iyi: true  }, // TKD rekabetçi ort. +%10
+  saglik_topu_cm:      { normlar: [375,310,450,365,525,410], yuksek_iyi: true  }, // Genel norm +%7
+  mekik_tekrar:        { normlar: [22,19,26,23,32,27],       yuksek_iyi: true  }, // TKD %23 üstün
+  sprint_30m_sn:       { normlar: [5.1,5.5,4.8,5.1,4.4,4.8], yuksek_iyi: false }, // Elite TKD ~%5 hızlı
+  illinois_sn:         { normlar: [17.8,19.0,16.5,17.8,15.5,17.0], yuksek_iyi: false }, // Xu et al. 2025 TKD
+  flamingo_hata:       { normlar: [5,7,3,5,2,4],             yuksek_iyi: false }, // TKD denge %16 iyi
+  otur_uzan_cm:        { normlar: [27,31,29,33,31,36],       yuksek_iyi: true  }, // TKD +5cm
+  beep_test_seviye:    { normlar: [6.5,5.8,7.5,6.8,9.0,8.0], yuksek_iyi: true  }, // TKD +1-1.5 seviye
+  cetvel_reaksiyon_cm: { normlar: [20,22,17,19,14,16],       yuksek_iyi: false }, // TKD ~2cm daha iyi
+  dolyo_chagi_tekrar:  { normlar: [13,11,16,14,20,17],       yuksek_iyi: true  }, // Xu et al.2025
+  fskt_tekrar:         { normlar: [14,12,17,15,21,18],       yuksek_iyi: true  }, // Da Silva Santos
+  fskt_kdi:            { normlar: [20,20,18,18,15,15],       yuksek_iyi: false }, // Da Silva Santos
+  dck60_tekrar:        { normlar: [55,46,65,55,78,65],       yuksek_iyi: true  }, // Xu et al.2025
+  sinav_tekrar:        { normlar: [15,11,22,15,30,20],       yuksek_iyi: true  }  // TKD +%25
 };
 
 function normIndeksiHesapla(yas, cinsiyet) {
