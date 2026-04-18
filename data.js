@@ -970,3 +970,26 @@ const SAHA_PERF_SPORCU = {
     red:    { metin: "Maça gergin çıkıyorsun. Hem kafan hem vücudun maça başlamadan yorulmuş. Bu maç başlamadan alınan bir handikap.", tavsiye: "💡 Maç öncesi 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 5 kez tekrarla. Vücudun sakinleşir." }
   }
 };
+
+// ── LİNK KÜTÜPHANESİ ─────────────────────────────────────────────────────
+async function linkleriGetir() {
+  var rows = await sbFetch('link_kutuphane?order=olusturma_tarihi.desc');
+  return rows || [];
+}
+async function linkEkle(veri) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/link_kutuphane', {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(veri)
+  });
+  if (!r.ok) throw new Error('Link eklenemedi');
+  return await r.json();
+}
+async function linkSil(id) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/link_kutuphane?id=eq.' + id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  if (!r.ok) throw new Error('Link silinemedi');
+}
