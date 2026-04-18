@@ -782,3 +782,191 @@ async function yarismaEkle(veri) {
   if (!r.ok) throw new Error('Ekleme hatası');
   return await r.json();
 }
+
+// ── BİLEŞİK SAHA PERFORMANS SKORLARI ─────────────────────────────────────
+
+function sahaPerfSkorlari(p) {
+  if (!p) return null;
+  // p: psikolojiPuanlari() çıktısı
+  // Tüm değerler 1-5 veya 1-36 arasında — normalize ediyoruz 0-1'e
+  var bk = (p.bilisselKaygi || 0) / 36;  // yüksek = kötü
+  var sk = (p.somatikKaygi  || 0) / 36;  // yüksek = kötü
+  var og = (p.ozguven        || 0) / 36;  // yüksek = iyi
+  var gy = (p.gorevYon       || 0) / 5;   // yüksek = iyi
+  var ey = (p.egoYon         || 0) / 5;   // yüksek = kötü
+  var mk = (p.kontrol        || 0) / 5;   // yüksek = iyi
+  var mb = (p.baglilik       || 0) / 5;   // yüksek = iyi
+  var mm = (p.meydan         || 0) / 5;   // yüksek = iyi
+  var mg = (p.guven          || 0) / 5;   // yüksek = iyi
+  var gd = (p.genisDissal    || 0) / 5;   // yüksek = iyi
+  var dd = (p.darDissal      || 0) / 5;   // yüksek = iyi
+  var dh = (p.dikkatHatasi   || 0) / 5;   // yüksek = kötü
+
+  // Her skor 0-100 arası — düşük = risk/zayıf, yüksek = iyi
+  return {
+    vurmaInhibisyon:   Math.round((sk * 0.5 + (1 - og) * 0.5) * 100),         // düşük iyi
+    gucluRakipCekilme: Math.round((bk * 0.4 + (1-mm) * 0.3 + (1-og) * 0.3) * 100), // düşük iyi
+    yuzSonrasiCokus:   Math.round((dh * 0.5 + (1 - mk) * 0.5) * 100),         // düşük iyi
+    erkenTukenme:      Math.round(((1-mb) * 0.5 + sk * 0.5) * 100),           // düşük iyi
+    motivasyonKirilma: Math.round((ey * 0.5 + (1 - mg) * 0.5) * 100),         // düşük iyi
+    taktikOkuma:       Math.round((gd * 0.4 + dd * 0.4 + (1-dh) * 0.2) * 100), // yüksek iyi
+    basincPerformans:  Math.round((mk * 0.4 + mg * 0.3 + mm * 0.3) * 100),    // yüksek iyi
+    uzunVadePotansiyel:Math.round((gy * 0.4 + mb * 0.3 + mm * 0.3) * 100),    // yüksek iyi
+    macIciDayaniklilik:Math.round((mk * 0.4 + (1-dh) * 0.3 + mg * 0.3) * 100), // yüksek iyi
+    rekabetciHazirlik: Math.round((og * 0.4 + (1-bk) * 0.3 + (1-sk) * 0.3) * 100) // yüksek iyi
+  };
+}
+
+// Risk skorları için renk (risk = düşük iyi, potansiyel = yüksek iyi)
+function sahaSkorRenk(skor, ters) {
+  var v = ters ? (100 - skor) : skor;
+  if (v >= 70) return 'green';
+  if (v >= 50) return 'orange';
+  return 'red';
+}
+
+const SAHA_PERF_ANTRENOR = {
+  vurmaInhibisyon: {
+    baslik: '⚡ Vurma İnhibisyonu Riski',
+    ters: true,
+    green:  { metin: "Sporcu maçta tam güçle vurabiliyor, kendini frenlemiyor. Teknik ve fizik sahaya yansıyor.", tavsiye: "💡 Bu dengeyi koru. Gereksiz baskı bu özgürlüğü bozabilir." },
+    orange: { metin: "Zaman zaman tam güçle gitmiyor. Antrenmanla rakibine karşı da aynı gücü çıkarabilir.", tavsiye: "💡 Kontrollu sparring'de 'tam git' komutu ver ve tekrarla. Her vuruşta ödüllendir." },
+    red:    { metin: "Teknik olarak iyi vurabiliyorsunuz ama maçta kendini frenleniyor. Kasları gergin, tam güce izin vermiyor. Fizik var, cesaret eksik.", tavsiye: "💡 Antrenmanlarında punta torbasına tam güçle vurdur, sonra aynı komutu sparring'e taşı. 'Vur, git, kork' döngüsünü kır." }
+  },
+  gucluRakipCekilme: {
+    baslik: '🛡 Güçlü Rakip Çekilme Riski',
+    ters: true,
+    green:  { metin: "Güçlü rakiple karşılaşınca çekilmiyor, zorlukla yüzleşiyor. Rekabetçi ortamda istikrarlı.", tavsiye: "💡 Büyük maçlara sok, bu sporcu baskıdan güç alıyor." },
+    orange: { metin: "Bazı güçlü rakipler karşısında biraz pasifleşiyor ama toparlayabiliyor.", tavsiye: "💡 Antrenmanlarında daha güçlü sporcularla eşleştir. Her seferinde 'bugün ne öğrendin?' diye sor." },
+    red:    { metin: "Kendi seviyesindeki rakiplere karşı iyi ama güçlü biri çıktığında içe kapanıyor. Bekleme, uzaklaşma ve pasif kalma başlıyor. Kaybetmekten değil, rakipten korkuyor.", tavsiye: "💡 Kasıtlı olarak daha güçlü sporcularla eşleştir. Skora değil öğrenmeye odaklan. 'Bu rakipten ne çalabilirsin?' diye sor." }
+  },
+  yuzSonrasiCokus: {
+    baslik: '🔄 Yüz Sonrası Çöküş Riski',
+    ters: true,
+    green:  { metin: "Tekme yedikten sonra hızla toparlanıyor. Zincirleme hata riski düşük, maç boyunca istikrarlı.", tavsiye: "💡 Bu toparlanma kapasitesini pekiştir. Bilerek hatalı durumlar yarat, toparlanma pratiği yaptır." },
+    orange: { metin: "Bazen hatadan sonra odağı dağılıyor ama kısa sürede toparlanabiliyor.", tavsiye: "💡 Maç sırasında her puan sonrası kısa bir sinyal ver. El hareketi ya da kısa söz — 'geçti, devam' anlamına gelsin." },
+    red:    { metin: "Tekme yediğinde veya hata yaptığında o anı zihninde tekrar tekrar yaşıyor. Bir sonraki hamleyi düşünmesi gerekirken önceki hatayı düşünüyor. Zincirleme hata buradan geliyor.", tavsiye: "💡 Her puan sonrası sporcuya bir reset sinyali ver. Maç sırasında köşe molalarında 'oldu, bitti, şimdi ne?' tekniğini öğret." }
+  },
+  erkenTukenme: {
+    baslik: '🔋 Erken Tükenme Riski',
+    ters: true,
+    green:  { metin: "Zor anlarda devam ediyor, maç sonuna kadar aynı kararlılıkla savaşıyor.", tavsiye: "💡 Bu bağlılığı ödüllendir. 'Bugün çok kararlı çalıştın' gibi geri bildirimler motivasyonu korur." },
+    orange: { metin: "Çoğunlukla devam ediyor ama aşırı zorlandığında pes etme isteği baş gösterebiliyor.", tavsiye: "💡 Bitirebileceği ama zor antrenmanlar ver. Her bitişte 'yaptın' de — küçük zaferler direnci artırır." },
+    red:    { metin: "Maçın başında iyi başlıyor ama zorlandığında devam etme isteği kırılıyor. Antrenmanların zor bölümlerinden de erken çıkıyor olabilir. Kritik anlarda bu risk sahaya yansır.", tavsiye: "💡 Kısa vadeli hedefler koy. 'Bu seti bitir' gibi. Uzun vadeli hedefler bu sporcuya uzak geliyor. Küçük adımlarla ilerle." }
+  },
+  motivasyonKirilma: {
+    baslik: '💥 Motivasyon Kırılganlığı Riski',
+    ters: true,
+    green:  { metin: "Kazanma-kaybetme döngüsünden bağımsız motivasyonunu koruyabiliyor. Sağlıklı rekabet anlayışı var.", tavsiye: "💡 Takım içi sıralamalardan kaçın. Bu dengeyi bozmamak önemli." },
+    orange: { metin: "Kaybetince biraz sarsılıyor ama toparlanabiliyor. Dikkatli yönetim gerekiyor.", tavsiye: "💡 Maç sonrası değerlendirmelerde kazanma-kaybetmeden önce performansı konuş." },
+    red:    { metin: "Kazandığında çok iyi hissediyor, kaybettiğinde veya birinin daha iyi olduğunu gördüğünde tamamen çöküyor. Turnuvada ilk yenilgiden sonra toparlanamayabilir.", tavsiye: "💡 Maç sonrası 'bugün ne iyi yaptın?' ile başla. Performansı skora bağlama. Bu sporcuyla birebir konuşmalar yap." }
+  },
+  taktikOkuma: {
+    baslik: '👁 Taktik Okuma Kapasitesi',
+    ters: false,
+    green:  { metin: "Sahayı çok iyi okuyor. Rakibini takip ediyor, açıkları fark ediyor, değişikliklere hızlı uyum sağlıyor. Taktik antrenmanlardan çok verim alır.", tavsiye: "💡 Bu sporcuya taktik sorumluluk ver. 'Rakibinin zayıf tarafı neydi?' diye sor — cevabı seni şaşırtabilir." },
+    orange: { metin: "Genel olarak iyi takip ediyor ama yoğun anlarda odak dağılabiliyor.", tavsiye: "💡 Antrenmanın yorucu bölümlerine taktik egzersizler ekle. Yorgunluk altında dikkat pratiği yaptır." },
+    red:    { metin: "Sahayı okumakta zorlanıyor. Sadece önüne bakıyor, rakibinin stratejisini kaçırıyor. Sürprizlere karşı savunmasız kalıyor.", tavsiye: "💡 Kısa süreli yoğun odak egzersizleri ekle. 'Rakibinin sağ omzuna bak' gibi tek nokta odak çalışmaları dikkat kapasitesini artırır." }
+  },
+  basincPerformans: {
+    baslik: '🏆 Baskı Altında Performans',
+    ters: false,
+    green:  { metin: "Kritik anlarda dağılmıyor. Final maçında, sayı geride olduğunda, seyirci baskısında da aynı sporcuyu görürsün.", tavsiye: "💡 Bu sporcuyu büyük maçlara sok. Baskıdan kaçınma — baskı bu sporcuyu daha iyi yapıyor." },
+    orange: { metin: "Çoğu baskı durumunda iyi ama çok yüksek stres anlarında biraz sarsılabiliyor.", tavsiye: "💡 Antrenmanlarında yüksek baskı simülasyonları uygula. 'Son 30 saniye, 2 puan gerideyiz' senaryoları yaptır." },
+    red:    { metin: "Baskı altında performansı düşüyor. Kritik anlarda hata oranı artıyor, karar verme güçleşiyor.", tavsiye: "💡 Önce düşük baskılı ortamlarda güven oluştur. Kademeli olarak baskıyı artır. Acele etme." }
+  },
+  uzunVadePotansiyel: {
+    baslik: '🌱 Uzun Vadeli Sporcu Potansiyeli',
+    ters: false,
+    green:  { metin: "Doğru nedenden taekwondo yapıyor — öğrenmek için. Zorluklardan kaçmıyor, antrenmanlara bağlı. Şu an en iyi olmasa bile en hızlı gelişen bu olacak.", tavsiye: "💡 Bu sporcuya zaman ayır. Zor teknikler öğret, sabırla ilerle. Verdiğin her şey geri dönecek." },
+    orange: { metin: "Genel olarak gelişmeye açık ama bazı dönemler motivasyonu dalgalanabiliyor.", tavsiye: "💡 Her antrenman için küçük hedefler koy. Küçük başarılar uzun vadeli bağlılığı besler." },
+    red:    { metin: "Şu an gelişime kapalı görünüyor. Sonuç odaklı yaklaşım veya düşük bağlılık uzun vadeli gelişimi engelliyor.", tavsiye: "💡 Neden taekwondo yaptığını konuş. Temeli yeniden kur. Zorlamak işe yaramaz, içsel motivasyonu bul." }
+  },
+  macIciDayaniklilik: {
+    baslik: '💪 Maç İçi Zihinsel Dayanıklılık',
+    ters: false,
+    green:  { metin: "Maç boyunca istikrarlı. İlk raund nasılsa son raund da öyle. Hata yaptığında toparlanıyor, baskı altında dağılmıyor. Maçı bitirme kapasitesi yüksek.", tavsiye: "💡 Bu özelliği koru. Gereksiz eleştiri ve baskı bu dengeyi bozabilir." },
+    orange: { metin: "Çoğunlukla istikrarlı ama uzun ve çekişmeli maçlarda son rauntta biraz düşüş yaşanabiliyor.", tavsiye: "💡 Uzun süreli baskı altında sparring antrenmanları yap. Maç süresi boyunca dayanıklılık pratiği." },
+    red:    { metin: "Maç başı ile maç sonu arasında belirgin fark var. Zorlandıkça mental kalitesi düşüyor, hatalar artıyor.", tavsiye: "💡 Reset teknikleri öğret. Her puan sonrası bir nefes al, hazır pozisyona dön ritüelini oturtun." }
+  },
+  rekabetciHazirlik: {
+    baslik: '🎯 Rekabetçi Hazırlık',
+    ters: false,
+    green:  { metin: "Bu sporcu maça hazır çıkıyor. Kafası sakin, vücudu rahat, kendine inanıyor. Maç öncesi en verimli durumda.", tavsiye: "💡 Maç öncesi rutinini bozma. Ne yapıyorsa işe yarıyor — değiştirme." },
+    orange: { metin: "Çoğunlukla hazır ama büyük maçlarda ya da önemli rakipler karşısında gerginlik artıyor.", tavsiye: "💡 Büyük maç öncesi rutini standartlaştır. Isınma, müzik, nefes — hep aynı şekilde." },
+    red:    { metin: "Maça gergin çıkıyor. Hem kafası hem vücudu maça başlamadan yorulmuş durumda. Bu maç başlamadan alınan bir handikap.", tavsiye: "💡 Maç öncesi saatlerde ne yapıyor? Rutini incele. Sessiz kalma, müzik, hafif hareket — neyin işe yaradığını bul." }
+  }
+};
+
+const SAHA_PERF_SPORCU = {
+  vurmaInhibisyon: {
+    baslik: '⚡ Tam Güçle Vurma',
+    ters: true,
+    green:  { metin: "Maçta kendini tutmuyorsun, tam güçle vurabiliyorsun. Bu çok iyi.", tavsiye: "💡 Bunu koru. Her antrenman aynı özgürlükle çalış." },
+    orange: { metin: "Bazen maçta tam güçle gitmediğini hissedebilirsin. Bu alışkanlıkla düzelir.", tavsiye: "💡 Antrenmanlarında her vuruşta 'tam git' de kendine. Bunu tekrarladıkça maçta da otomatik olur." },
+    red:    { metin: "Teknik olarak iyi vurabiliyorsun ama maçta kendini frenliyor olabilirsin. Vücudun geri çekiyor, tam güce izin vermiyor. Bu fizik sorunu değil, alışkanlık sorunu.", tavsiye: "💡 Antrenmanında her vuruşta 'tam git' de kendine. Bunu tekrarladıkça maçta da otomatik hale gelir." }
+  },
+  gucluRakipCekilme: {
+    baslik: '🛡 Güçlü Rakiple Başa Çıkma',
+    ters: true,
+    green:  { metin: "Güçlü rakiple karşılaşınca çekilmiyorsun. Zorlukla yüzleşebiliyorsun — bu çok değerli.", tavsiye: "💡 Büyük maçlardan kaçma. Bu özelliğin seni daha da güçlü yapar." },
+    orange: { metin: "Çoğu rakiple iyi başa çıkıyorsun ama bazı güçlü sporcular karşısında biraz pasifleşebiliyorsun.", tavsiye: "💡 O rakibi değil sadece ilk hamleyi düşün. Sadece ilki — sonrası gelir." },
+    red:    { metin: "Güçlü ya da daha önce seni yenmiş biriyle karşılaşınca içine kapandığını fark ediyor olabilirsin. Bu normal bir his — ama bu his seni sahada durdurmasın.", tavsiye: "💡 O rakibi düşünmek yerine sadece ilk hamleyi düşün. Sadece ilki. Sonrası kendiliğinden gelir." }
+  },
+  yuzSonrasiCokus: {
+    baslik: '🔄 Tekme Yedikten Sonra Toparlanma',
+    ters: true,
+    green:  { metin: "Tekme yedikten sonra hızlıca toparlanabiliyorsun. Zincirleme hata yapmıyorsun.", tavsiye: "💡 Bu gücünü bil. Rakibin seni sarsmak isteyecek — ama sen toparlanıyorsun." },
+    orange: { metin: "Genellikle toparlanabiliyorsun ama bazen bir hata diğerini tetikleyebiliyor.", tavsiye: "💡 Hata yaptığında hemen bir nefes al ve bir sonraki hamleye bak. Geçmişe değil ileriye." },
+    red:    { metin: "Bir tekme yediğinde o anı kafanda tekrar tekrar oynatıyor olabilirsin. Bir sonraki hamleyi düşünmen gerekirken önceki hatayı düşünüyorsun. Zincirleme hata buradan geliyor.", tavsiye: "💡 Yedikten hemen sonra bir derin nefes al ve 'bitti, şimdi ne?' de. Geçmişe değil bir sonraki hamleye bak." }
+  },
+  erkenTukenme: {
+    baslik: '🔋 Maçı Sonuna Kadar Götürme',
+    ters: true,
+    green:  { metin: "Maçın zor anlarında da devam ediyorsun. Son raundda da ilk raunddaki gibisini.", tavsiye: "💡 Bu dayanıklılığın rakibine karşı büyük avantaj. Son raundu sen kazanırsın." },
+    orange: { metin: "Genellikle devam ediyorsun ama çok zorlandığında pes etme isteği gelebiliyor.", tavsiye: "💡 Zor antrenmanların zorlu yerinde 'sadece 30 saniye daha' de. Bu alışkanlık maçta seni ayakta tutar." },
+    red:    { metin: "Maçın başında iyi başlıyorsun ama zorlandığında devam etme isteğin kırılabiliyor. Bu seni son rauntta zayıf bırakır.", tavsiye: "💡 Antrenmanların zor yerlerinde 'sadece 30 saniye daha' de kendine. Bu alışkanlık maçta seni ayakta tutar." }
+  },
+  motivasyonKirilma: {
+    baslik: '💥 Kaybedince Toparlanma',
+    ters: true,
+    green:  { metin: "Kaybettiğinde çökmüyorsun. Kazanma-kaybetme seni sarsmıyor, devam ediyorsun.", tavsiye: "💡 Bu sağlıklı yaklaşımı koru. Her kayıp bir ders — sen bunu zaten biliyorsun." },
+    orange: { metin: "Kaybedince biraz sarsılıyorsun ama toparlanabiliyorsun.", tavsiye: "💡 Kaybettiğinde kendine sor: 'Bugün ne öğrendim?' Skoru değil, öğrendiğini say." },
+    red:    { metin: "Kaybettiğinde ya da birinin senden iyi olduğunu gördüğünde motivasyonun çok düşüyor olabilir. Bu seni kırılgan yapıyor.", tavsiye: "💡 Her maçtan sonra kendine sor: 'Bugün ne iyi yaptım?' Skoru değil, performansını değerlendir." }
+  },
+  taktikOkuma: {
+    baslik: '👁 Sahayı Okuma',
+    ters: false,
+    green:  { metin: "Sahada çok iyi görüyorsun. Rakibini okuyabilir, açıkları fark edebilirsin. Bu çok değerli bir özellik.", tavsiye: "💡 Maç sırasında rakibinin hangi tarafının zayıf olduğunu gözlemle. Sonra antrenörüne söyle." },
+    orange: { metin: "Genel olarak iyi takip ediyorsun ama çok hızlı tempoda dikkat dağılabiliyor.", tavsiye: "💡 Maçta sadece rakibinin omuzlarına bak. Omuzlar nereye giderse vücut oraya gider." },
+    red:    { metin: "Sahada sadece önüne bakıyor olabilirsin. Rakibinin stratejisini kaçırıyorsun, sürprizlere hazırlıksız kalıyorsun.", tavsiye: "💡 Antrenman maçlarında sadece rakibine değil tüm sahaya bakmayı dene. Ne kadar çok şey fark ettiğini göreceksin." }
+  },
+  basincPerformans: {
+    baslik: '🏆 Baskı Altında Kalite',
+    ters: false,
+    green:  { metin: "Zor anlarda dağılmıyorsun. Final maçında da ilk maçtaki gibisini. Bu çok az sporcuda olan bir özellik.", tavsiye: "💡 Büyük maçlardan kaçma. O anlar seni daha da güçlü yapar." },
+    orange: { metin: "Çoğu baskıda iyi ama çok yüksek stres anlarında biraz sarsılabiliyor.", tavsiye: "💡 Baskı anında sadece bir sonraki hamleye odaklan. Skoru, seyirciyi, rakibi unut — sadece bir hamle." },
+    red:    { metin: "Baskı altında performansın düşüyor. Kritik anlarda hata yapma ihtimalin artıyor.", tavsiye: "💡 Baskı anında bir derin nefes al ve kafanda 'ben hazırım' de. Bunu antrenmanlarında da pratik yap." }
+  },
+  uzunVadePotansiyel: {
+    baslik: '🌱 Gelişim Potansiyelin',
+    ters: false,
+    green:  { metin: "Öğrenmek için taekwondo yapıyorsun ve zorluklardan kaçmıyorsun. Şu an en iyi olmasan bile en hızlı gelişen sen olacaksın.", tavsiye: "💡 Sabırlı ol. Her antrenman seni bir adım ilerletiyor, bunu hissetmesen bile." },
+    orange: { metin: "Genel olarak gelişmeye açıksın ama bazı dönemler motivasyonun dalgalanıyor.", tavsiye: "💡 Her antrenman sonrası küçük bir hedef koy. Küçük başarılar seni ilerletiyor." },
+    red:    { metin: "Şu an gelişime biraz kapalı görünüyorsun. Sonuçlara çok takılıyor, süreci kaçırıyor olabilirsin.", tavsiye: "💡 Kazanmayı değil öğrenmeyi hedefle. 'Bugün ne yeni şey denedim?' diye sor kendine." }
+  },
+  macIciDayaniklilik: {
+    baslik: '💪 Maç Boyunca İstikrar',
+    ters: false,
+    green:  { metin: "Maç boyunca istikrarlısın. İlk raunddaki sen, son raunddaki sensin. Rakibin yorulurken sen hâlâ güçlüsün.", tavsiye: "💡 Bu gücünü bil. Son raundu sen kazanırsın — sabırla bekle." },
+    orange: { metin: "Çoğunlukla istikrarlısın ama uzun maçlarda son rauntta hafif düşüş yaşanabiliyor.", tavsiye: "💡 Son raundu kafanda en önemli raund olarak belirle. Orada en iyini ver." },
+    red:    { metin: "Maç başı ile maç sonu arasında belirgin fark var. Zoruldukça kaliten düşüyor.", tavsiye: "💡 Her tekme yediğinde veya hata yaptığında hemen bir nefes al ve 'devam' de. Ritim kırılmasın." }
+  },
+  rekabetciHazirlik: {
+    baslik: '🎯 Maça Hazırlık',
+    ters: false,
+    green:  { metin: "Maça hazır çıkıyorsun. Kafan sakin, vücudun rahat, kendine inanıyorsun. Bu her sporcuda olmaz.", tavsiye: "💡 Maç öncesi ne yapıyorsan devam et. İşe yarıyor." },
+    orange: { metin: "Çoğunlukla hazır çıkıyorsun ama büyük maçlarda gerginlik artabiliyor.", tavsiye: "💡 Maç öncesi rutinini standartlaştır. Hep aynı şeyleri yap — vücudun bunu tanıdık hissedecek." },
+    red:    { metin: "Maça gergin çıkıyorsun. Hem kafan hem vücudun maça başlamadan yorulmuş. Bu maç başlamadan alınan bir handikap.", tavsiye: "💡 Maç öncesi 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 5 kez tekrarla. Vücudun sakinleşir." }
+  }
+};
