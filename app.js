@@ -821,15 +821,9 @@ function antrenorGozlemModalOlustur() {
       <div class="modal-handle"></div>
       <div class="modal-baslik">👁 Antrenör Psikoloji Gözlem Formu</div>
       <input type="hidden" id="gozlemSporcuId">
-      <div class="form-row">
-        <div class="form-grup">
-          <label class="form-etiket">Gözlem Tarihi *</label>
-          <input type="date" id="gozlemTarih" class="form-input">
-        </div>
-        <div class="form-grup">
-          <label class="form-etiket">Yaklaşan Yarış</label>
-          <input type="text" id="gozlemYaris" class="form-input" placeholder="Opsiyonel">
-        </div>
+      <div class="form-grup">
+        <label class="form-etiket">Gözlem Tarihi *</label>
+        <input type="date" id="gozlemTarih" class="form-input">
       </div>`;
 
   bolumler.forEach(bolum => {
@@ -889,7 +883,7 @@ async function gozlemKaydet() {
   const veri = {
     sporcu_id: sporcuId,
     gozlem_tarihi: tarih,
-    yaklasan_yaris: document.getElementById('gozlemYaris')?.value?.trim() || null,
+    yaklasan_yaris: null,
     antrenor_notu: document.getElementById('gozlemNot').value.trim() || null,
     ...gozlemCevaplari
   };
