@@ -993,3 +993,36 @@ async function linkSil(id) {
   });
   if (!r.ok) throw new Error('Link silinemedi');
 }
+
+// ── SİLME FONKSİYONLARI ──────────────────────────────────────────────────
+async function motorikTestSil(id) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/motorik_testler?id=eq.' + id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  if (!r.ok) throw new Error('Test silinemedi');
+}
+
+async function anketSil(id) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/psikoloji_anketler?id=eq.' + id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  if (!r.ok) throw new Error('Anket silinemedi');
+}
+
+async function antrenorAnketSil(id) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/antrenor_psikoloji?id=eq.' + id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  if (!r.ok) throw new Error('Gözlem silinemedi');
+}
+
+async function sporcuSil(id) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/sporcular?id=eq.' + id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  if (!r.ok) throw new Error('Sporcu silinemedi');
+}
