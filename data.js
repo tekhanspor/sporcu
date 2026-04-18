@@ -749,3 +749,32 @@ const ANTRENOR_PSIKO_ACIKLAMALAR = {
   }
 
 };
+
+// ── YARIŞMA TAKVİMİ ──────────────────────────────────────────────────────
+async function yarismalariGetir() {
+  const rows = await sbFetch('yarisma_takvimi?order=tarih.asc');
+  return rows || [];
+}
+
+async function yarismaSil(id) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/yarisma_takvimi?id=eq.' + id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  if (!r.ok) throw new Error('Silme hatası');
+}
+
+async function yarismaEkle(veri) {
+  const r = await fetch(SUPABASE_URL + '/rest/v1/yarisma_takvimi', {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(veri)
+  });
+  if (!r.ok) throw new Error('Ekleme hatası');
+  return await r.json();
+}
