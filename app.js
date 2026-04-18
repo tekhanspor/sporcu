@@ -474,6 +474,7 @@ function renderProfilHeader(s) {
       <div class="profil-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || '—'}</div>
     </div>
     <button style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer" onclick="sporcuDuzModalAc('${s.id}')">Düzenle</button>
+    <button style="background:rgba(255,0,0,0.3);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer;margin-left:6px" onclick="sporcuSilBtn('${s.id}','${s.ad_soyad}')">Sil</button>
   </div>`;
 }
 
@@ -613,7 +614,10 @@ function renderProfilTestler(testler, sporcu) {
       const ustunlar = alanlar.filter(k => { const r = testDurumu(k, t[k], yas, cin); return r.renk === 'green'; });
       const zayiflar = alanlar.filter(k => { const r = testDurumu(k, t[k], yas, cin); return r.renk === 'red'; });
       html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
-      html += '<div style="font-size:12px;font-weight:700;color:var(--gray-500);margin-bottom:6px">' + tarihFormatla(t.test_tarihi) + '</div>';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">';
+      html += '<span style="font-size:12px;font-weight:700;color:var(--gray-500)">' + tarihFormatla(t.test_tarihi) + '</span>';
+      html += '<button onclick="testSilBtn(&quot;' + t.id + '&quot;)" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#c81e1e;font-size:11px;padding:2px 8px;cursor:pointer">Sil</button>';
+      html += '</div>';
       if (ustunlar.length > 0) {
         html += '<div style="margin-bottom:4px"><span style="font-size:11px;color:#057a55;font-weight:600">🟢 Üstün: </span>';
         html += '<span style="font-size:12px;color:var(--gray-700)">' + ustunlar.map(k => TEST_ETIKETLERI[k].ad).join(', ') + '</span></div>';
@@ -692,9 +696,15 @@ function renderProfilPsikoloji(anketler, antPsiko) {
     });
     html += '</div>';
     if (anketler.length > 1) {
-      html += `<div class="kart"><div class="kart-baslik">📋 Sporcu Anket Geçmişi</div>
-        ${anketler.slice(1).map(a => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(a.anket_tarihi)}</span><span class="gecmis-icerik">Anket dolduruldu</span></div>`).join('')}
-      </div>`;
+      html += '<div class="kart"><div class="kart-baslik">📋 Sporcu Anket Geçmişi</div>';
+      anketler.slice(1).forEach(function(a) {
+        html += '<div class="gecmis-item">';
+        html += '<span class="gecmis-tarih">' + tarihFormatla(a.anket_tarihi) + '</span>';
+        html += '<span class="gecmis-icerik">Anket dolduruldu</span>';
+        html += '<button onclick="anketSilBtn(&quot;' + a.id + '&quot;)" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#c81e1e;font-size:11px;padding:2px 8px;cursor:pointer;margin-left:auto">Sil</button>';
+        html += '</div>';
+      });
+      html += '</div>';
     }
   } else {
     html += '<div class="kart"><div class="kart-baslik">👤 Sporcu Öz-Bildirimi</div><div class="bos-durum" style="padding:20px 0"><span class="ikon" style="font-size:32px">📋</span><p>Sporcu henüz anket doldurmamış</p></div></div>';
@@ -728,9 +738,15 @@ function renderProfilPsikoloji(anketler, antPsiko) {
     if (g.antrenor_notu) html += '<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-700)">📝 ' + g.antrenor_notu + '</div>';
     html += '</div>';
     if (antPsiko.length > 1) {
-      html += `<div class="kart"><div class="kart-baslik">📋 Antrenör Gözlem Geçmişi</div>
-        ${antPsiko.slice(1).map(g2 => `<div class="gecmis-item"><span class="gecmis-tarih">${tarihFormatla(g2.gozlem_tarihi)}</span><span class="gecmis-icerik">Gözlem formu dolduruldu</span></div>`).join('')}
-      </div>`;
+      html += '<div class="kart"><div class="kart-baslik">📋 Antrenör Gözlem Geçmişi</div>';
+      antPsiko.slice(1).forEach(function(g2) {
+        html += '<div class="gecmis-item">';
+        html += '<span class="gecmis-tarih">' + tarihFormatla(g2.gozlem_tarihi) + '</span>';
+        html += '<span class="gecmis-icerik">Gözlem formu dolduruldu</span>';
+        html += '<button onclick="antrenorAnketSilBtn(&quot;' + g2.id + '&quot;)" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#c81e1e;font-size:11px;padding:2px 8px;cursor:pointer;margin-left:auto">Sil</button>';
+        html += '</div>';
+      });
+      html += '</div>';
     }
   } else {
     html += '<div class="kart"><div class="kart-baslik">🏆 Antrenör Gözlemi</div><div class="bos-durum" style="padding:20px 0"><span class="ikon" style="font-size:32px">👀</span><p>Henüz gözlem formu doldurulmamış</p></div></div>';
@@ -1936,4 +1952,42 @@ function testHatirlaticiEkle(sporcu, sonTestTarihi) {
   if (gun >= 56) return '<span style="font-size:11px;color:#c81e1e;font-weight:600">⚠️ ' + gun + ' gün önce</span>';
   if (gun >= 42) return '<span style="font-size:11px;color:#e65100">⏰ ' + gun + ' gün önce</span>';
   return '<span style="font-size:11px;color:var(--gray-400)">' + gun + ' gün önce</span>';
+}
+
+// ── SİLME HANDLER FONKSİYONLARI ──────────────────────────────────────────
+async function sporcuSilBtn(id, ad) {
+  if (!confirm(ad + ' adlı sporcuyu silmek istediğine emin misin?\nTüm test ve anket verileri de silinecek.')) return;
+  try {
+    await sporcuSil(id);
+    bildirimGoster('✅ Sporcu silindi');
+    geriGit('antrenorEkrani');
+    sporcularYukle();
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function testSilBtn(id) {
+  if (!confirm('Bu test kaydını silmek istediğine emin misin?')) return;
+  try {
+    await motorikTestSil(id);
+    bildirimGoster('✅ Test silindi');
+    sporcuProfilAc(aktifSporcuId);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function anketSilBtn(id) {
+  if (!confirm('Bu anketi silmek istediğine emin misin?')) return;
+  try {
+    await anketSil(id);
+    bildirimGoster('✅ Anket silindi');
+    sporcuProfilAc(aktifSporcuId);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function antrenorAnketSilBtn(id) {
+  if (!confirm('Bu gözlem formunu silmek istediğine emin misin?')) return;
+  try {
+    await antrenorAnketSil(id);
+    bildirimGoster('✅ Gözlem silindi');
+    sporcuProfilAc(aktifSporcuId);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
 }
