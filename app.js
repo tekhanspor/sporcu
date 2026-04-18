@@ -462,7 +462,6 @@ function renderProfilHeader(s) {
     <div>
       <div class="profil-isim">${s.ad_soyad}</div>
       <div class="profil-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || '—'}</div>
-      <div class="profil-meta">${s.kulup_okul || ''}</div>
     </div>
     <button style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer" onclick="sporcuDuzModalAc('${s.id}')">Düzenle</button>
   </div>`;
@@ -478,7 +477,6 @@ function renderProfilBilgiler(s) {
     { etiket: 'Boy', deger: s.boy_cm ? s.boy_cm + ' cm' : '—' },
     { etiket: 'Kilo', deger: s.kilo_kg ? s.kilo_kg + ' kg' : '—' },
     { etiket: 'Dan / Kuşak', deger: s.dan_kusak || '—' },
-    { etiket: 'Kulüp / Okul', deger: s.kulup_okul || '—' },
     { etiket: 'Kullanıcı Adı', deger: s.kullanici_adi }
   ];
   const izinDurum = s.anket_izin;
@@ -1012,7 +1010,7 @@ function profilTabSec(tab, btn) {
 function sporcuEklePanelAc() {
   document.getElementById('sporcuModalBaslik').textContent = 'Sporcu Ekle';
   document.getElementById('sporcuDuzId').value = '';
-  ['sAd','sKullaniciAdi','sSifre','sDogum','sBoy','sKilo','sDan','sKulup'].forEach(id => {
+  ['sAd','sKullaniciAdi','sSifre','sDogum','sBoy','sKilo','sDan'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = '';
   });
@@ -1035,7 +1033,6 @@ async function sporcuDuzModalAc(id) {
   document.getElementById('sBoy').value = sporcu.boy_cm || '';
   document.getElementById('sKilo').value = sporcu.kilo_kg || '';
   document.getElementById('sDan').value = sporcu.dan_kusak || '';
-  document.getElementById('sKulup').value = sporcu.kulup_okul || '';
   hataGizle('sporcuModalHata');
   modalAc('sporcuModal');
 }
@@ -1051,7 +1048,6 @@ async function sporcuKaydet() {
     boy_cm: parseFloat(document.getElementById('sBoy').value) || null,
     kilo_kg: parseFloat(document.getElementById('sKilo').value) || null,
     dan_kusak: document.getElementById('sDan').value.trim() || null,
-    kulup_okul: document.getElementById('sKulup').value.trim() || null
   };
   if (!veri.ad_soyad)      { hataGoster('sporcuModalHata', 'Ad soyad gerekli'); return; }
   if (!veri.kullanici_adi) { hataGoster('sporcuModalHata', 'Kullanıcı adı gerekli'); return; }
