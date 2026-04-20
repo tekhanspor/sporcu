@@ -1770,6 +1770,37 @@ async function sporcuSonuclariniYukle() {
       html += '</div>';
     }
 
+    // PSİKOLOJİK REÇETE — SPORCU VERSİYONU
+    if (anketler && anketler.length > 0) {
+      var p2 = psikolojiPuanlari(anketler[0]);
+      var gelisimAlanlar = ['bilisselKaygi','somatikKaygi','ozguven','egoYon',
+        'kontrol','baglilik','meydan','guven','genisDissal','darDissal','dikkatHatasi'];
+      var spZayiflar = gelisimAlanlar.filter(function(k) {
+        var r = psikolojiBoyutDurumu(k, p2[k]);
+        return r.renk === 'red' || r.renk === 'orange';
+      });
+      if (spZayiflar.length > 0) {
+        html += '<div class="kart"><div class="kart-baslik">💊 Psikolojik Reçetem</div>';
+        spZayiflar.forEach(function(k) {
+          var r = psikolojiBoyutDurumu(k, p2[k]);
+          var barRenk = r.renk === 'orange' ? '#e65100' : '#c81e1e';
+          var bgRenk = r.renk === 'orange' ? '#fff7ed' : '#fef2f2';
+          var recete = psikolojiReceteGetir(k);
+          html += '<div style="padding:12px 0;border-bottom:1px solid var(--gray-100)">';
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+          html += '<span style="font-size:13px;font-weight:600">' + psikolojiAlanAdi(k) + '</span>';
+          html += '<span class="badge badge-' + (r.renk === 'orange' ? 'orange' : 'red') + '">' + r.durum + '</span>';
+          html += '</div>';
+          var receteDiv = document.createElement('div');
+          receteDiv.style.cssText = 'font-size:12px;color:var(--gray-600);line-height:1.9;background:' + bgRenk + ';padding:10px;border-radius:8px';
+          receteDiv.innerHTML = recete;
+          html += receteDiv.outerHTML;
+          html += '</div>';
+        });
+        html += '</div>';
+      }
+    }
+
     // SAHA PERFORMANS SKORLARI — SPORCU VERSİYONU
     if (anketler && anketler.length > 0) {
       var sp2 = psikolojiPuanlari(anketler[0]);
