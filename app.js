@@ -2257,11 +2257,33 @@ async function beslenmeEkraniYukle() {
   var bugun = new Date().toISOString().split('T')[0];
 
   try {
-    var [kayit, yemekListesi, miktarListesi] = await Promise.all([
+    var [kayit, yemekListesi] = await Promise.all([
       beslenmeGetir(sporcu.id, bugun),
-      yemekListesiGetir(),
-      miktarListesiGetir()
+      yemekListesiGetir()
     ]);
+
+    // Miktar listesi sabit — DB'ye gerek yok
+    var miktarListesi = [
+      { ad: '1 tabak',        carpan: 1    },
+      { ad: '1 yarım tabak',  carpan: 0.5  },
+      { ad: '2 tabak',        carpan: 2    },
+      { ad: '1 kepçe',        carpan: 0.8  },
+      { ad: '2 kepçe',        carpan: 1.6  },
+      { ad: '1 kase',         carpan: 0.9  },
+      { ad: '1 yarım kase',   carpan: 0.45 },
+      { ad: '1 porsiyon',     carpan: 1    },
+      { ad: '2 porsiyon',     carpan: 2    },
+      { ad: '1 dilim',        carpan: 0.3  },
+      { ad: '2 dilim',        carpan: 0.6  },
+      { ad: '1 adet',         carpan: 0.4  },
+      { ad: '2 adet',         carpan: 0.8  },
+      { ad: '3 adet',         carpan: 1.2  },
+      { ad: '1 su bardağı',   carpan: 0.5  },
+      { ad: '1 çay bardağı',  carpan: 0.25 },
+      { ad: '1 avuç',         carpan: 0.3  },
+      { ad: '1 dilim ekmek',  carpan: 1    },
+      { ad: '2 dilim ekmek',  carpan: 2    }
+    ];
 
     tumYemekler = yemekListesi || [];
     var isAntrenman = kayit ? kayit.antrenman_gunu : false;
@@ -2315,16 +2337,17 @@ async function beslenmeEkraniYukle() {
     // YEMEK SEÇİCİ — arama + liste
     html += '<div style="margin-bottom:10px">';
     html += '<label style="font-size:12px;font-weight:700;color:var(--gray-600);display:block;margin-bottom:4px">Yemek ara veya seç</label>';
-    html += '<input type="text" id="yemekArama" class="form-input" placeholder="Örn: mercimek, pilav, tavuk..." oninput="yemekAramaFiltrele()" style="margin-bottom:6px">';
+    html += '<input type="text" id="yemekArama" class="form-input" placeholder="Örn: mercimek, pilav, tavuk..." oninput="yemekAramaFiltrele()" onfocus="yemekAramaFiltrele()" style="margin-bottom:6px">';
     html += '<div id="yemekAramaSonuclari" style="max-height:180px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px;display:none"></div>';
     html += '</div>';
 
     // Miktar seçimi
     html += '<div class="form-row" style="margin-bottom:8px">';
     html += '<div class="form-grup"><label class="form-etiket">Seçilen yemek</label><div id="seciliYemekGoster" style="padding:10px;background:var(--gray-50);border-radius:8px;font-size:13px;color:var(--gray-500);min-height:40px">— Listeden seç —</div></div>';
-    html += '<div class="form-grup"><label class="form-etiket">Miktar</label><select id="miktarSec" class="form-input">';
+    html += '<div class="form-grup"><label class="form-etiket">Miktar</label><select id="miktarSec" class="form-input" onchange="miktarSecildi()">';
     (miktarListesi||[]).forEach(function(m) { html += '<option value="' + m.carpan + '" data-ad="' + m.ad + '">' + m.ad + '</option>'; });
     html += '</select></div></div>';
+    html += '<div id="kaloriOnizle" style="text-align:center;font-size:12px;color:var(--gray-400);margin:-4px 0 8px"></div>';
     html += '<button onclick="yemekSepeteEkle()" class="btn btn-primary" style="width:100%;margin-bottom:8px">+ Listeye Ekle</button>';
 
     // Yeni yemek ekle
@@ -2377,11 +2400,17 @@ function yemekAramaFiltrele() {
   var arama = (document.getElementById('yemekArama')?.value || '').toLowerCase().trim();
   var sonucDiv = document.getElementById('yemekAramaSonuclari');
   if (!sonucDiv) return;
-  if (!arama) { sonucDiv.style.display = 'none'; return; }
 
-  var sonuclar = tumYemekler.filter(function(y) {
-    return y.ad.toLowerCase().includes(arama);
-  }).slice(0, 10);
+  // Boşken tüm listeyi göster (max 20)
+  var sonuclar = arama
+    ? tumYemekler.filter(function(y) { return y.ad.toLowerCase().includes(arama); }).slice(0, 15)
+    : tumYemekler.slice(0, 20);
+
+  if (tumYemekler.length === 0) {
+    sonucDiv.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--gray-400)">Yemek listesi yükleniyor...</div>';
+    sonucDiv.style.display = 'block';
+    return;
+  }
 
   if (sonuclar.length === 0) {
     sonucDiv.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--gray-400)">Bulunamadı — aşağıdan yeni yemek ekleyebilirsin</div>';
@@ -2577,4 +2606,17 @@ async function antrenorBeslenmeToggle(sporcuId, durum, btn) {
     btn.textContent = durum ? '✅ Takip Açık' : '❌ Takip Kapalı';
     bildirimGoster(durum ? '✅ Beslenme takibi açıldı' : 'Beslenme takibi kapatıldı');
   } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+function miktarSecildi() {
+  var miktarEl = document.getElementById('miktarSec');
+  var onizleEl = document.getElementById('kaloriOnizle');
+  if (!miktarEl || !onizleEl) return;
+  var carpan = parseFloat(miktarEl.value || 1);
+  var miktarAd = miktarEl.options[miktarEl.selectedIndex]?.getAttribute('data-ad') || '';
+  if (_seciliYemekAd && _seciliYemekKalori) {
+    var kalori = Math.round(_seciliYemekKalori * carpan);
+    onizleEl.textContent = miktarAd + ' ' + _seciliYemekAd + ' ≈ ' + kalori + ' kalori';
+    onizleEl.style.color = 'var(--primary)';
+  }
 }
