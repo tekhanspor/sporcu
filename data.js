@@ -1113,8 +1113,100 @@ function kaloriHedefiHesapla(sporcu, antrenmanGunu) {
 }
 
 // ── YEMEK & MİKTAR LİSTESİ ───────────────────────────────────────────────
+// Sabit yemek listesi — tablo olmasa da çalışır
+const SABIT_YEMEKLER = [
+  // Çorbalar
+  {ad:'Mercimek çorbası',kalori_tabak:140,kategori:'corba'},
+  {ad:'Ezogelin çorbası',kalori_tabak:130,kategori:'corba'},
+  {ad:'Tarhana çorbası',kalori_tabak:120,kategori:'corba'},
+  {ad:'Yayla çorbası',kalori_tabak:110,kategori:'corba'},
+  {ad:'Domates çorbası',kalori_tabak:90,kategori:'corba'},
+  {ad:'Tavuk suyu çorba',kalori_tabak:80,kategori:'corba'},
+  {ad:'Düğün çorbası',kalori_tabak:160,kategori:'corba'},
+  {ad:'İşkembe çorbası',kalori_tabak:130,kategori:'corba'},
+  // Ana yemekler
+  {ad:'Pirinç pilavı',kalori_tabak:320,kategori:'ana_yemek'},
+  {ad:'Bulgur pilavı',kalori_tabak:280,kategori:'ana_yemek'},
+  {ad:'Makarna',kalori_tabak:300,kategori:'ana_yemek'},
+  {ad:'Kuru fasulye',kalori_tabak:220,kategori:'ana_yemek'},
+  {ad:'Nohut yemeği',kalori_tabak:210,kategori:'ana_yemek'},
+  {ad:'Bezelye yemeği',kalori_tabak:190,kategori:'ana_yemek'},
+  {ad:'Ispanak yemeği',kalori_tabak:150,kategori:'ana_yemek'},
+  {ad:'Patates yemeği',kalori_tabak:200,kategori:'ana_yemek'},
+  {ad:'Zeytinyağlı fasulye',kalori_tabak:160,kategori:'ana_yemek'},
+  {ad:'Tavuk sote',kalori_tabak:250,kategori:'ana_yemek'},
+  {ad:'Tavuk haşlama',kalori_tabak:200,kategori:'ana_yemek'},
+  {ad:'Izgara tavuk',kalori_tabak:220,kategori:'ana_yemek'},
+  {ad:'Köfte',kalori_tabak:280,kategori:'ana_yemek'},
+  {ad:'Kıymalı yemek',kalori_tabak:260,kategori:'ana_yemek'},
+  {ad:'Izgara balık',kalori_tabak:200,kategori:'ana_yemek'},
+  {ad:'Haşlama et',kalori_tabak:240,kategori:'ana_yemek'},
+  {ad:'Sebze yemeği',kalori_tabak:130,kategori:'ana_yemek'},
+  {ad:'Dolma/sarma',kalori_tabak:180,kategori:'ana_yemek'},
+  {ad:'Börek (peynirli)',kalori_tabak:300,kategori:'ana_yemek'},
+  {ad:'Menemen',kalori_tabak:220,kategori:'ana_yemek'},
+  {ad:'Karnıyarık',kalori_tabak:280,kategori:'ana_yemek'},
+  {ad:'İmam bayıldı',kalori_tabak:180,kategori:'ana_yemek'},
+  {ad:'Biber dolması',kalori_tabak:190,kategori:'ana_yemek'},
+  {ad:'Etli nohut',kalori_tabak:280,kategori:'ana_yemek'},
+  {ad:'Şehriyeli pirinç pilavı',kalori_tabak:340,kategori:'ana_yemek'},
+  // Kahvaltılık
+  {ad:'Yumurta (haşlama)',kalori_tabak:70,kategori:'kahvaltilik'},
+  {ad:'Yumurta (sahanda)',kalori_tabak:120,kategori:'kahvaltilik'},
+  {ad:'Beyaz peynir',kalori_tabak:90,kategori:'kahvaltilik'},
+  {ad:'Kaşar peyniri',kalori_tabak:120,kategori:'kahvaltilik'},
+  {ad:'Zeytin',kalori_tabak:80,kategori:'kahvaltilik'},
+  {ad:'Bal/reçel',kalori_tabak:60,kategori:'kahvaltilik'},
+  {ad:'Tereyağı',kalori_tabak:100,kategori:'kahvaltilik'},
+  // Süt ürünleri
+  {ad:'Yoğurt',kalori_tabak:80,kategori:'sut'},
+  {ad:'Ayran',kalori_tabak:50,kategori:'sut'},
+  {ad:'Süt',kalori_tabak:120,kategori:'sut'},
+  {ad:'Kefir',kalori_tabak:100,kategori:'sut'},
+  // Ekmek
+  {ad:'Ekmek',kalori_tabak:80,kategori:'ekmek'},
+  {ad:'Tam buğday ekmek',kalori_tabak:70,kategori:'ekmek'},
+  {ad:'Simit',kalori_tabak:250,kategori:'ekmek'},
+  {ad:'Poğaça',kalori_tabak:280,kategori:'ekmek'},
+  {ad:'Pide',kalori_tabak:220,kategori:'ekmek'},
+  // Meyve
+  {ad:'Elma',kalori_tabak:80,kategori:'meyve'},
+  {ad:'Muz',kalori_tabak:90,kategori:'meyve'},
+  {ad:'Portakal',kalori_tabak:70,kategori:'meyve'},
+  {ad:'Üzüm',kalori_tabak:100,kategori:'meyve'},
+  {ad:'Karpuz',kalori_tabak:50,kategori:'meyve'},
+  {ad:'Şeftali',kalori_tabak:60,kategori:'meyve'},
+  {ad:'Çilek',kalori_tabak:50,kategori:'meyve'},
+  {ad:'Armut',kalori_tabak:75,kategori:'meyve'},
+  // Salata
+  {ad:'Domates-salatalık',kalori_tabak:40,kategori:'salata'},
+  {ad:'Karışık salata',kalori_tabak:60,kategori:'salata'},
+  {ad:'Çoban salatası',kalori_tabak:70,kategori:'salata'},
+  // Atıştırmalık
+  {ad:'Ceviz',kalori_tabak:100,kategori:'atistirmalik'},
+  {ad:'Fındık',kalori_tabak:110,kategori:'atistirmalik'},
+  {ad:'Badem',kalori_tabak:100,kategori:'atistirmalik'},
+  {ad:'Ton balığı (konserve)',kalori_tabak:150,kategori:'atistirmalik'},
+  {ad:'Hurma',kalori_tabak:80,kategori:'atistirmalik'},
+  // İçecek
+  {ad:'Çay (şekersiz)',kalori_tabak:5,kategori:'icecek'},
+  {ad:'Meyve suyu (taze)',kalori_tabak:110,kategori:'icecek'},
+];
+
 async function yemekListesiGetir() {
-  return await sbFetch('yemek_listesi?order=kategori.asc,ad.asc') || [];
+  // Önce sabit listeyi al, sonra DB'den kullanıcı eklediklerini ekle
+  try {
+    var dbYemekler = await sbFetch('yemek_listesi?order=olusturma_tarihi.desc') || [];
+    // DB'de olan isimleri sabit listeden çıkar (duplicate olmasın)
+    var dbAdlar = dbYemekler.map(function(y) { return y.ad.toLowerCase(); });
+    var birlesik = SABIT_YEMEKLER.filter(function(y) {
+      return !dbAdlar.includes(y.ad.toLowerCase());
+    }).concat(dbYemekler);
+    return birlesik;
+  } catch(e) {
+    // DB yoksa sadece sabit listeyi döndür
+    return SABIT_YEMEKLER;
+  }
 }
 async function yemekEkle(ad, kalori, kategori) {
   var r = await fetch(SUPABASE_URL + '/rest/v1/yemek_listesi', {
