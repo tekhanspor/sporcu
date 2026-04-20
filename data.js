@@ -1053,7 +1053,10 @@ async function beslenmeKaydet(sporcuId, tarih, veri) {
       'Content-Type': 'application/json', 'Prefer': 'return=representation' },
     body: JSON.stringify(Object.assign({ sporcu_id: sporcuId, tarih: tarih }, veri))
   });
-  if (!r.ok) throw new Error('Beslenme kaydedilemedi');
+  if (!r.ok) {
+    var errText = await r.text();
+    throw new Error('Beslenme kaydedilemedi: ' + r.status + ' ' + errText.substring(0,100));
+  }
   return await r.json();
 }
 
