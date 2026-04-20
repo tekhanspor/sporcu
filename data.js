@@ -1086,7 +1086,8 @@ function proteinPuanHesapla(metin) {
 }
 
 // Günlük kalori hedefi hesapla
-function kaloriHedefiHesapla(sporcu, antrenmanGunu) {
+// antrenmanTuru: 'yok' | 'teknik' | 'kuvvet' | 'dayaniklilik'
+function kaloriHedefiHesapla(sporcu, antrenmanTuru) {
   var kilo = sporcu.kilo_kg || 55;
   var boy = sporcu.boy_cm || 160;
   var yas = yasHesapla(sporcu.dogum_tarihi) || 14;
@@ -1101,18 +1102,30 @@ function kaloriHedefiHesapla(sporcu, antrenmanGunu) {
     bmr = 447.6 + (9.2 * kilo) + (3.1 * boy) - (4.3 * yas);
   }
 
-  // Antrenman çarpanı
-  var carpan = antrenmanGunu ? 1.6 : 1.3;
-  var tdee = Math.round(bmr * carpan);
+  // Antrenman türüne göre ekstra harcama (2 saat akşam TKD)
+  var ekstraKal = 0;
+  var antAciklama = 'Dinlenme günü';
+  if (antrenmanTuru === 'teknik') { ekstraKal = 450; antAciklama = 'Teknik/taktik antrenman'; }
+  else if (antrenmanTuru === 'kuvvet') { ekstraKal = 550; antAciklama = 'Kuvvet antrenmanı'; }
+  else if (antrenmanTuru === 'dayaniklilik') { ekstraKal = 600; antAciklama = 'Dayanıklılık antrenmanı'; }
+
+  // Günlük bazal + sedanter aktivite + antrenman
+  var tdee = Math.round(bmr * 1.3) + ekstraKal;
+
+  // Kilo hedefi yoksa sadece enerji dengesi
+  var hedefYok = !sporcu.hedef_kilo;
 
   // Profile göre ayarla
-  if (profil === 'ver') {
-    return { hedef: tdee - 400, min: tdee - 600, max: tdee - 200, aciklama: 'Kilo verme modu' };
+  var sonuc;
+  if (profil === 'ver' && !hedefYok) {
+    sonuc = { hedef: tdee - 400, min: tdee - 600, max: tdee - 200, aciklama: antAciklama + ' · Kilo verme' };
   } else if (profil === 'ust_siklet') {
-    return { hedef: tdee + 200, min: tdee, max: tdee + 400, aciklama: 'Güç kazanım modu' };
+    sonuc = { hedef: tdee + 200, min: tdee, max: tdee + 400, aciklama: antAciklama + ' · Güç kazanım' };
   } else {
-    return { hedef: tdee, min: tdee - 200, max: tdee + 200, aciklama: 'Kilo koruma modu' };
+    sonuc = { hedef: tdee, min: tdee - 200, max: tdee + 200, aciklama: antAciklama + ' · Enerji dengesi' };
   }
+  sonuc.hedefYok = hedefYok;
+  return sonuc;
 }
 
 // ── YEMEK & MİKTAR LİSTESİ ───────────────────────────────────────────────
