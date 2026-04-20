@@ -7,6 +7,11 @@ let tumSporcular = [];
 let aktifAnketCevaplari = {};
 let grafikInstances = {};
 
+function oturumGuncelle(yeniAlanlar) {
+  Object.assign(oturumKullanici, yeniAlanlar);
+  sessionStorage.setItem('oturum', JSON.stringify({ kullanici: oturumKullanici, rol: aktifRol }));
+}
+
 // ── BAŞLANGIÇ ─────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
   const kayitli = sessionStorage.getItem('oturum');
