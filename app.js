@@ -503,7 +503,7 @@ function renderProfilBilgiler(s) {
       <span style="color:var(--gray-500);font-size:13px">${b.etiket}</span>
       <span style="font-size:13px;font-weight:600">${b.deger || '—'}</span>
     </div>`).join('')}
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-100)">
       <div>
         <div style="font-size:13px;font-weight:600">🧠 Anket İzni</div>
         <div style="font-size:11px;color:var(--gray-500)">Sporcu psikoloji anketi doldurabilsin mi?</div>
@@ -511,6 +511,17 @@ function renderProfilBilgiler(s) {
       <button onclick="anketIzniToggle('${s.id}', ${izinDurum})"
         style="padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:${izinDurum ? '#def7ec' : '#fde8e8'};color:${izinDurum ? '#057a55' : '#c81e1e'}">
         ${izinDurum ? '✅ Açık' : '🔒 Kapalı'}
+      </button>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0">
+      <div>
+        <div style="font-size:13px;font-weight:600">🍽️ Beslenme Takibi</div>
+        <div style="font-size:11px;color:var(--gray-500)">Sporcu beslenme ekranını görebilsin mi?</div>
+      </div>
+      <button onclick="beslenmeIzniToggle('${s.id}', ${s.beslenme_aktif})"
+        id="beslenmeToggleBtn_${s.id}"
+        style="padding:8px 16px;border-radius:8px;border:none;font-size:13px;font-weight:600;cursor:pointer;background:${s.beslenme_aktif ? '#def7ec' : '#fde8e8'};color:${s.beslenme_aktif ? '#057a55' : '#c81e1e'}">
+        ${s.beslenme_aktif ? '✅ Açık' : '🔒 Kapalı'}
       </button>
     </div>
   </div>`;
@@ -1800,6 +1811,17 @@ async function anketIzniToggle(sporcuId, mevcutDurum) {
   try {
     await sporcuGuncelle(sporcuId, { anket_izin: !mevcutDurum });
     bildirimGoster(mevcutDurum ? '🔒 Anket kapatıldı' : '✅ Anket açıldı');
+    sporcuProfilAc(sporcuId);
+  } catch(e) {
+    bildirimGoster('Hata: ' + e.message);
+  }
+}
+
+async function beslenmeIzniToggle(sporcuId, mevcutDurum) {
+  try {
+    var yeniDurum = !mevcutDurum;
+    await sporcuGuncelle(sporcuId, { beslenme_aktif: yeniDurum });
+    bildirimGoster(yeniDurum ? '✅ Beslenme takibi açıldı' : '🔒 Beslenme takibi kapatıldı');
     sporcuProfilAc(sporcuId);
   } catch(e) {
     bildirimGoster('Hata: ' + e.message);
