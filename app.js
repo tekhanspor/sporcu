@@ -960,17 +960,23 @@ function renderRecete(testler, anketler, sporcu) {
       return renk === 'red' || renk === 'orange';
     });
     if (gelisimler.length > 0) {
-      html += `<div class="kart"><div class="kart-baslik">🧠 Psikolojik Reçete</div>
-      ${gelisimler.map(k => {
+      html += '<div class="kart"><div class="kart-baslik">🧠 Psikolojik Reçete</div>';
+      gelisimler.forEach(function(k) {
         const { durum } = psikolojiBoyutDurumu(k, p[k]);
-        return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:13px;font-weight:600">${psikolojiAlanAdi(k)}</span>
-            <span class="badge badge-${durum.includes('🔴') ? 'red' : 'orange'}">${durum}</span>
-          </div>
-          <div style="font-size:12px;color:var(--gray-500)">${psikolojiReceteGetir(k)}</div>
-        </div>`;
-      }).join('')}</div>`;
+        const badgeRenk = durum.includes('🔴') ? 'red' : 'orange';
+        const receteMetni = psikolojiReceteGetir(k);
+        html += '<div style="padding:12px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+        html += '<span style="font-size:13px;font-weight:600">' + psikolojiAlanAdi(k) + '</span>';
+        html += '<span class="badge badge-' + badgeRenk + '">' + durum + '</span>';
+        html += '</div>';
+        const receteDiv = document.createElement('div');
+        receteDiv.style.cssText = 'font-size:12px;color:var(--gray-600);line-height:1.9;background:var(--gray-50);padding:10px;border-radius:8px';
+        receteDiv.innerHTML = receteMetni;
+        html += receteDiv.outerHTML;
+        html += '</div>';
+      });
+      html += '</div>';
     }
   }
 
@@ -1032,19 +1038,62 @@ function psikolojiAlanAdi(k) {
 
 function psikolojiReceteGetir(k) {
   const r = {
-    bilisselKaygi: 'Bilişsel yeniden yapılandırma: "DUR" komutu + olumlu iç ses. Günlük 5dk Düşünce Günlüğü.',
-    somatikKaygi: 'Kutu Nefesi (4-4-4-4) + Progresif Kas Gevşemesi. Isınma öncesi 3dk, uyku öncesi 10dk.',
-    ozguven: 'Başarı Envanteri: 3 güçlü an yaz. Her antrenman sonu "bugün iyi yaptığım 1 şey" sorusu.',
-    egoYon: 'Süreç Hedefleme: "Ben vs Geçen Hafta Ben". Geri bildirimi süreç odaklı yap.',
-    kontrol: 'Duygu düzenleme: 10sn reset (nefes→odak→devam). Mindfulness 5dk/gün.',
-    baglilik: 'Uzun vadeli hedef planı. Zor seansları tamamlamayı ödüllendir.',
-    meydan: 'Kademeli zorluk artışı. "Ne öğrendim?" sorusu. Büyüme Anı günlüğü.',
-    guven: 'Yeterlilik geçmişi gözden geçirme. Zor anlarda destekleyici iç ses.',
-    genisDissal: 'Çoklu uyarıcı takip drilleri. Saha okuma egzersizleri. Haftada 2x.',
-    darDissal: 'Odak nokta belirli drilleri. Pre-performance rutini oluştur.',
-    dikkatHatasi: 'Odak Kelimesi antrenmanı. Park Et & Git tekniği. Günlük 5dk dikkat meditasyonu.'
+    bilisselKaygi: `
+      <b>🏋️ Antrenman döneminde:</b> Her antrenman sonrası kafanda o gün iyi yaptığın 1 şeyi düşün ve aklında tut. Olumsuz bir düşünce gelince içinden "dur" de ve o iyi anı hatırla.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> "Ya kaybedersem" diye düşünmeye başlarsan hemen dur. Yerine şunu sor: "Maçta ne yapmak istiyorum?" Sonucu değil, yapacağını düşün.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Soyunma odasında 3 kez yavaşça nefes al. Sadece ilk hamleyi düşün — sadece ilkini. Geri kalanı gelir.`,
+
+    somatikKaygi: `
+      <b>🏋️ Antrenman döneminde:</b> Her gece yatmadan önce: 4 saniye nefes al, 4 saniye tut, 4 saniye ver. Bunu 5 kez tekrarla. Zamanla vücudun bunu tanımaya başlar.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Vücudun gerginleşmeye başlarsa ellerin, omuzların, çeneni sıkıştır — sonra bırak. Bu gerginliği atmana yardımcı olur.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Isınırken kasıtlı olarak yavaş ve derin nefes al. Vücuduna "hazırım, sakinim" sinyali veriyorsun.`,
+
+    ozguven: `
+      <b>🏋️ Antrenman döneminde:</b> Her hafta antrenmanında iyi yaptığın 3 şeyi yaz. Küçük de olsa. Bu liste büyüdükçe kendine güvenin de büyüyecek.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> O listeyi oku. "Bunları yapabiliyorum" de. Rakibini değil, kendi güçlü yönlerini düşün.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Sahaya çıkmadan önce içinden "bunu antrenmanımda yaptım, burada da yaparım" de. Bir kez, yüksek sesle değil — ama net olarak.`,
+
+    egoYon: `
+      <b>🏋️ Antrenman döneminde:</b> Maç sonuçlarına değil, o maçta ne kadar iyi oynadığına odaklan. Kaybetsen bile "bugün şunu iyi yaptım" diyebiliyorsan doğru yoldasın.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Rakibini değil, kendini düşün. "Geçen müsabakamdan bu sefer ne farklı yapacağım?" sorusunu sor.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Rakibinin kim olduğunu aklından çıkar. Sahada sadece sen ve taekwondo var.`,
+
+    kontrol: `
+      <b>🏋️ Antrenman döneminde:</b> Antrenman sırasında bir hata yapınca ne hissediyorsun? Fark etmeye başla. Sonra hemen bir nefes al ve devam et. Bu alışkanlık olana kadar tekrarla.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Aklına kötü senaryolar gelirse hepsini bir kenara bırak ve şunu sor: "Şu an yapabileceğim en iyi şey ne?" O soruya odaklan.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Sayı yersen veya hata yaparsan hemen bir derin nefes al — sadece bir. Sonra "oldu, bitti, devam" de ve bir sonraki hamleye bak.`,
+
+    baglilik: `
+      <b>🏋️ Antrenman döneminde:</b> Her antrenman öncesi kendine küçük bir hedef koy. "Bugün dolyo chagiyi 2 daha hızlı atacağım" gibi. Bitirince kendinle gurur duy.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> "Neden taekwondo yapıyorum?" diye sor. Cevabın neyse, onu hatırla. O his seni maçta ayakta tutar.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> "Buraya kadar geldim çünkü çalıştım" de. Bu maç da o çalışmanın bir parçası.`,
+
+    meydan: `
+      <b>🏋️ Antrenman döneminde:</b> Zor bir egzersiz veya güçlü bir rakip gördüğünde "bu beni geliştirecek" de. Her hafta antrenman sonrası "bugün ne öğrendim?" diye sor kendine.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Güçlü bir rakiple karşılaşacaksan "bu benim için iyi bir sınav" diye düşün. Kaybetmek öğrenmek demek — kazanmak da.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> "Bu maçtan ne öğreneceğim?" diye sor. Skoru değil, deneyimi düşün.`,
+
+    guven: `
+      <b>🏋️ Antrenman döneminde:</b> Hata yaptığında "berbat biriyim" değil "bir daha dene" de. Bu çok basit görünür ama içindeki sesin tonu zamanla değişir.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Geçmişte çok zor bir antrenmandan ya da maçtan çıktın ve atlattın. Onu hatırla. "Onu atlattım, bunu da atlarım" de.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> "Hazırım" de. Mükemmel olmak zorunda değilsin — hazır olman yeterli.`,
+
+    genisDissal: `
+      <b>🏋️ Antrenman döneminde:</b> Sparring'de sadece rakibine değil, tüm sahaya bak. Hakemin nerede olduğunu, rakibinin hangi ayağına bastığını fark etmeye çalış.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Rakibinin videosunu izlerken sadece tekniklerine değil, vücut diline de bak. Yorulunca ne yapıyor, güçlü tarafı hangi yön?<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Sahaya çıkınca bir an dur ve tüm alanı gözlerinle tara. "Ben buradayım, her şeyi görüyorum" hissini ver kendine.`,
+
+    darDissal: `
+      <b>🏋️ Antrenman döneminde:</b> Her tekme atmadan önce bir an dur ve hedefe bak. Sadece hedefe. Bu küçük duraklama odaklanma alışkanlığı yaratır.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Zihninde maçı canlandır. Rakibin geliyor, sen ne yapıyorsun? Bu hayali prova seni hazırlar.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Rakibinin gözlerine bak ve "şu an buradayım" de içinden. Geçmiş maç yok, sonraki raunt yok — sadece şu an.`,
+
+    dikkatHatasi: `
+      <b>🏋️ Antrenman döneminde:</b> Hata yaptıktan sonra ne kadar süre o hatayı düşündüğünü fark etmeye başla. Fark etmek ilk adım. Sonra "oldu, geçti" de ve devam et.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Geçmiş maçlardaki hatalar aklına gelirse onları bir kağıda yaz ve "bunlar öğrendiğim şeyler" de. Kağıdı kapat.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Sayı yersen veya hata yaparsan hemen 1 nefes al ve bir "kelime" söyle içinden — "devam", "güçlü", ne olursa. Bu kelime seni o andan koparır ve ileriye bakmana yardımcı olur.`
   };
-  return r[k] || 'Antrenör ile birlikte çalışılacak.';
+  return r[k] || 'Antrenörünle birlikte çalış.';
 }
 
 function profilTabSec(tab, btn) {
@@ -1321,13 +1370,14 @@ function renderSporcuTestler(testler, sporcu) {
 function sporcuTabSec(tab, btn) {
   document.querySelectorAll('#sporcuEkrani .tab-btn').forEach(b => b.classList.remove('aktif'));
   if (btn) btn.classList.add('aktif');
-  ['profil','anketim','sonuclarim','takvim','linkler'].forEach(t => {
+  ['profil','anketim','sonuclarim','takvim','linkler','beslenme'].forEach(t => {
     document.getElementById(`stab-${t}`).style.display = t === tab ? 'block' : 'none';
   });
   if (tab === 'anketim') anketIzinKontrol();
   if (tab === 'sonuclarim') sporcuSonuclariniYukle();
   if (tab === 'takvim') yarismaTakvimiYukle('sporcuYarismaDiv', false);
   if (tab === 'linkler') linkKutuphanesiniYukle('sporcuLinkDiv', false);
+  if (tab === 'beslenme') beslenmeEkraniYukle();
 }
 
 
@@ -1989,5 +2039,284 @@ async function antrenorAnketSilBtn(id) {
     await antrenorAnketSil(id);
     bildirimGoster('✅ Gözlem silindi');
     sporcuProfilAc(aktifSporcuId);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+// ── BESLENME ANALİZ API ────────────────────────────────────────────────────
+async function yemekAnalizEt(yemekMetni, antrenmanGunu, profil) {
+  var prompt = `Sen bir spor beslenmesi uzmanısın ve Türk mutfağını çok iyi biliyorsun.
+
+Sporcu şunları yedi: "${yemekMetni}"
+
+Türk ev yemeklerinde standart porsiyonlar:
+- 1 tabak pilav/makarna = 300-350 kalori
+- 1 yarım tabak = 150-175 kalori  
+- 1 kepçe yemek = 180-220 kalori
+- 1 kase çorba = 150-200 kalori
+- 1 kase salata = 50-80 kalori
+- 1 dilim ekmek = 80 kalori
+- 1 yumurta = 70 kalori
+- 1 su bardağı süt/ayran = 100-130 kalori
+- 1 porsiyon et/tavuk = 200-250 kalori
+- 1 muz/elma/portakal = 80-100 kalori
+
+Şunu JSON formatında döndür, başka hiçbir şey yazma:
+{
+  "kalori": 1250,
+  "protein": "yüksek|orta|düşük",
+  "karbonhidrat": "yüksek|orta|düşük",
+  "yag": "saglikli|kotu|yok",
+  "sebze_meyve": "yeterli|az|yok",
+  "abur_cubur": ["cips","kola"] veya [],
+  "ozet": "Kısa değerlendirme"
+}`;
+
+  try {
+    var resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    var data = await resp.json();
+    var text = data.content && data.content[0] ? data.content[0].text : '';
+    var clean = text.replace(/```json|```/g, '').trim();
+    return JSON.parse(clean);
+  } catch(e) {
+    return null;
+  }
+}
+
+// ── BESLENME EKRANI ────────────────────────────────────────────────────────
+async function beslenmeEkraniYukle() {
+  var div = document.getElementById('sporcuBeslenmeDiv');
+  if (!div) return;
+  var sporcu = oturumKullanici;
+  var bugun = new Date().toISOString().split('T')[0];
+  var kayit = await beslenmeGetir(sporcu.id, bugun);
+  var hedefObj = kaloriHedefiHesapla(sporcu, kayit ? kayit.antrenman_gunu : false);
+
+  var html = '';
+
+  // Kilo hedefi kartı
+  if (sporcu.hedef_kilo && sporcu.kilo_kg) {
+    var fark = parseFloat(sporcu.kilo_kg) - parseFloat(sporcu.hedef_kilo);
+    var renk = fark > 0 ? '#e65100' : fark < -2 ? '#1a56db' : '#057a55';
+    var mesaj = fark > 2 ? 'Kilo verme modundasın' : fark < -2 ? 'Kilo alma modundasın' : 'Hedef kilona ulaştın!';
+    html += '<div style="display:flex;gap:10px;margin-bottom:12px">';
+    html += '<div style="flex:1;background:var(--gray-50);border-radius:12px;padding:12px;text-align:center">';
+    html += '<div style="font-size:22px;font-weight:800;color:var(--gray-800)">' + sporcu.kilo_kg + ' kg</div>';
+    html += '<div style="font-size:11px;color:var(--gray-500)">Şu an</div></div>';
+    html += '<div style="flex:1;background:var(--gray-50);border-radius:12px;padding:12px;text-align:center">';
+    html += '<div style="font-size:22px;font-weight:800;color:' + renk + '">' + sporcu.hedef_kilo + ' kg</div>';
+    html += '<div style="font-size:11px;color:var(--gray-500)">Hedef</div></div>';
+    html += '<div style="flex:1;background:var(--gray-50);border-radius:12px;padding:12px;text-align:center">';
+    html += '<div style="font-size:18px;font-weight:800;color:' + renk + '">' + (fark > 0 ? '-' : '+') + Math.abs(fark).toFixed(1) + '</div>';
+    html += '<div style="font-size:10px;color:' + renk + ';font-weight:600">' + mesaj + '</div></div>';
+    html += '</div>';
+  }
+
+  // Bugünkü kalori hedefi
+  html += '<div class="kart">';
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+  html += '<div class="kart-baslik" style="margin:0">🍽️ Bugünün Beslenme Takibi</div>';
+  html += '</div>';
+
+  // Antrenman günü toggle
+  var isAntrenman = kayit ? kayit.antrenman_gunu : false;
+  html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px;background:var(--gray-50);border-radius:8px">';
+  html += '<span style="font-size:13px;font-weight:600">Bugün antrenman var mı?</span>';
+  html += '<button onclick="beslenmeAntrGunToggle(' + !isAntrenman + ')" style="padding:6px 14px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:' + (isAntrenman ? '#def7ec' : '#f3f4f6') + ';color:' + (isAntrenman ? '#057a55' : '#6b7280') + '">';
+  html += isAntrenman ? '✅ Evet' : 'Hayır';
+  html += '</button></div>';
+
+  // Kalori hedef göstergesi
+  var toplamKalori = kayit ? (kayit.toplam_kalori || 0) : 0;
+  var hedefKalori = hedefObj.hedef;
+  var kaloriYuzde = Math.min(Math.round((toplamKalori / hedefKalori) * 100), 120);
+  var kaloriRenk = toplamKalori > hedefObj.max ? '#c81e1e' : toplamKalori < hedefObj.min ? '#1a56db' : '#057a55';
+  html += '<div style="margin-bottom:12px">';
+  html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px">';
+  html += '<span style="font-size:12px;color:var(--gray-500)">' + hedefObj.aciklama + '</span>';
+  html += '<span style="font-size:13px;font-weight:700;color:' + kaloriRenk + '">' + toplamKalori + ' / ' + hedefKalori + ' kal</span>';
+  html += '</div>';
+  html += '<div class="ilerleme-kap"><div class="ilerleme-bar" style="width:' + kaloriYuzde + '%;background:' + kaloriRenk + '"></div></div>';
+  if (toplamKalori > hedefObj.max) {
+    html += '<div style="font-size:11px;color:#c81e1e;margin-top:4px;font-weight:600">⚠️ Günlük hedefin ' + (toplamKalori - hedefKalori) + ' kalori üzerinde!</div>';
+  } else if (toplamKalori < hedefObj.min && toplamKalori > 0) {
+    html += '<div style="font-size:11px;color:#1a56db;margin-top:4px;font-weight:600">💡 Bugün az yedin. Performansın etkilenebilir.</div>';
+  }
+  html += '</div>';
+
+  // Öğün girişleri
+  var ogunler = [
+    { key: 'sabah', label: '☀️ Sabah', placeholder: 'örn: 2 yumurta, beyaz peynir, 2 dilim ekmek, çay' },
+    { key: 'ogle', label: '🌤️ Öğlen', placeholder: 'örn: 1 tabak pilav, 1 kepçe nohut yemeği, ayran' },
+    { key: 'aksam', label: '🌙 Akşam', placeholder: 'örn: 1 porsiyon tavuk, salata, 1 dilim ekmek' },
+    { key: 'ara_ogun', label: '🍌 Ara Öğün', placeholder: 'örn: 1 muz, 1 avuç ceviz (opsiyonel)' }
+  ];
+
+  ogunler.forEach(function(o) {
+    var deger = kayit ? (kayit[o.key] || '') : '';
+    html += '<div style="margin-bottom:10px">';
+    html += '<label style="font-size:12px;font-weight:700;color:var(--gray-600);display:block;margin-bottom:4px">' + o.label + '</label>';
+    html += '<div style="display:flex;gap:6px">';
+    html += '<input type="text" id="beslenme_' + o.key + '" class="form-input" placeholder="' + o.placeholder + '" value="' + deger + '" style="flex:1;font-size:12px">';
+    html += '<button onclick="ogunKaydet(\'' + o.key + '\')" style="padding:8px 12px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer">Kaydet</button>';
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+
+  // Beslenme analiz sonuçları
+  if (kayit && (kayit.sabah || kayit.ogle || kayit.aksam)) {
+    html += renderBeslenmeAnaliz(kayit);
+  }
+
+  // Son 7 gün özeti
+  var gecmis = await beslenmeGecmisGetir(sporcu.id);
+  if (gecmis && gecmis.length > 1) {
+    html += '<div class="kart"><div class="kart-baslik">📊 Son 7 Gün</div>';
+    gecmis.slice(0, 7).forEach(function(g) {
+      var gHedef = kaloriHedefiHesapla(sporcu, g.antrenman_gunu).hedef;
+      var gRenk = !g.toplam_kalori ? '#9ca3af' : g.toplam_kalori > gHedef * 1.15 ? '#c81e1e' : g.toplam_kalori < gHedef * 0.8 ? '#1a56db' : '#057a55';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100)">';
+      html += '<span style="font-size:12px;color:var(--gray-500)">' + tarihFormatla(g.tarih) + (g.antrenman_gunu ? ' 🏋️' : '') + '</span>';
+      html += '<span style="font-size:12px;font-weight:700;color:' + gRenk + '">' + (g.toplam_kalori || '—') + ' kal</span>';
+      if (g.abur_cubur) html += '<span style="font-size:10px;color:#c81e1e">⚠️ abur cubur</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  div.innerHTML = html;
+}
+
+function renderBeslenmeAnaliz(kayit) {
+  if (!kayit || !kayit.analiz_json) return '';
+  var analiz;
+  try { analiz = typeof kayit.analiz_json === 'string' ? JSON.parse(kayit.analiz_json) : kayit.analiz_json; }
+  catch(e) { return ''; }
+  if (!analiz) return '';
+
+  var html = '<div class="kart"><div class="kart-baslik">🔍 Bugünkü Beslenme Analizi</div>';
+
+  // Makro göstergeler
+  var makrolar = [
+    { label: 'Protein', deger: analiz.protein, ikon: '💪' },
+    { label: 'Karbonhidrat', deger: analiz.karbonhidrat, ikon: '⚡' },
+    { label: 'Yağ', deger: analiz.yag === 'saglikli' ? 'sağlıklı' : analiz.yag === 'kotu' ? 'kötü' : 'az', ikon: '🫒' },
+    { label: 'Sebze/Meyve', deger: analiz.sebze_meyve, ikon: '🥗' }
+  ];
+
+  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
+  makrolar.forEach(function(m) {
+    var renk = (m.deger === 'yüksek' || m.deger === 'sağlıklı' || m.deger === 'yeterli') ? '#057a55'
+             : (m.deger === 'orta' || m.deger === 'az') ? '#e65100' : '#c81e1e';
+    html += '<div style="background:var(--gray-50);border-radius:8px;padding:8px;text-align:center">';
+    html += '<div style="font-size:18px">' + m.ikon + '</div>';
+    html += '<div style="font-size:11px;color:var(--gray-500)">' + m.label + '</div>';
+    html += '<div style="font-size:12px;font-weight:700;color:' + renk + '">' + (m.deger || '—') + '</div>';
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Protein uyarısı
+  if (analiz.protein === 'düşük') {
+    html += '<div style="background:#fff7ed;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#92400e">';
+    html += '💪 <b>Protein az:</b> Bugün yumurta, et, tavuk, balık, peynir, yoğurt, kuru fasulye veya nohut eklemeyi dene.';
+    html += '</div>';
+  }
+
+  // Sebze uyarısı
+  if (analiz.sebze_meyve === 'yok' || analiz.sebze_meyve === 'az') {
+    html += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#166534">';
+    html += '🥗 <b>Sebze/meyve az:</b> Salata, domates, salatalık, ıspanak, meyve gibi şeyler vitamin ve mineral için önemli.';
+    html += '</div>';
+  }
+
+  // Yağ uyarısı
+  if (analiz.yag === 'kotu') {
+    html += '<div style="background:#fef2f2;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#991b1b">';
+    html += '🚫 <b>Kızartma/kötü yağ var:</b> Kızartmalar ve margarinli yiyecekler performansını düşürür. Fırında veya haşlama tercih et.';
+    html += '</div>';
+  }
+
+  // Abur cubur uyarısı
+  if (analiz.abur_cubur && analiz.abur_cubur.length > 0) {
+    html += '<div style="background:#fef2f2;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#991b1b">';
+    html += '⚠️ <b>Abur cubur tespit edildi (' + analiz.abur_cubur.join(', ') + '):</b> Bunlar enerjini hızlı verir ama çabuk düşürür. Maç günü kesinlikle yeme.';
+    html += '</div>';
+  }
+
+  if (analiz.ozet) {
+    html += '<div style="font-size:12px;color:var(--gray-600);padding:6px 0">' + analiz.ozet + '</div>';
+  }
+
+  html += '</div>';
+  return html;
+}
+
+async function ogunKaydet(ogunKey) {
+  var deger = document.getElementById('beslenme_' + ogunKey)?.value?.trim();
+  if (!deger) return;
+  var sporcu = oturumKullanici;
+  var bugun = new Date().toISOString().split('T')[0];
+
+  bildirimGoster('Analiz yapılıyor...');
+
+  try {
+    // Mevcut kaydı al
+    var kayit = await beslenmeGetir(sporcu.id, bugun);
+    var guncelleme = {};
+    guncelleme[ogunKey] = deger;
+
+    // Tüm öğünleri birleştir analiz için
+    var tumYemekler = '';
+    var ogunKeys = ['sabah', 'ogle', 'aksam', 'ara_ogun'];
+    ogunKeys.forEach(function(k) {
+      var val = k === ogunKey ? deger : (kayit ? kayit[k] : '');
+      if (val) tumYemekler += val + '. ';
+    });
+
+    // API analiz
+    var isAntrenman = kayit ? kayit.antrenman_gunu : false;
+    var analiz = await yemekAnalizEt(tumYemekler, isAntrenman, sporcu.beslenme_profil || 'koru');
+
+    if (analiz) {
+      guncelleme.toplam_kalori = analiz.kalori;
+      guncelleme.protein_puan = analiz.protein === 'yüksek' ? 3 : analiz.protein === 'orta' ? 2 : 1;
+      guncelleme.abur_cubur = analiz.abur_cubur && analiz.abur_cubur.length > 0;
+      guncelleme.abur_cubur_notlar = analiz.abur_cubur ? analiz.abur_cubur.join(', ') : null;
+      guncelleme.analiz_json = JSON.stringify(analiz);
+    }
+
+    await beslenmeKaydet(sporcu.id, bugun, guncelleme);
+    bildirimGoster('✅ Kaydedildi');
+    beslenmeEkraniYukle();
+  } catch(e) {
+    bildirimGoster('Hata: ' + e.message);
+  }
+}
+
+async function beslenmeAntrGunToggle(durum) {
+  var sporcu = oturumKullanici;
+  var bugun = new Date().toISOString().split('T')[0];
+  try {
+    await beslenmeKaydet(sporcu.id, bugun, { antrenman_gunu: durum });
+    beslenmeEkraniYukle();
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function beslenmeHedefiKaydet(sporcuId) {
+  var hedefKilo = parseFloat(document.getElementById('hedefKiloInput')?.value) || null;
+  var profil = document.getElementById('beslenmeProfilInput')?.value || 'koru';
+  try {
+    await sporcuGuncelle(sporcuId, { hedef_kilo: hedefKilo, beslenme_profil: profil });
+    bildirimGoster('✅ Beslenme hedefi güncellendi');
+    sporcuProfilAc(sporcuId);
   } catch(e) { bildirimGoster('Hata: ' + e.message); }
 }
