@@ -591,8 +591,9 @@ function renderProfilTestler(testler, sporcu) {
   </div>
 
   <div class="kart">
-    <div class="kart-baslik">📊 Son Test — ${tarihFormatla(enSon.test_tarihi)}
-      ${enSon.sonraki_test_tarihi ? `<span style="font-size:11px;color:var(--gray-500);font-weight:400;margin-left:8px">Sonraki: ${tarihFormatla(enSon.sonraki_test_tarihi)}</span>` : ''}
+    <div class="kart-baslik" style="display:flex;justify-content:space-between;align-items:center">
+      <span>📊 Son Test — ${tarihFormatla(enSon.test_tarihi)}</span>
+      <button onclick="testSilBtn('${enSon.id}')" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#c81e1e;font-size:11px;padding:2px 8px;cursor:pointer;font-weight:600">Sil</button>
     </div>
     ${alanlar.map((alan, i) => {
       const val = enSon[alan];
