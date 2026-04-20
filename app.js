@@ -2484,19 +2484,37 @@ async function yemekListeKaydet() {
   var sporcu = oturumKullanici;
   var bugun = new Date().toISOString().split('T')[0];
   var toplamKalori = secilenYemekler.reduce(function(t,y){ return t+(y.kalori||0); }, 0);
-  var yemekMetni = secilenYemekler.map(function(y){ return y.miktar+' '+y.yemek; }).join(', ');
+
+  // Önce kaydet — API analizi olmadan
   try {
-    var analiz = await yemekAnalizEt(yemekMetni, false, sporcu.beslenme_profil||'koru');
     await beslenmeKaydet(sporcu.id, bugun, {
       yemek_listesi_json: JSON.stringify(secilenYemekler),
-      toplam_kalori: analiz ? analiz.kalori : toplamKalori,
-      analiz_json: analiz ? JSON.stringify(analiz) : null,
-      abur_cubur: analiz && analiz.abur_cubur && analiz.abur_cubur.length > 0,
-      abur_cubur_notlar: analiz && analiz.abur_cubur ? analiz.abur_cubur.join(', ') : null
+      toplam_kalori: toplamKalori
     });
     bildirimGoster('✅ Eklendi');
     beslenmeEkraniYukle();
-  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+  } catch(e) {
+    bildirimGoster('Hata: ' + e.message);
+    return;
+  }
+
+  // Sonra arka planda API analizi yap (başarısız olsa sorun yok)
+  try {
+    var yemekMetni = secilenYemekler.map(function(y){ return y.miktar+' '+y.yemek; }).join(', ');
+    var analiz = await yemekAnalizEt(yemekMetni, false, sporcu.beslenme_profil||'koru');
+    if (analiz) {
+      await beslenmeKaydet(sporcu.id, bugun, {
+        toplam_kalori: analiz.kalori || toplamKalori,
+        analiz_json: JSON.stringify(analiz),
+        abur_cubur: analiz.abur_cubur && analiz.abur_cubur.length > 0,
+        abur_cubur_notlar: analiz.abur_cubur ? analiz.abur_cubur.join(', ') : null
+      });
+      beslenmeEkraniYukle();
+    }
+  } catch(e) {
+    // API hatası — sessizce geç, kayıt zaten yapıldı
+    console.log('Analiz yapılamadı:', e.message);
+  }
 }
 
 async function yemekListedenSil(index) {
