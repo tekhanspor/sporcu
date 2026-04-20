@@ -1869,6 +1869,18 @@ async function yarismaTakvimiYukle(hedefDiv, antrenorMod) {
     var bugun = new Date();
     bugun.setHours(0,0,0,0);
 
+    // Tüm yarışmalar için sporcu bağlantılarını çek
+    var sporcuMap = {};
+    if (yarislar && yarislar.length > 0) {
+      try {
+        var tumBaglanti = await sbFetch('yarisma_sporcu?select=yarisma_id,sporcular(id,ad_soyad)');
+        (tumBaglanti || []).forEach(function(b) {
+          if (!sporcuMap[b.yarisma_id]) sporcuMap[b.yarisma_id] = [];
+          if (b.sporcular) sporcuMap[b.yarisma_id].push(b.sporcular.ad_soyad);
+        });
+      } catch(e) {}
+    }
+
     var html = '';
 
     if (antrenorMod) {
@@ -1892,8 +1904,9 @@ async function yarismaTakvimiYukle(hedefDiv, antrenorMod) {
         var kalanGun = Math.ceil((tarihObj - bugun) / (1000 * 60 * 60 * 24));
         var renk = kalanGun <= 7 ? '#c81e1e' : kalanGun <= 30 ? '#e65100' : '#057a55';
         var bg   = kalanGun <= 7 ? '#fef2f2' : kalanGun <= 30 ? '#fff7ed' : '#f0fdf4';
+        var sporcular = sporcuMap[y.id] || [];
 
-        html += '<div style="display:flex;align-items:center;gap:12px;padding:12px;background:' + bg + ';border-radius:12px;margin-bottom:8px">';
+        html += '<div style="display:flex;align-items:flex-start;gap:12px;padding:12px;background:' + bg + ';border-radius:12px;margin-bottom:8px">';
         html += '<div style="text-align:center;min-width:52px;background:white;border-radius:10px;padding:6px;box-shadow:0 1px 4px rgba(0,0,0,0.08)">';
         html += '<div style="font-size:18px;font-weight:800;color:' + renk + '">' + tarihObj.getDate() + '</div>';
         html += '<div style="font-size:10px;color:var(--gray-500)">' + tarihObj.toLocaleString('tr-TR',{month:'short'}).toUpperCase() + '</div>';
@@ -1902,11 +1915,18 @@ async function yarismaTakvimiYukle(hedefDiv, antrenorMod) {
         html += '<div style="font-size:14px;font-weight:700;color:var(--gray-800)">' + y.musabaka_adi + '</div>';
         if (y.yer) html += '<div style="font-size:12px;color:var(--gray-500)">📍 ' + y.yer + '</div>';
         if (y.aciklama) html += '<div style="font-size:12px;color:var(--gray-600);margin-top:2px">' + y.aciklama + '</div>';
+        if (sporcular.length > 0) {
+          html += '<div style="margin-top:6px;display:flex;flex-wrap:wrap;gap:4px">';
+          sporcular.forEach(function(ad) {
+            html += '<span style="font-size:11px;background:rgba(0,0,0,0.08);border-radius:10px;padding:2px 8px;font-weight:600">👤 ' + ad + '</span>';
+          });
+          html += '</div>';
+        }
         html += '</div>';
-        html += '<div style="text-align:right">';
+        html += '<div style="text-align:right;flex-shrink:0">';
         html += '<div style="font-size:11px;font-weight:700;color:' + renk + '">' + kalanGun + ' gün</div>';
         if (antrenorMod) {
-          html += '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end">';
+          html += '<div style="display:flex;flex-direction:column;gap:4px;align-items:flex-end;margin-top:4px">';
           html += '<button onclick="yarismasDuzenleAc(&quot;' + y.id + '&quot;)" style="background:none;border:1px solid var(--gray-200);border-radius:6px;color:var(--gray-600);cursor:pointer;font-size:11px;padding:2px 8px">Düzenle</button>';
           html += '<button onclick="yarismaKaldır(&quot;' + y.id + '&quot;)" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:18px;line-height:1">×</button>';
           html += '</div>';
