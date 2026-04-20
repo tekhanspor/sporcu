@@ -2270,6 +2270,10 @@ async function antrenorBeslenmeOzetiGoster(sporcuId, sporcuAd) {
 
 // ── BESLENME SİSTEMİ ──────────────────────────────────────────────────────
 var secilenYemekler = [];
+var secilenSabah = [];
+var secilenOgle = [];
+var secilenAksam = [];
+var aktifOgun = 'aksam';
 var tumYemekler = [];
 
 async function beslenmeEkraniYukle() {
@@ -2317,15 +2321,21 @@ async function beslenmeEkraniYukle() {
     ];
 
     tumYemekler = yemekListesi || [];
-    var isAntrenman = kayit ? kayit.antrenman_gunu : false;
-    var hedefObj = kaloriHedefiHesapla(sporcu, isAntrenman);
+    var antTur = kayit ? (kayit.antrenman_turu || 'yok') : 'yok';
+    var hedefObj = kaloriHedefiHesapla(sporcu, antTur);
 
-    // Kaydedilmiş yemek listesini yükle
-    try {
-      secilenYemekler = kayit && kayit.yemek_listesi_json ? JSON.parse(kayit.yemek_listesi_json) : [];
-    } catch(e) { secilenYemekler = []; }
+    // Kaydedilmiş yemek listelerini öğünlere göre yükle
+    try { secilenYemekler = kayit && kayit.yemek_listesi_json ? JSON.parse(kayit.yemek_listesi_json) : []; } catch(e) { secilenYemekler = []; }
+    try { secilenSabah = kayit && kayit.sabah_json ? JSON.parse(kayit.sabah_json) : []; } catch(e) { secilenSabah = []; }
+    try { secilenOgle = kayit && kayit.ogle_json ? JSON.parse(kayit.ogle_json) : []; } catch(e) { secilenOgle = []; }
+    try { secilenAksam = kayit && kayit.aksam_json ? JSON.parse(kayit.aksam_json) : []; } catch(e) { secilenAksam = []; }
 
-    var toplamKalori = secilenYemekler.reduce(function(t, y) { return t + (y.kalori||0); }, 0);
+    // Geriye dönük uyumluluk: eski yemek_listesi_json varsa akşama say
+    if (secilenYemekler.length > 0 && secilenSabah.length === 0 && secilenOgle.length === 0 && secilenAksam.length === 0) {
+      secilenAksam = secilenYemekler;
+    }
+
+    var toplamKalori = [...secilenSabah, ...secilenOgle, ...secilenAksam].reduce(function(t,y){ return t+(y.kalori||0); }, 0);
     var html = '';
 
     // Kilo kartı
@@ -2365,36 +2375,54 @@ async function beslenmeEkraniYukle() {
     if (toplamKalori > hedefObj.max) html += '<div style="font-size:11px;color:#c81e1e;font-weight:600;margin-bottom:8px">⚠️ Hedefin ' + (toplamKalori-hedefObj.hedef) + ' kalori üzerinde!</div>';
     else if (toplamKalori < hedefObj.min && toplamKalori > 0) html += '<div style="font-size:11px;color:#1a56db;font-weight:600;margin-bottom:8px">💡 Bugün az yedin — performansın etkilenebilir.</div>';
 
-    // YEMEK SEÇİCİ — arama + liste
-    html += '<div style="margin-bottom:10px">';
-    html += '<label style="font-size:12px;font-weight:700;color:var(--gray-600);display:block;margin-bottom:4px">Yemek ara veya seç</label>';
-    html += '<input type="text" id="yemekArama" class="form-input" placeholder="Örn: mercimek, pilav, tavuk..." oninput="yemekAramaFiltrele()" onfocus="yemekAramaFiltrele()" style="margin-bottom:6px">';
-    html += '<div id="yemekAramaSonuclari" style="max-height:180px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px;display:none"></div>';
+    // ÖĞÜN SEKMELERİ
+    html += '<div class="kart">';
+    html += '<div class="kart-baslik" style="margin-bottom:10px">🍽️ Öğünlerim</div>';
+    // Öğün sekme butonları
+    html += '<div style="display:flex;gap:4px;margin-bottom:12px">';
+    var ogunler = [{k:'sabah',label:'☀️ Sabah'},{k:'ogle',label:'🌤️ Öğlen'},{k:'aksam',label:'🌙 Akşam'}];
+    ogunler.forEach(function(o) {
+      html += '<button onclick="aktifOgunSec(&quot;' + o.k + '&quot;)" id="ogunBtn_' + o.k + '" style="flex:1;padding:8px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:var(--gray-100);color:var(--gray-600)">' + o.label + '</button>';
+    });
     html += '</div>';
+    html += '<div id="aktifOgunLabel" style="font-size:12px;color:var(--gray-500);margin-bottom:8px">Öğün seç</div>';
 
-    // Miktar seçimi
-    html += '<div class="form-row" style="margin-bottom:8px">';
-    html += '<div class="form-grup"><label class="form-etiket">Seçilen yemek</label><div id="seciliYemekGoster" style="padding:10px;background:var(--gray-50);border-radius:8px;font-size:13px;color:var(--gray-500);min-height:40px">— Listeden seç —</div></div>';
-    html += '<div class="form-grup"><label class="form-etiket">Miktar</label><select id="miktarSec" class="form-input" onchange="miktarSecildi()">';
+    // Yemek arama
+    html += '<input type="text" id="yemekArama" class="form-input" placeholder="Örn: mercimek, pilav, tavuk..." oninput="yemekAramaFiltrele()" onfocus="yemekAramaFiltrele()" style="margin-bottom:6px">';
+    html += '<div id="yemekAramaSonuclari" style="max-height:160px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px;display:none;background:white"></div>';
+
+    // Miktar + ekle
+    html += '<div style="display:flex;gap:6px;margin-top:8px;align-items:flex-end">';
+    html += '<div style="flex:1"><label style="font-size:11px;color:var(--gray-500)">Seçilen</label><div id="seciliYemekGoster" style="padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-500);margin-top:2px">— seç —</div></div>';
+    html += '<div><label style="font-size:11px;color:var(--gray-500)">Miktar</label><select id="miktarSec" class="form-input" onchange="miktarSecildi()" style="margin-top:2px">';
     (miktarListesi||[]).forEach(function(m) { html += '<option value="' + m.carpan + '" data-ad="' + m.ad + '">' + m.ad + '</option>'; });
-    html += '</select></div></div>';
-    html += '<div id="kaloriOnizle" style="text-align:center;font-size:12px;color:var(--gray-400);margin:-4px 0 8px"></div>';
-    html += '<button onclick="yemekSepeteEkle()" class="btn btn-primary" style="width:100%;margin-bottom:8px">+ Listeye Ekle</button>';
-
-    // Yeni yemek ekle
-    html += '<div id="yeniYemekToggle" style="text-align:center;margin-bottom:4px"><button onclick="yeniYemekFormAc()" style="background:none;border:none;color:var(--primary);font-size:12px;cursor:pointer">+ Listede olmayan yemek ekle</button></div>';
+    html += '</select></div>';
+    html += '<button onclick="yemekSepeteEkle()" class="btn btn-primary" style="white-space:nowrap">+ Ekle</button>';
+    html += '</div>';
+    html += '<div id="kaloriOnizle" style="font-size:11px;color:var(--primary);margin:4px 0"></div>';
+    html += '<div style="text-align:center;margin-top:4px"><button onclick="yeniYemekFormAc()" style="background:none;border:none;color:var(--gray-400);font-size:11px;cursor:pointer">+ Listede yoksa ekle</button></div>';
     html += '<div id="yeniYemekFormDiv"></div>';
     html += '</div>';
 
-    // Bugünkü yemek listesi
-    if (secilenYemekler.length > 0) {
-      html += '<div class="kart"><div class="kart-baslik">📋 Bugün Yediklerim (' + toplamKalori + ' kal)</div>';
-      secilenYemekler.forEach(function(item, i) {
-        var aburCubur = aburCuburTespitEt(item.yemek).length > 0;
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--gray-100)">';
-        html += '<span style="font-size:13px">' + (aburCubur ? '⚠️ ' : '') + item.miktar + ' ' + item.yemek + '</span>';
-        html += '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--gray-500)">' + item.kalori + ' kal</span>';
-        html += '<button onclick="yemekListedenSil(' + i + ')" style="background:none;border:none;color:#c81e1e;cursor:pointer;font-size:18px;padding:0;line-height:1">×</button></div></div>';
+    // Öğün listeleri
+    var ogunGoster = [
+      {k:'sabah', label:'☀️ Sabah', liste: secilenSabah},
+      {k:'ogle',  label:'🌤️ Öğlen', liste: secilenOgle},
+      {k:'aksam', label:'🌙 Akşam', liste: secilenAksam}
+    ];
+    var herhangiBirYemek = secilenSabah.length > 0 || secilenOgle.length > 0 || secilenAksam.length > 0;
+    if (herhangiBirYemek) {
+      html += '<div class="kart"><div class="kart-baslik">📋 Bugün Yediklerim — ' + toplamKalori + ' kal</div>';
+      ogunGoster.forEach(function(o) {
+        if (o.liste.length === 0) return;
+        html += '<div style="font-size:11px;font-weight:700;color:var(--gray-500);margin:8px 0 4px">' + o.label + '</div>';
+        o.liste.forEach(function(item, i) {
+          var aburCubur = aburCuburTespitEt(item.yemek).length > 0;
+          html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--gray-100)">';
+          html += '<span style="font-size:13px">' + (aburCubur?'⚠️ ':'') + item.miktar + ' ' + item.yemek + '</span>';
+          html += '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--gray-500)">' + item.kalori + ' kal</span>';
+          html += '<button onclick="yemekListedenSil(&quot;' + o.k + '&quot;,' + i + ')" style="background:none;border:none;color:#c81e1e;cursor:pointer;font-size:18px;padding:0;line-height:1">×</button></div></div>';
+        });
       });
       html += '</div>';
     }
@@ -2469,14 +2497,36 @@ function yemekSec(ad, kalori) {
   if (a) a.value = ad;
 }
 
+function aktifOgunSec(ogun) {
+  aktifOgun = ogun;
+  var label = ogun === 'sabah' ? '☀️ Sabah öğününe ekleniyor' : ogun === 'ogle' ? '🌤️ Öğlen öğününe ekleniyor' : '🌙 Akşam öğününe ekleniyor';
+  var el = document.getElementById('aktifOgunLabel');
+  if (el) el.textContent = label;
+  // Buton stillerini güncelle
+  ['sabah','ogle','aksam'].forEach(function(k) {
+    var btn = document.getElementById('ogunBtn_' + k);
+    if (!btn) return;
+    btn.style.background = k === ogun ? 'var(--primary)' : 'var(--gray-100)';
+    btn.style.color = k === ogun ? 'white' : 'var(--gray-600)';
+  });
+}
+
 function yemekSepeteEkle() {
   if (!_seciliYemekAd) { bildirimGoster('Önce bir yemek seç'); return; }
+  if (!aktifOgun) { bildirimGoster('Önce öğün seç (Sabah/Öğlen/Akşam)'); return; }
   var miktarEl = document.getElementById('miktarSec');
   var carpan = miktarEl ? parseFloat(miktarEl.options[miktarEl.selectedIndex]?.value||1) : 1;
   var miktarAd = miktarEl ? miktarEl.options[miktarEl.selectedIndex]?.getAttribute('data-ad') : '1 porsiyon';
   var kalori = Math.round(_seciliYemekKalori * carpan);
-  secilenYemekler.push({ miktar: miktarAd, yemek: _seciliYemekAd, kalori: kalori });
+  var item = { miktar: miktarAd, yemek: _seciliYemekAd, kalori: kalori };
+  if (aktifOgun === 'sabah') secilenSabah.push(item);
+  else if (aktifOgun === 'ogle') secilenOgle.push(item);
+  else secilenAksam.push(item);
   _seciliYemekAd = ''; _seciliYemekKalori = 0;
+  var goster = document.getElementById('seciliYemekGoster');
+  if (goster) { goster.textContent = '— seç —'; goster.style.color = 'var(--gray-500)'; }
+  var arama = document.getElementById('yemekArama');
+  if (arama) arama.value = '';
   yemekListeKaydet();
 }
 
@@ -2485,10 +2535,14 @@ async function yemekListeKaydet() {
   var bugun = new Date().toISOString().split('T')[0];
   var toplamKalori = secilenYemekler.reduce(function(t,y){ return t+(y.kalori||0); }, 0);
 
+  var tumYemekBirlestir = [...secilenSabah, ...secilenOgle, ...secilenAksam];
   // Önce kaydet — API analizi olmadan
   try {
     await beslenmeKaydet(sporcu.id, bugun, {
-      yemek_listesi_json: JSON.stringify(secilenYemekler),
+      yemek_listesi_json: JSON.stringify(tumYemekBirlestir),
+      sabah_json: JSON.stringify(secilenSabah),
+      ogle_json: JSON.stringify(secilenOgle),
+      aksam_json: JSON.stringify(secilenAksam),
       toplam_kalori: toplamKalori
     });
     bildirimGoster('✅ Eklendi');
@@ -2517,14 +2571,11 @@ async function yemekListeKaydet() {
   }
 }
 
-async function yemekListedenSil(index) {
-  secilenYemekler.splice(index, 1);
-  var sporcu = oturumKullanici;
-  var bugun = new Date().toISOString().split('T')[0];
-  var toplamKalori = secilenYemekler.reduce(function(t,y){ return t+(y.kalori||0); }, 0);
-  await beslenmeKaydet(sporcu.id, bugun, { yemek_listesi_json: JSON.stringify(secilenYemekler), toplam_kalori: toplamKalori });
-  bildirimGoster('Silindi');
-  beslenmeEkraniYukle();
+async function yemekListedenSil(ogun, index) {
+  if (ogun === 'sabah') secilenSabah.splice(index, 1);
+  else if (ogun === 'ogle') secilenOgle.splice(index, 1);
+  else secilenAksam.splice(index, 1);
+  yemekListeKaydet();
 }
 
 function yeniYemekFormAc() {
@@ -2585,11 +2636,12 @@ async function kiloGuncelle() {
   } catch(e) { bildirimGoster('Hata: ' + e.message); }
 }
 
-async function beslenmeAntrGunToggle(durum) {
+async function beslenmeAntrGunToggle(tur) {
   var sporcu = oturumKullanici;
   var bugun = new Date().toISOString().split('T')[0];
   try {
-    await beslenmeKaydet(sporcu.id, bugun, { antrenman_gunu: durum });
+    var antGunu = tur !== 'yok';
+    await beslenmeKaydet(sporcu.id, bugun, { antrenman_turu: tur, antrenman_gunu: antGunu });
     beslenmeEkraniYukle();
   } catch(e) { bildirimGoster('Hata: ' + e.message); }
 }
