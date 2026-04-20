@@ -1163,3 +1163,38 @@ async function yarismaGuncelle(id, veri) {
 async function sporcuBeslenmeOzetiGetir(sporcuId) {
   return await sbFetch('beslenme_gunluk?sporcu_id=eq.' + sporcuId + '&order=tarih.desc&limit=7') || [];
 }
+
+// Beslenme aktif/pasif toggle (antrenör yapar)
+async function beslenmeAktifToggle(sporcuId, durum) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/sporcular?id=eq.' + sporcuId, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json' },
+    body: JSON.stringify({ beslenme_aktif: durum })
+  });
+  if (!r.ok) throw new Error('Güncellenemedi');
+}
+
+// Sporcu listesi + yaklaşan yarışma kontrolü (antrenör uyarı için)
+async function sporcuYarismaUyariGetir() {
+  var [sporcular, yarislar] = await Promise.all([
+    sbFetch('sporcular?aktif=eq.true&select=id,ad_soyad,kilo_kg,hedef_kilo,beslenme_aktif,dogum_tarihi'),
+    sbFetch('yarisma_sporcu?select=sporcu_id,yarisma_id,yarisma_takvimi(tarih,musabaka_adi)')
+  ]);
+  var bugun = new Date(); bugun.setHours(0,0,0,0);
+  var uyarilar = [];
+  (yarislar || []).forEach(function(ys) {
+    var yar = ys.yarisma_takvimi;
+    if (!yar) return;
+    var tarih = new Date(yar.tarih);
+    var gun = Math.ceil((tarih - bugun) / (1000*60*60*24));
+    if (gun > 0 && gun <= 60) {
+      var sporcu = (sporcular || []).find(function(s) { return s.id === ys.sporcu_id; });
+      if (sporcu) {
+        var fark = sporcu.hedef_kilo ? (parseFloat(sporcu.kilo_kg||0) - parseFloat(sporcu.hedef_kilo)).toFixed(1) : null;
+        uyarilar.push({ sporcu: sporcu, musabaka: yar.musabaka_adi, gun: gun, fark: fark });
+      }
+    }
+  });
+  return uyarilar;
+}
