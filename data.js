@@ -1111,3 +1111,55 @@ function kaloriHedefiHesapla(sporcu, antrenmanGunu) {
     return { hedef: tdee, min: tdee - 200, max: tdee + 200, aciklama: 'Kilo koruma modu' };
   }
 }
+
+// ── YEMEK & MİKTAR LİSTESİ ───────────────────────────────────────────────
+async function yemekListesiGetir() {
+  return await sbFetch('yemek_listesi?order=kategori.asc,ad.asc') || [];
+}
+async function yemekEkle(ad, kalori, kategori) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/yemek_listesi', {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify({ ad: ad, kalori_tabak: kalori || null, kategori: kategori || 'diger' })
+  });
+  if (!r.ok) throw new Error('Yemek eklenemedi');
+  return await r.json();
+}
+async function miktarListesiGetir() {
+  return await sbFetch('miktar_listesi?order=ad.asc') || [];
+}
+
+// ── YARIŞMA-SPORCU BAĞLANTISI ─────────────────────────────────────────────
+async function yarismaSporcularGetir(yarismaId) {
+  return await sbFetch('yarisma_sporcu?yarisma_id=eq.' + yarismaId + '&select=sporcu_id') || [];
+}
+async function yarismaSporcuEkle(yarismaId, sporcuId) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/yarisma_sporcu', {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json' },
+    body: JSON.stringify({ yarisma_id: yarismaId, sporcu_id: sporcuId })
+  });
+  if (!r.ok && r.status !== 409) throw new Error('Eklenemedi');
+}
+async function yarismaSporcuSil(yarismaId, sporcuId) {
+  await fetch(SUPABASE_URL + '/rest/v1/yarisma_sporcu?yarisma_id=eq.' + yarismaId + '&sporcu_id=eq.' + sporcuId, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+}
+async function yarismaGuncelle(id, veri) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/yarisma_takvimi?id=eq.' + id, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json' },
+    body: JSON.stringify(veri)
+  });
+  if (!r.ok) throw new Error('Güncellenemedi');
+}
+
+// Sporcu beslenme özeti (antrenör için)
+async function sporcuBeslenmeOzetiGetir(sporcuId) {
+  return await sbFetch('beslenme_gunluk?sporcu_id=eq.' + sporcuId + '&order=tarih.desc&limit=7') || [];
+}
