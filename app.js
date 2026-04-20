@@ -1283,9 +1283,9 @@ function renderSporcuProfil(s) {
     </div>`;
   }
 
-  // Boy-kilo güncelleme formu
+  // Profil güncelleme formu
   html += `<div class="kart" style="margin-top:12px">
-    <div class="kart-baslik">⚖️ Boy & Kilo Güncelle</div>
+    <div class="kart-baslik">✏️ Bilgilerimi Güncelle</div>
     <div class="form-row">
       <div class="form-grup">
         <label class="form-etiket">Boy (cm)</label>
@@ -1296,18 +1296,30 @@ function renderSporcuProfil(s) {
         <input type="number" id="spKilo" class="form-input" value="${s.kilo_kg || ''}" placeholder="55" step="0.1">
       </div>
     </div>
-    <button class="btn btn-primary" style="margin-top:4px" onclick="sporcuBoyKiloGuncelle()">Kaydet</button>
+    <div class="form-grup">
+      <label class="form-etiket">Doğum Tarihi</label>
+      <input type="date" id="spDogum" class="form-input" value="${s.dogum_tarihi || ''}">
+    </div>
+    <button class="btn btn-primary" style="margin-top:4px;width:100%" onclick="sporcuBoyKiloGuncelle()">Kaydet</button>
   </div>`;
 
   document.getElementById('sporcuProfilDiv').innerHTML = html;
 }
 
 async function sporcuBoyKiloGuncelle() {
-  var boy = parseFloat(document.getElementById('spBoy').value) || null;
-  var kilo = parseFloat(document.getElementById('spKilo').value) || null;
-  if (!boy || !kilo) { bildirimGoster('Boy ve kilo giriniz'); return; }
+  var boy = parseFloat(document.getElementById('spBoy')?.value) || null;
+  var kilo = parseFloat(document.getElementById('spKilo')?.value) || null;
+  var dogum = document.getElementById('spDogum')?.value || null;
+  var guncelleme = {};
+  if (boy) guncelleme.boy_cm = boy;
+  if (kilo) guncelleme.kilo_kg = kilo;
+  if (dogum) guncelleme.dogum_tarihi = dogum;
+  if (!Object.keys(guncelleme).length) { bildirimGoster('En az bir alan doldur'); return; }
   try {
-    await sporcuGuncelle(oturumKullanici.id, { boy_cm: boy, kilo_kg: kilo });
+    await sporcuGuncelle(oturumKullanici.id, guncelleme);
+    if (boy) oturumKullanici.boy_cm = boy;
+    if (kilo) oturumKullanici.kilo_kg = kilo;
+    if (dogum) oturumKullanici.dogum_tarihi = dogum;
     oturumKullanici.boy_cm = boy;
     oturumKullanici.kilo_kg = kilo;
     bildirimGoster('✅ Boy ve kilo güncellendi');
@@ -2597,13 +2609,47 @@ function yeniYemekEkleForm() {
 
 async function yeniYemekKaydet() {
   var ad = document.getElementById('yeniYemekAd')?.value?.trim();
-  var kalori = parseInt(document.getElementById('yeniYemekKalori')?.value) || null;
+  var kaloriEl = document.getElementById('yeniYemekKalori');
+  var kalori = kaloriEl ? (parseInt(kaloriEl.value) || null) : null;
   if (!ad) { bildirimGoster('Yemek adı gerekli'); return; }
+
+  // Kalori bilinmiyorsa API'ye sor
+  if (!kalori) {
+    bildirimGoster('Kalori hesaplanıyor...');
+    try {
+      var resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 100,
+          messages: [{
+            role: 'user',
+            content: 'Türk mutfağında "' + ad + '" yemeğinin 1 standart ev porsiyonunun kalorisi kaçtır? Sadece sayıyı yaz, başka hiçbir şey yazma. Örnek: 220'
+          }]
+        })
+      });
+      var data = await resp.json();
+      var text = data.content && data.content[0] ? data.content[0].text.trim() : '';
+      var hesaplanan = parseInt(text.replace(/[^0-9]/g, ''));
+      if (hesaplanan > 0 && hesaplanan < 2000) {
+        kalori = hesaplanan;
+        bildirimGoster('Kalori tahmini: ~' + kalori + ' kal');
+      }
+    } catch(e) {}
+  }
+
   try {
     await yemekEkle(ad, kalori, 'diger');
-    bildirimGoster('✅ Yemek kütüphaneye eklendi');
+    bildirimGoster('✅ ' + ad + ' eklendi (~' + (kalori || '?') + ' kal)');
     beslenmeEkraniYukle();
-  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+  } catch(e) {
+    if (e.message.includes('duplicate') || e.message.includes('unique')) {
+      bildirimGoster('Bu yemek zaten listede var');
+    } else {
+      bildirimGoster('Hata: ' + e.message);
+    }
+  }
 }
 
 async function kiloGuncelle() {
