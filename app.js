@@ -1300,6 +1300,10 @@ function renderSporcuProfil(s) {
       <label class="form-etiket">Doğum Tarihi</label>
       <input type="date" id="spDogum" class="form-input" value="${s.dogum_tarihi || ''}">
     </div>
+    <div class="form-grup">
+      <label class="form-etiket">Hedef Kilo (kg)</label>
+      <input type="number" id="spHedefKilo" class="form-input" value="${s.hedef_kilo || ''}" placeholder="örn: 41" step="0.1">
+    </div>
     <button class="btn btn-primary" style="margin-top:4px;width:100%" onclick="sporcuBoyKiloGuncelle()">Kaydet</button>
   </div>`;
 
@@ -1310,16 +1314,19 @@ async function sporcuBoyKiloGuncelle() {
   var boy = parseFloat(document.getElementById('spBoy')?.value) || null;
   var kilo = parseFloat(document.getElementById('spKilo')?.value) || null;
   var dogum = document.getElementById('spDogum')?.value || null;
+  var hedefKilo = parseFloat(document.getElementById('spHedefKilo')?.value) || null;
   var guncelleme = {};
   if (boy) guncelleme.boy_cm = boy;
   if (kilo) guncelleme.kilo_kg = kilo;
   if (dogum) guncelleme.dogum_tarihi = dogum;
+  if (hedefKilo) guncelleme.hedef_kilo = hedefKilo;
   if (!Object.keys(guncelleme).length) { bildirimGoster('En az bir alan doldur'); return; }
   try {
     await sporcuGuncelle(oturumKullanici.id, guncelleme);
     if (boy) oturumKullanici.boy_cm = boy;
     if (kilo) oturumKullanici.kilo_kg = kilo;
     if (dogum) oturumKullanici.dogum_tarihi = dogum;
+    if (hedefKilo) oturumKullanici.hedef_kilo = hedefKilo;
     oturumKullanici.boy_cm = boy;
     oturumKullanici.kilo_kg = kilo;
     bildirimGoster('✅ Boy ve kilo güncellendi');
@@ -2364,6 +2371,7 @@ async function sporcuKendiProfilKaydet() {
     if (boy) oturumKullanici.boy_cm = boy;
     if (kilo) oturumKullanici.kilo_kg = kilo;
     if (dogum) oturumKullanici.dogum_tarihi = dogum;
+    if (hedefKilo) oturumKullanici.hedef_kilo = hedefKilo;
     bildirimGoster('✅ Bilgilerin güncellendi');
     sporcuProfilYukle();
   } catch(e) { bildirimGoster('Hata: ' + e.message); }
