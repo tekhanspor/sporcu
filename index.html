@@ -53,12 +53,8 @@
       <input type="text" class="arama-input" placeholder="Sporcu ara..." id="sporcuArama" oninput="sporcuFiltrele()">
       <div id="sporcuListesiDiv"></div>
     </div>
-    <div id="tab-yarisma" style="display:none">
-      <div id="yarismaDiv"></div>
-    </div>
-    <div id="tab-linkler" style="display:none">
-      <div id="antrenorLinkDiv"></div>
-    </div>
+    <div id="tab-yarisma" style="display:none"><div id="yarismaDiv"></div></div>
+    <div id="tab-linkler" style="display:none"><div id="antrenorLinkDiv"></div></div>
   </div>
   <button class="btn-fab" id="fabBtn" onclick="sporcuEklePanelAc()">+</button>
 </div>
@@ -98,6 +94,7 @@
     <button class="tab-btn aktif" onclick="sporcuTabSec('profil', this)">👤 Profilim</button>
     <button class="tab-btn" onclick="sporcuTabSec('anketim', this)">🧠 Anket</button>
     <button class="tab-btn" onclick="sporcuTabSec('sonuclarim', this)">📋 Sonuçlarım</button>
+    <button class="tab-btn" onclick="sporcuTabSec('beslenme', this)">🍽️ Beslenme</button>
     <button class="tab-btn" onclick="sporcuTabSec('takvim', this)">🏆 Takvim</button>
     <button class="tab-btn" onclick="sporcuTabSec('linkler', this)">🎬 Videolar</button>
   </div>
@@ -105,6 +102,7 @@
     <div id="stab-profil"><div id="sporcuProfilDiv"></div></div>
     <div id="stab-anketim" style="display:none"><div id="sporcuAnketDiv"></div></div>
     <div id="stab-sonuclarim" style="display:none"><div id="sporcuSonuclarDiv"></div></div>
+    <div id="stab-beslenme" style="display:none"><div id="sporcuBeslenmeDiv"></div></div>
     <div id="stab-takvim" style="display:none"><div id="sporcuYarismaDiv"></div></div>
     <div id="stab-linkler" style="display:none"><div id="sporcuLinkDiv"></div></div>
   </div>
