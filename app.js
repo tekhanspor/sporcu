@@ -2363,11 +2363,7 @@ async function beslenmeEkraniYukle() {
     // Kalori hedefi
     var kaloriRenk = toplamKalori > hedefObj.max ? '#c81e1e' : toplamKalori < hedefObj.min && toplamKalori > 0 ? '#1a56db' : '#057a55';
     var kaloriYuzde = Math.min(Math.round((toplamKalori / hedefObj.hedef) * 100), 120);
-    html += '<div class="kart"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
-    html += '<div class="kart-baslik" style="margin:0">🍽️ Bugün Ne Yedim?</div>';
-    html += '<button onclick="beslenmeAntrGunToggle(' + !isAntrenman + ')" style="padding:5px 12px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:' + (isAntrenman?'#def7ec':'#f3f4f6') + ';color:' + (isAntrenman?'#057a55':'#6b7280') + '">';
-    html += isAntrenman ? '🏋️ Antrenman günü' : 'Dinlenme günü';
-    html += '</button></div>';
+    html += '<div class="kart">';
 
     // Kalori çubuğu
     html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--gray-500)">' + hedefObj.aciklama + ' — Hedef: ' + hedefObj.hedef + ' kal</span><span style="font-size:13px;font-weight:700;color:' + kaloriRenk + '">' + toplamKalori + ' kal</span></div>';
