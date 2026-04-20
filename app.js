@@ -115,6 +115,7 @@ function antrenorPanelAc() {
   document.getElementById('antrenorAdi').textContent = oturumKullanici.ad_soyad || '';
   sporcularYukle();
   yarismaTakvimiYukle('yarismaDiv', true);
+  setTimeout(antrenorBeslenmeUyariYukle, 800);
 }
 
 async function sporcularYukle() {
@@ -2115,564 +2116,6 @@ Türk ev yemeklerinde standart porsiyonlar:
 }
 
 // ── BESLENME EKRANI ────────────────────────────────────────────────────────
-async function beslenmeEkraniYukle() {
-  var div = document.getElementById('sporcuBeslenmeDiv');
-  if (!div) return;
-  var sporcu = oturumKullanici;
-  var bugun = new Date().toISOString().split('T')[0];
-  var kayit = await beslenmeGetir(sporcu.id, bugun);
-  var hedefObj = kaloriHedefiHesapla(sporcu, kayit ? kayit.antrenman_gunu : false);
-
-  var html = '';
-
-  // Kilo hedefi kartı
-  if (sporcu.hedef_kilo && sporcu.kilo_kg) {
-    var fark = parseFloat(sporcu.kilo_kg) - parseFloat(sporcu.hedef_kilo);
-    var renk = fark > 0 ? '#e65100' : fark < -2 ? '#1a56db' : '#057a55';
-    var mesaj = fark > 2 ? 'Kilo verme modundasın' : fark < -2 ? 'Kilo alma modundasın' : 'Hedef kilona ulaştın!';
-    html += '<div style="display:flex;gap:10px;margin-bottom:12px">';
-    html += '<div style="flex:1;background:var(--gray-50);border-radius:12px;padding:12px;text-align:center">';
-    html += '<div style="font-size:22px;font-weight:800;color:var(--gray-800)">' + sporcu.kilo_kg + ' kg</div>';
-    html += '<div style="font-size:11px;color:var(--gray-500)">Şu an</div></div>';
-    html += '<div style="flex:1;background:var(--gray-50);border-radius:12px;padding:12px;text-align:center">';
-    html += '<div style="font-size:22px;font-weight:800;color:' + renk + '">' + sporcu.hedef_kilo + ' kg</div>';
-    html += '<div style="font-size:11px;color:var(--gray-500)">Hedef</div></div>';
-    html += '<div style="flex:1;background:var(--gray-50);border-radius:12px;padding:12px;text-align:center">';
-    html += '<div style="font-size:18px;font-weight:800;color:' + renk + '">' + (fark > 0 ? '-' : '+') + Math.abs(fark).toFixed(1) + '</div>';
-    html += '<div style="font-size:10px;color:' + renk + ';font-weight:600">' + mesaj + '</div></div>';
-    html += '</div>';
-  }
-
-  // Bugünkü kalori hedefi
-  html += '<div class="kart">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
-  html += '<div class="kart-baslik" style="margin:0">🍽️ Bugünün Beslenme Takibi</div>';
-  html += '</div>';
-
-  // Antrenman günü toggle
-  var isAntrenman = kayit ? kayit.antrenman_gunu : false;
-  html += '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px;background:var(--gray-50);border-radius:8px">';
-  html += '<span style="font-size:13px;font-weight:600">Bugün antrenman var mı?</span>';
-  html += '<button onclick="beslenmeAntrGunToggle(' + !isAntrenman + ')" style="padding:6px 14px;border-radius:8px;border:none;font-size:12px;font-weight:700;cursor:pointer;background:' + (isAntrenman ? '#def7ec' : '#f3f4f6') + ';color:' + (isAntrenman ? '#057a55' : '#6b7280') + '">';
-  html += isAntrenman ? '✅ Evet' : 'Hayır';
-  html += '</button></div>';
-
-  // Kalori hedef göstergesi
-  var toplamKalori = kayit ? (kayit.toplam_kalori || 0) : 0;
-  var hedefKalori = hedefObj.hedef;
-  var kaloriYuzde = Math.min(Math.round((toplamKalori / hedefKalori) * 100), 120);
-  var kaloriRenk = toplamKalori > hedefObj.max ? '#c81e1e' : toplamKalori < hedefObj.min ? '#1a56db' : '#057a55';
-  html += '<div style="margin-bottom:12px">';
-  html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px">';
-  html += '<span style="font-size:12px;color:var(--gray-500)">' + hedefObj.aciklama + '</span>';
-  html += '<span style="font-size:13px;font-weight:700;color:' + kaloriRenk + '">' + toplamKalori + ' / ' + hedefKalori + ' kal</span>';
-  html += '</div>';
-  html += '<div class="ilerleme-kap"><div class="ilerleme-bar" style="width:' + kaloriYuzde + '%;background:' + kaloriRenk + '"></div></div>';
-  if (toplamKalori > hedefObj.max) {
-    html += '<div style="font-size:11px;color:#c81e1e;margin-top:4px;font-weight:600">⚠️ Günlük hedefin ' + (toplamKalori - hedefKalori) + ' kalori üzerinde!</div>';
-  } else if (toplamKalori < hedefObj.min && toplamKalori > 0) {
-    html += '<div style="font-size:11px;color:#1a56db;margin-top:4px;font-weight:600">💡 Bugün az yedin. Performansın etkilenebilir.</div>';
-  }
-  html += '</div>';
-
-  // Öğün girişleri
-  var ogunler = [
-    { key: 'sabah', label: '☀️ Sabah', placeholder: 'örn: 2 yumurta, beyaz peynir, 2 dilim ekmek, çay' },
-    { key: 'ogle', label: '🌤️ Öğlen', placeholder: 'örn: 1 tabak pilav, 1 kepçe nohut yemeği, ayran' },
-    { key: 'aksam', label: '🌙 Akşam', placeholder: 'örn: 1 porsiyon tavuk, salata, 1 dilim ekmek' },
-    { key: 'ara_ogun', label: '🍌 Ara Öğün', placeholder: 'örn: 1 muz, 1 avuç ceviz (opsiyonel)' }
-  ];
-
-  ogunler.forEach(function(o) {
-    var deger = kayit ? (kayit[o.key] || '') : '';
-    html += '<div style="margin-bottom:10px">';
-    html += '<label style="font-size:12px;font-weight:700;color:var(--gray-600);display:block;margin-bottom:4px">' + o.label + '</label>';
-    html += '<div style="display:flex;gap:6px">';
-    html += '<input type="text" id="beslenme_' + o.key + '" class="form-input" placeholder="' + o.placeholder + '" value="' + deger + '" style="flex:1;font-size:12px">';
-    html += '<button onclick="ogunKaydet(\'' + o.key + '\')" style="padding:8px 12px;background:var(--primary);color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer">Kaydet</button>';
-    html += '</div></div>';
-  });
-
-  html += '</div>';
-
-  // Beslenme analiz sonuçları
-  if (kayit && (kayit.sabah || kayit.ogle || kayit.aksam)) {
-    html += renderBeslenmeAnaliz(kayit);
-  }
-
-  // Son 7 gün özeti
-  var gecmis = await beslenmeGecmisGetir(sporcu.id);
-  if (gecmis && gecmis.length > 1) {
-    html += '<div class="kart"><div class="kart-baslik">📊 Son 7 Gün</div>';
-    gecmis.slice(0, 7).forEach(function(g) {
-      var gHedef = kaloriHedefiHesapla(sporcu, g.antrenman_gunu).hedef;
-      var gRenk = !g.toplam_kalori ? '#9ca3af' : g.toplam_kalori > gHedef * 1.15 ? '#c81e1e' : g.toplam_kalori < gHedef * 0.8 ? '#1a56db' : '#057a55';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100)">';
-      html += '<span style="font-size:12px;color:var(--gray-500)">' + tarihFormatla(g.tarih) + (g.antrenman_gunu ? ' 🏋️' : '') + '</span>';
-      html += '<span style="font-size:12px;font-weight:700;color:' + gRenk + '">' + (g.toplam_kalori || '—') + ' kal</span>';
-      if (g.abur_cubur) html += '<span style="font-size:10px;color:#c81e1e">⚠️ abur cubur</span>';
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  div.innerHTML = html;
-}
-
-function renderBeslenmeAnaliz(kayit) {
-  if (!kayit || !kayit.analiz_json) return '';
-  var analiz;
-  try { analiz = typeof kayit.analiz_json === 'string' ? JSON.parse(kayit.analiz_json) : kayit.analiz_json; }
-  catch(e) { return ''; }
-  if (!analiz) return '';
-
-  var html = '<div class="kart"><div class="kart-baslik">🔍 Bugünkü Beslenme Analizi</div>';
-
-  // Makro göstergeler
-  var makrolar = [
-    { label: 'Protein', deger: analiz.protein, ikon: '💪' },
-    { label: 'Karbonhidrat', deger: analiz.karbonhidrat, ikon: '⚡' },
-    { label: 'Yağ', deger: analiz.yag === 'saglikli' ? 'sağlıklı' : analiz.yag === 'kotu' ? 'kötü' : 'az', ikon: '🫒' },
-    { label: 'Sebze/Meyve', deger: analiz.sebze_meyve, ikon: '🥗' }
-  ];
-
-  html += '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">';
-  makrolar.forEach(function(m) {
-    var renk = (m.deger === 'yüksek' || m.deger === 'sağlıklı' || m.deger === 'yeterli') ? '#057a55'
-             : (m.deger === 'orta' || m.deger === 'az') ? '#e65100' : '#c81e1e';
-    html += '<div style="background:var(--gray-50);border-radius:8px;padding:8px;text-align:center">';
-    html += '<div style="font-size:18px">' + m.ikon + '</div>';
-    html += '<div style="font-size:11px;color:var(--gray-500)">' + m.label + '</div>';
-    html += '<div style="font-size:12px;font-weight:700;color:' + renk + '">' + (m.deger || '—') + '</div>';
-    html += '</div>';
-  });
-  html += '</div>';
-
-  // Protein uyarısı
-  if (analiz.protein === 'düşük') {
-    html += '<div style="background:#fff7ed;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#92400e">';
-    html += '💪 <b>Protein az:</b> Bugün yumurta, et, tavuk, balık, peynir, yoğurt, kuru fasulye veya nohut eklemeyi dene.';
-    html += '</div>';
-  }
-
-  // Sebze uyarısı
-  if (analiz.sebze_meyve === 'yok' || analiz.sebze_meyve === 'az') {
-    html += '<div style="background:#f0fdf4;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#166534">';
-    html += '🥗 <b>Sebze/meyve az:</b> Salata, domates, salatalık, ıspanak, meyve gibi şeyler vitamin ve mineral için önemli.';
-    html += '</div>';
-  }
-
-  // Yağ uyarısı
-  if (analiz.yag === 'kotu') {
-    html += '<div style="background:#fef2f2;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#991b1b">';
-    html += '🚫 <b>Kızartma/kötü yağ var:</b> Kızartmalar ve margarinli yiyecekler performansını düşürür. Fırında veya haşlama tercih et.';
-    html += '</div>';
-  }
-
-  // Abur cubur uyarısı
-  if (analiz.abur_cubur && analiz.abur_cubur.length > 0) {
-    html += '<div style="background:#fef2f2;border-radius:8px;padding:8px 10px;margin-bottom:8px;font-size:12px;color:#991b1b">';
-    html += '⚠️ <b>Abur cubur tespit edildi (' + analiz.abur_cubur.join(', ') + '):</b> Bunlar enerjini hızlı verir ama çabuk düşürür. Maç günü kesinlikle yeme.';
-    html += '</div>';
-  }
-
-  if (analiz.ozet) {
-    html += '<div style="font-size:12px;color:var(--gray-600);padding:6px 0">' + analiz.ozet + '</div>';
-  }
-
-  html += '</div>';
-  return html;
-}
-
-async function ogunKaydet(ogunKey) {
-  var deger = document.getElementById('beslenme_' + ogunKey)?.value?.trim();
-  if (!deger) return;
-  var sporcu = oturumKullanici;
-  var bugun = new Date().toISOString().split('T')[0];
-
-  bildirimGoster('Analiz yapılıyor...');
-
-  try {
-    // Mevcut kaydı al
-    var kayit = await beslenmeGetir(sporcu.id, bugun);
-    var guncelleme = {};
-    guncelleme[ogunKey] = deger;
-
-    // Tüm öğünleri birleştir analiz için
-    var tumYemekler = '';
-    var ogunKeys = ['sabah', 'ogle', 'aksam', 'ara_ogun'];
-    ogunKeys.forEach(function(k) {
-      var val = k === ogunKey ? deger : (kayit ? kayit[k] : '');
-      if (val) tumYemekler += val + '. ';
-    });
-
-    // API analiz
-    var isAntrenman = kayit ? kayit.antrenman_gunu : false;
-    var analiz = await yemekAnalizEt(tumYemekler, isAntrenman, sporcu.beslenme_profil || 'koru');
-
-    if (analiz) {
-      guncelleme.toplam_kalori = analiz.kalori;
-      guncelleme.protein_puan = analiz.protein === 'yüksek' ? 3 : analiz.protein === 'orta' ? 2 : 1;
-      guncelleme.abur_cubur = analiz.abur_cubur && analiz.abur_cubur.length > 0;
-      guncelleme.abur_cubur_notlar = analiz.abur_cubur ? analiz.abur_cubur.join(', ') : null;
-      guncelleme.analiz_json = JSON.stringify(analiz);
-    }
-
-    await beslenmeKaydet(sporcu.id, bugun, guncelleme);
-    bildirimGoster('✅ Kaydedildi');
-    beslenmeEkraniYukle();
-  } catch(e) {
-    bildirimGoster('Hata: ' + e.message);
-  }
-}
-
-async function beslenmeAntrGunToggle(durum) {
-  var sporcu = oturumKullanici;
-  var bugun = new Date().toISOString().split('T')[0];
-  try {
-    await beslenmeKaydet(sporcu.id, bugun, { antrenman_gunu: durum });
-    beslenmeEkraniYukle();
-  } catch(e) { bildirimGoster('Hata: ' + e.message); }
-}
-
-async function beslenmeHedefiKaydet(sporcuId) {
-  var hedefKilo = parseFloat(document.getElementById('hedefKiloInput')?.value) || null;
-  var profil = document.getElementById('beslenmeProfilInput')?.value || 'koru';
-  try {
-    await sporcuGuncelle(sporcuId, { hedef_kilo: hedefKilo, beslenme_profil: profil });
-    oturumGuncelle({ hedef_kilo: hedefKilo, beslenme_profil: profil });
-    bildirimGoster('✅ Beslenme hedefi güncellendi');
-    sporcuProfilAc(sporcuId);
-  } catch(e) { bildirimGoster('Hata: ' + e.message); }
-}
-
-// ── SPORCU PROFİL DÜZENLEME (kendi profilini günceller) ──────────────────
-function sporcuProfilDuzenlemeGoster() {
-  var s = oturumKullanici;
-  var html = '<div class="kart"><div class="kart-baslik">✏️ Bilgilerimi Güncelle</div>';
-  html += '<div class="form-row">';
-  html += '<div class="form-grup"><label class="form-etiket">Boy (cm)</label>';
-  html += '<input type="number" id="spBoy" class="form-input" value="' + (s.boy_cm || '') + '" placeholder="165"></div>';
-  html += '<div class="form-grup"><label class="form-etiket">Kilo (kg)</label>';
-  html += '<input type="number" id="spKilo" class="form-input" value="' + (s.kilo_kg || '') + '" placeholder="55" step="0.1"></div>';
-  html += '</div>';
-  html += '<div class="form-grup"><label class="form-etiket">Doğum Tarihi</label>';
-  html += '<input type="date" id="spDogum" class="form-input" value="' + (s.dogum_tarihi || '') + '"></div>';
-  html += '<button class="btn btn-primary" onclick="sporcuKendiProfilKaydet()">Kaydet</button>';
-  html += '</div>';
-  var div = document.getElementById('sporcuProfilDiv');
-  if (div) div.innerHTML = html + (div.innerHTML || '');
-}
-
-async function sporcuKendiProfilKaydet() {
-  var boy = parseFloat(document.getElementById('spBoy')?.value) || null;
-  var kilo = parseFloat(document.getElementById('spKilo')?.value) || null;
-  var dogum = document.getElementById('spDogum')?.value || null;
-  try {
-    await sporcuGuncelle(oturumKullanici.id, { boy_cm: boy, kilo_kg: kilo, dogum_tarihi: dogum });
-    // Oturum güncelle
-    if (boy) oturumKullanici.boy_cm = boy;
-    if (kilo) oturumKullanici.kilo_kg = kilo;
-    if (dogum) oturumKullanici.dogum_tarihi = dogum;
-    if (hedefKilo) oturumKullanici.hedef_kilo = hedefKilo;
-    bildirimGoster('✅ Bilgilerin güncellendi');
-    sporcuProfilYukle();
-  } catch(e) { bildirimGoster('Hata: ' + e.message); }
-}
-
-// ── YENİ BESLENME EKRANI (yemek listesiyle) ───────────────────────────────
-var secilenYemekler = []; // { yemek, miktar, kalori }
-
-async function beslenmeEkraniYukle() {
-  var div = document.getElementById('sporcuBeslenmeDiv');
-  if (!div) return;
-  div.innerHTML = '<div class="yukleniyor"><div class="spinner"></div></div>';
-
-  var sporcu = oturumKullanici;
-  var bugun = new Date().toISOString().split('T')[0];
-  var [kayit, yemekler, miktarlar] = await Promise.all([
-    beslenmeGetir(sporcu.id, bugun),
-    yemekListesiGetir(),
-    miktarListesiGetir()
-  ]);
-
-  var isAntrenman = kayit ? kayit.antrenman_gunu : false;
-  var hedefObj = kaloriHedefiHesapla(sporcu, isAntrenman);
-  var toplamKalori = kayit ? (kayit.toplam_kalori || 0) : 0;
-
-  var html = '';
-
-  // Kilo kartı
-  var mevcutKilo = sporcu.kilo_kg;
-  var hedefKilo = sporcu.hedef_kilo;
-  if (mevcutKilo || hedefKilo) {
-    html += '<div class="kart">';
-    html += '<div class="kart-baslik">⚖️ Kilo Durumum</div>';
-    html += '<div style="display:flex;gap:10px;margin-bottom:10px">';
-    if (mevcutKilo) {
-      html += '<div style="flex:1;background:var(--gray-50);border-radius:10px;padding:10px;text-align:center">';
-      html += '<div style="font-size:22px;font-weight:800">' + mevcutKilo + ' kg</div>';
-      html += '<div style="font-size:11px;color:var(--gray-500)">Şu anki kilom</div></div>';
-    }
-    if (hedefKilo) {
-      var fark = parseFloat(mevcutKilo || 0) - parseFloat(hedefKilo);
-      var fRenk = fark > 0.5 ? '#e65100' : fark < -0.5 ? '#1a56db' : '#057a55';
-      html += '<div style="flex:1;background:var(--gray-50);border-radius:10px;padding:10px;text-align:center">';
-      html += '<div style="font-size:22px;font-weight:800;color:' + fRenk + '">' + hedefKilo + ' kg</div>';
-      html += '<div style="font-size:11px;color:var(--gray-500)">Hedef kilom</div></div>';
-      if (mevcutKilo) {
-        html += '<div style="flex:1;background:var(--gray-50);border-radius:10px;padding:10px;text-align:center">';
-        html += '<div style="font-size:20px;font-weight:800;color:' + fRenk + '">' + (fark > 0 ? '-' : '+') + Math.abs(fark).toFixed(1) + '</div>';
-        html += '<div style="font-size:10px;color:' + fRenk + '">' + (fark > 0.5 ? 'vermem gereken' : fark < -0.5 ? 'almam gereken' : 'hedefe ulaştım!') + '</div></div>';
-      }
-    }
-    html += '</div>';
-    // Kilo güncelleme
-    html += '<div style="display:flex;gap:8px;align-items:flex-end">';
-    html += '<div style="flex:1"><label style="font-size:11px;color:var(--gray-500)">Mevcut kilom</label>';
-    html += '<input type="number" id="yeniKiloInput" class="form-input" placeholder="' + (mevcutKilo || '55') + '" step="0.1" style="margin-top:4px"></div>';
-    html += '<button onclick="kiloGuncelle()" class="btn btn-primary" style="white-space:nowrap">Güncelle</button>';
-    html += '</div></div>';
-  }
-
-  // 2 ay uyarısı kontrolü — takvimden gelecek müsabakalar
-  html += '<div id="beslenmeUyariDiv"></div>';
-
-  // Kalori hedefi
-  var kaloriRenk = toplamKalori > hedefObj.max ? '#c81e1e' : toplamKalori < hedefObj.min && toplamKalori > 0 ? '#1a56db' : '#057a55';
-  var kaloriYuzde = Math.min(Math.round((toplamKalori / hedefObj.hedef) * 100), 120);
-  html += '<div class="kart">';
-  html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
-  html += '<div class="kart-baslik" style="margin:0">🍽️ Bugünkü Beslenme</div>';
-  html += '<button onclick="beslenmeAntrGunToggle(' + !isAntrenman + ')" style="padding:5px 12px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:' + (isAntrenman ? '#def7ec' : '#f3f4f6') + ';color:' + (isAntrenman ? '#057a55' : '#6b7280') + '">';
-  html += isAntrenman ? '🏋️ Antrenman günü' : 'Dinlenme günü';
-  html += '</button></div>';
-  html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px">';
-  html += '<span style="font-size:11px;color:var(--gray-500)">' + hedefObj.aciklama + ' — Hedef: ' + hedefObj.hedef + ' kal</span>';
-  html += '<span style="font-size:13px;font-weight:700;color:' + kaloriRenk + '">' + toplamKalori + ' kal</span></div>';
-  html += '<div class="ilerleme-kap" style="margin-bottom:8px"><div class="ilerleme-bar" style="width:' + kaloriYuzde + '%;background:' + kaloriRenk + '"></div></div>';
-  if (toplamKalori > hedefObj.max) html += '<div style="font-size:11px;color:#c81e1e;font-weight:600">⚠️ Günlük hedefin ' + (toplamKalori - hedefObj.hedef) + ' kalori üzerinde!</div>';
-  else if (toplamKalori < hedefObj.min && toplamKalori > 0) html += '<div style="font-size:11px;color:#1a56db;font-weight:600">💡 Bugün az yedin. Performansın etkilenebilir.</div>';
-  html += '</div>';
-
-  // Yemek seçici
-  var kategoriler = { ana_yemek: '🍲 Ana Yemek', corba: '🥣 Çorba', salata: '🥗 Salata', meyve: '🍎 Meyve', icecek: '🥛 İçecek', diger: '🍳 Diğer' };
-  html += '<div class="kart"><div class="kart-baslik">+ Yemek Ekle</div>';
-  html += '<div class="form-row">';
-  // Miktar seçici
-  html += '<div class="form-grup"><label class="form-etiket">Miktar</label>';
-  html += '<select id="miktarSec" class="form-input">';
-  miktarlar.forEach(function(m) { html += '<option value="' + m.ad + '">' + m.ad + '</option>'; });
-  html += '</select></div>';
-  // Yemek seçici
-  html += '<div class="form-grup"><label class="form-etiket">Yemek</label>';
-  html += '<select id="yemekSec" class="form-input">';
-  Object.keys(kategoriler).forEach(function(kat) {
-    var katYemekler = yemekler.filter(function(y) { return y.kategori === kat; });
-    if (katYemekler.length > 0) {
-      html += '<optgroup label="' + kategoriler[kat] + '">';
-      katYemekler.forEach(function(y) { html += '<option value="' + y.id + '" data-kalori="' + (y.kalori_tabak || 0) + '" data-ad="' + y.ad + '">' + y.ad + ' (~' + (y.kalori_tabak || '?') + ' kal)</option>'; });
-      html += '</optgroup>';
-    }
-  });
-  html += '</select></div></div>';
-  html += '<div style="display:flex;gap:8px;margin-top:8px">';
-  html += '<button onclick="yemekSepeteEkle()" class="btn btn-primary" style="flex:1">Listeye Ekle</button>';
-  html += '<button onclick="yeniYemekEkleForm()" class="btn btn-outline" style="flex:1">+ Yeni Yemek</button>';
-  html += '</div>';
-  html += '<div id="yeniYemekFormDiv"></div>';
-  html += '</div>';
-
-  // Bugünkü yemek listesi
-  if (kayit && kayit.sabah) {
-    var listeData = [];
-    try { listeData = JSON.parse(kayit.sabah); } catch(e) { listeData = []; }
-    if (listeData.length > 0) {
-      html += '<div class="kart"><div class="kart-baslik">📋 Bugün Yediklerim</div>';
-      listeData.forEach(function(item, i) {
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100)">';
-        html += '<span style="font-size:13px">' + item.miktar + ' ' + item.yemek + '</span>';
-        html += '<div style="display:flex;align-items:center;gap:8px">';
-        html += '<span style="font-size:12px;color:var(--gray-500)">' + item.kalori + ' kal</span>';
-        html += '<button onclick="yemekListedenSil(' + i + ')" style="background:none;border:none;color:#c81e1e;cursor:pointer;font-size:16px">×</button>';
-        html += '</div></div>';
-      });
-      html += '</div>';
-    }
-  }
-
-  // Analiz sonuçları
-  if (kayit && kayit.analiz_json) html += renderBeslenmeAnaliz(kayit);
-
-  // Son 7 gün
-  var gecmis = await beslenmeGecmisGetir(sporcu.id);
-  if (gecmis && gecmis.length > 1) {
-    html += '<div class="kart"><div class="kart-baslik">📊 Son 7 Gün</div>';
-    gecmis.slice(0, 7).forEach(function(g) {
-      var gHedef = kaloriHedefiHesapla(sporcu, g.antrenman_gunu).hedef;
-      var gRenk = !g.toplam_kalori ? '#9ca3af' : g.toplam_kalori > gHedef * 1.15 ? '#c81e1e' : g.toplam_kalori < gHedef * 0.8 ? '#1a56db' : '#057a55';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100)">';
-      html += '<span style="font-size:12px;color:var(--gray-500)">' + tarihFormatla(g.tarih) + (g.antrenman_gunu ? ' 🏋️' : '') + '</span>';
-      html += '<span style="font-size:12px;font-weight:700;color:' + gRenk + '">' + (g.toplam_kalori || '—') + ' kal</span>';
-      if (g.abur_cubur) html += '<span style="font-size:10px;color:#c81e1e;margin-left:4px">⚠️</span>';
-      html += '</div>';
-    });
-    html += '</div>';
-  }
-
-  div.innerHTML = html;
-
-  // 2 ay uyarısı yükle
-  beslenmeUyariYukle();
-}
-
-async function beslenmeUyariYukle() {
-  var div = document.getElementById('beslenmeUyariDiv');
-  if (!div) return;
-  try {
-    var yarislar = await yarismalariGetir();
-    var bugun = new Date(); bugun.setHours(0,0,0,0);
-    var uyarilar = yarislar.filter(function(y) {
-      var tar = new Date(y.tarih);
-      var gun = Math.ceil((tar - bugun) / (1000*60*60*24));
-      return gun > 0 && gun <= 60;
-    });
-    if (uyarilar.length === 0) return;
-    var html = '';
-    uyarilar.forEach(function(y) {
-      var tar = new Date(y.tarih);
-      var gun = Math.ceil((tar - bugun) / (1000*60*60*24));
-      var acil = gun <= 30;
-      html += '<div style="background:' + (acil ? '#fef2f2' : '#fff7ed') + ';border-radius:12px;padding:12px;margin-bottom:8px;border-left:4px solid ' + (acil ? '#c81e1e' : '#e65100') + '">';
-      html += '<div style="font-size:13px;font-weight:700;color:' + (acil ? '#c81e1e' : '#e65100') + '">';
-      html += (acil ? '🔴 ' : '🟠 ') + y.musabaka_adi + ' — ' + gun + ' gün kaldı</div>';
-      html += '<div style="font-size:12px;color:var(--gray-600);margin-top:4px">Beslenme takibini düzenli tutman önemli. Hedef kilona ' + gun + ' günün var.</div>';
-      html += '</div>';
-    });
-    div.innerHTML = html;
-  } catch(e) {}
-}
-
-function yemekSepeteEkle() {
-  var miktarEl = document.getElementById('miktarSec');
-  var yemekEl = document.getElementById('yemekSec');
-  if (!miktarEl || !yemekEl) return;
-  var miktar = miktarEl.value;
-  var secOpt = yemekEl.options[yemekEl.selectedIndex];
-  var yemekAd = secOpt.getAttribute('data-ad');
-  var kaloriBase = parseInt(secOpt.getAttribute('data-kalori')) || 0;
-  // Miktar çarpanı
-  var carpan = 1;
-  if (miktar.includes('yarım')) carpan = 0.5;
-  else if (miktar.startsWith('2 ')) carpan = 2;
-  else if (miktar.startsWith('3 ')) carpan = 3;
-  var kalori = Math.round(kaloriBase * carpan);
-  secilenYemekler.push({ miktar: miktar, yemek: yemekAd, kalori: kalori });
-  yemekListeKaydet();
-}
-
-async function yemekListeKaydet() {
-  var sporcu = oturumKullanici;
-  var bugun = new Date().toISOString().split('T')[0];
-  var toplamKalori = secilenYemekler.reduce(function(t, y) { return t + y.kalori; }, 0);
-  var yemekMetni = secilenYemekler.map(function(y) { return y.miktar + ' ' + y.yemek; }).join(', ');
-  var analiz = await yemekAnalizEt(yemekMetni, false, sporcu.beslenme_profil || 'koru');
-  var guncelleme = {
-    sabah: JSON.stringify(secilenYemekler),
-    toplam_kalori: analiz ? analiz.kalori : toplamKalori,
-    analiz_json: analiz ? JSON.stringify(analiz) : null,
-    abur_cubur: analiz && analiz.abur_cubur && analiz.abur_cubur.length > 0,
-    abur_cubur_notlar: analiz && analiz.abur_cubur ? analiz.abur_cubur.join(', ') : null
-  };
-  try {
-    await beslenmeKaydet(sporcu.id, bugun, guncelleme);
-    bildirimGoster('✅ Yemek eklendi');
-    beslenmeEkraniYukle();
-  } catch(e) { bildirimGoster('Hata: ' + e.message); }
-}
-
-async function yemekListedenSil(index) {
-  var sporcu = oturumKullanici;
-  var bugun = new Date().toISOString().split('T')[0];
-  var kayit = await beslenmeGetir(sporcu.id, bugun);
-  if (!kayit) return;
-  var liste = [];
-  try { liste = JSON.parse(kayit.sabah); } catch(e) {}
-  liste.splice(index, 1);
-  secilenYemekler = liste;
-  var toplamKalori = liste.reduce(function(t, y) { return t + y.kalori; }, 0);
-  await beslenmeKaydet(sporcu.id, bugun, { sabah: JSON.stringify(liste), toplam_kalori: toplamKalori });
-  bildirimGoster('Yemek silindi');
-  beslenmeEkraniYukle();
-}
-
-function yeniYemekEkleForm() {
-  var div = document.getElementById('yeniYemekFormDiv');
-  if (!div) return;
-  div.innerHTML = '<div style="margin-top:10px;padding:10px;background:var(--gray-50);border-radius:8px">' +
-    '<div class="form-row">' +
-    '<div class="form-grup"><label class="form-etiket">Yemek Adı</label><input type="text" id="yeniYemekAd" class="form-input" placeholder="Tarhana çorbası"></div>' +
-    '<div class="form-grup"><label class="form-etiket">Kalori (1 porsiyon)</label><input type="number" id="yeniYemekKalori" class="form-input" placeholder="160"></div>' +
-    '</div>' +
-    '<button onclick="yeniYemekKaydet()" class="btn btn-primary">Kaydet & Ekle</button>' +
-    '</div>';
-}
-
-async function yeniYemekKaydet() {
-  var ad = document.getElementById('yeniYemekAd')?.value?.trim();
-  var kaloriEl = document.getElementById('yeniYemekKalori');
-  var kalori = kaloriEl ? (parseInt(kaloriEl.value) || null) : null;
-  if (!ad) { bildirimGoster('Yemek adı gerekli'); return; }
-
-  // Kalori bilinmiyorsa API'ye sor
-  if (!kalori) {
-    bildirimGoster('Kalori hesaplanıyor...');
-    try {
-      var resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 100,
-          messages: [{
-            role: 'user',
-            content: 'Türk mutfağında "' + ad + '" yemeğinin 1 standart ev porsiyonunun kalorisi kaçtır? Sadece sayıyı yaz, başka hiçbir şey yazma. Örnek: 220'
-          }]
-        })
-      });
-      var data = await resp.json();
-      var text = data.content && data.content[0] ? data.content[0].text.trim() : '';
-      var hesaplanan = parseInt(text.replace(/[^0-9]/g, ''));
-      if (hesaplanan > 0 && hesaplanan < 2000) {
-        kalori = hesaplanan;
-        bildirimGoster('Kalori tahmini: ~' + kalori + ' kal');
-      }
-    } catch(e) {}
-  }
-
-  try {
-    await yemekEkle(ad, kalori, 'diger');
-    bildirimGoster('✅ ' + ad + ' eklendi (~' + (kalori || '?') + ' kal)');
-    beslenmeEkraniYukle();
-  } catch(e) {
-    if (e.message.includes('duplicate') || e.message.includes('unique')) {
-      bildirimGoster('Bu yemek zaten listede var');
-    } else {
-      bildirimGoster('Hata: ' + e.message);
-    }
-  }
-}
-
-async function kiloGuncelle() {
-  var yeniKilo = parseFloat(document.getElementById('yeniKiloInput')?.value);
-  if (!yeniKilo) { bildirimGoster('Kilo gir'); return; }
-  try {
-    await sporcuGuncelle(oturumKullanici.id, { kilo_kg: yeniKilo });
-    oturumGuncelle({ kilo_kg: yeniKilo });
-    bildirimGoster('✅ Kilo güncellendi');
-    beslenmeEkraniYukle();
-  } catch(e) { bildirimGoster('Hata: ' + e.message); }
-}
 
 // ── TAKVIM DÜZENLEME ──────────────────────────────────────────────────────
 async function yarismasDuzenleAc(id) {
@@ -2770,4 +2213,346 @@ async function antrenorBeslenmeOzetiGoster(sporcuId, sporcuAd) {
   });
   html += '</div>';
   div.insertAdjacentHTML('afterbegin', html);
+}
+
+// ── BESLENME SİSTEMİ ──────────────────────────────────────────────────────
+var secilenYemekler = [];
+var tumYemekler = [];
+
+async function beslenmeEkraniYukle() {
+  var div = document.getElementById('sporcuBeslenmeDiv');
+  if (!div) return;
+  div.innerHTML = '<div class="yukleniyor"><div class="spinner"></div></div>';
+
+  var sporcu = oturumKullanici;
+
+  // Beslenme aktif mi kontrol et
+  if (!sporcu.beslenme_aktif) {
+    div.innerHTML = '<div class="bos-durum"><span class="ikon">🍽️</span><p>Beslenme takibi henüz aktif değil.</p><p style="font-size:12px;color:var(--gray-400)">Antrenörün aktif ettiğinde buradan takip yapabilirsin.</p></div>';
+    return;
+  }
+
+  var bugun = new Date().toISOString().split('T')[0];
+
+  try {
+    var [kayit, yemekListesi, miktarListesi] = await Promise.all([
+      beslenmeGetir(sporcu.id, bugun),
+      yemekListesiGetir(),
+      miktarListesiGetir()
+    ]);
+
+    tumYemekler = yemekListesi || [];
+    var isAntrenman = kayit ? kayit.antrenman_gunu : false;
+    var hedefObj = kaloriHedefiHesapla(sporcu, isAntrenman);
+
+    // Kaydedilmiş yemek listesini yükle
+    try {
+      secilenYemekler = kayit && kayit.yemek_listesi_json ? JSON.parse(kayit.yemek_listesi_json) : [];
+    } catch(e) { secilenYemekler = []; }
+
+    var toplamKalori = secilenYemekler.reduce(function(t, y) { return t + (y.kalori||0); }, 0);
+    var html = '';
+
+    // Kilo kartı
+    var mevcutKilo = parseFloat(sporcu.kilo_kg) || 0;
+    var hedefKilo = parseFloat(sporcu.hedef_kilo) || 0;
+    if (mevcutKilo || hedefKilo) {
+      var fark = mevcutKilo - hedefKilo;
+      var fRenk = fark > 0.5 ? '#e65100' : fark < -0.5 ? '#1a56db' : '#057a55';
+      html += '<div class="kart"><div style="display:flex;gap:8px;margin-bottom:10px">';
+      html += '<div style="flex:1;background:var(--gray-50);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800">' + (mevcutKilo||'—') + ' kg</div><div style="font-size:11px;color:var(--gray-500)">Şu anki kilo</div></div>';
+      if (hedefKilo) {
+        html += '<div style="flex:1;background:var(--gray-50);border-radius:10px;padding:10px;text-align:center"><div style="font-size:20px;font-weight:800;color:' + fRenk + '">' + hedefKilo + ' kg</div><div style="font-size:11px;color:var(--gray-500)">Hedef</div></div>';
+        html += '<div style="flex:1;background:var(--gray-50);border-radius:10px;padding:10px;text-align:center"><div style="font-size:18px;font-weight:800;color:' + fRenk + '">' + (fark>0?'-':'+') + Math.abs(fark).toFixed(1) + '</div><div style="font-size:10px;color:' + fRenk + '">' + (fark>0.5?'verilecek':fark<-0.5?'alınacak':'hedefe ulaştın!') + '</div></div>';
+      }
+      html += '</div>';
+      // Kilo güncelle
+      html += '<div style="display:flex;gap:8px"><input type="number" id="yeniKiloInput" class="form-input" placeholder="Yeni kilonu gir" step="0.1" style="flex:1">';
+      html += '<button onclick="kiloGuncelle()" class="btn btn-primary">Güncelle</button></div>';
+      html += '</div>';
+    }
+
+    // 2 ay uyarısı
+    html += '<div id="beslenmeUyariDiv"></div>';
+
+    // Kalori hedefi
+    var kaloriRenk = toplamKalori > hedefObj.max ? '#c81e1e' : toplamKalori < hedefObj.min && toplamKalori > 0 ? '#1a56db' : '#057a55';
+    var kaloriYuzde = Math.min(Math.round((toplamKalori / hedefObj.hedef) * 100), 120);
+    html += '<div class="kart"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">';
+    html += '<div class="kart-baslik" style="margin:0">🍽️ Bugün Ne Yedim?</div>';
+    html += '<button onclick="beslenmeAntrGunToggle(' + !isAntrenman + ')" style="padding:5px 12px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:' + (isAntrenman?'#def7ec':'#f3f4f6') + ';color:' + (isAntrenman?'#057a55':'#6b7280') + '">';
+    html += isAntrenman ? '🏋️ Antrenman günü' : 'Dinlenme günü';
+    html += '</button></div>';
+
+    // Kalori çubuğu
+    html += '<div style="display:flex;justify-content:space-between;margin-bottom:4px"><span style="font-size:11px;color:var(--gray-500)">' + hedefObj.aciklama + ' — Hedef: ' + hedefObj.hedef + ' kal</span><span style="font-size:13px;font-weight:700;color:' + kaloriRenk + '">' + toplamKalori + ' kal</span></div>';
+    html += '<div class="ilerleme-kap" style="margin-bottom:8px"><div class="ilerleme-bar" style="width:' + kaloriYuzde + '%;background:' + kaloriRenk + '"></div></div>';
+    if (toplamKalori > hedefObj.max) html += '<div style="font-size:11px;color:#c81e1e;font-weight:600;margin-bottom:8px">⚠️ Hedefin ' + (toplamKalori-hedefObj.hedef) + ' kalori üzerinde!</div>';
+    else if (toplamKalori < hedefObj.min && toplamKalori > 0) html += '<div style="font-size:11px;color:#1a56db;font-weight:600;margin-bottom:8px">💡 Bugün az yedin — performansın etkilenebilir.</div>';
+
+    // YEMEK SEÇİCİ — arama + liste
+    html += '<div style="margin-bottom:10px">';
+    html += '<label style="font-size:12px;font-weight:700;color:var(--gray-600);display:block;margin-bottom:4px">Yemek ara veya seç</label>';
+    html += '<input type="text" id="yemekArama" class="form-input" placeholder="Örn: mercimek, pilav, tavuk..." oninput="yemekAramaFiltrele()" style="margin-bottom:6px">';
+    html += '<div id="yemekAramaSonuclari" style="max-height:180px;overflow-y:auto;border:1px solid var(--gray-200);border-radius:8px;display:none"></div>';
+    html += '</div>';
+
+    // Miktar seçimi
+    html += '<div class="form-row" style="margin-bottom:8px">';
+    html += '<div class="form-grup"><label class="form-etiket">Seçilen yemek</label><div id="seciliYemekGoster" style="padding:10px;background:var(--gray-50);border-radius:8px;font-size:13px;color:var(--gray-500);min-height:40px">— Listeden seç —</div></div>';
+    html += '<div class="form-grup"><label class="form-etiket">Miktar</label><select id="miktarSec" class="form-input">';
+    (miktarListesi||[]).forEach(function(m) { html += '<option value="' + m.carpan + '" data-ad="' + m.ad + '">' + m.ad + '</option>'; });
+    html += '</select></div></div>';
+    html += '<button onclick="yemekSepeteEkle()" class="btn btn-primary" style="width:100%;margin-bottom:8px">+ Listeye Ekle</button>';
+
+    // Yeni yemek ekle
+    html += '<div id="yeniYemekToggle" style="text-align:center;margin-bottom:4px"><button onclick="yeniYemekFormAc()" style="background:none;border:none;color:var(--primary);font-size:12px;cursor:pointer">+ Listede olmayan yemek ekle</button></div>';
+    html += '<div id="yeniYemekFormDiv"></div>';
+    html += '</div>';
+
+    // Bugünkü yemek listesi
+    if (secilenYemekler.length > 0) {
+      html += '<div class="kart"><div class="kart-baslik">📋 Bugün Yediklerim (' + toplamKalori + ' kal)</div>';
+      secilenYemekler.forEach(function(item, i) {
+        var aburCubur = aburCuburTespitEt(item.yemek).length > 0;
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<span style="font-size:13px">' + (aburCubur ? '⚠️ ' : '') + item.miktar + ' ' + item.yemek + '</span>';
+        html += '<div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;color:var(--gray-500)">' + item.kalori + ' kal</span>';
+        html += '<button onclick="yemekListedenSil(' + i + ')" style="background:none;border:none;color:#c81e1e;cursor:pointer;font-size:18px;padding:0;line-height:1">×</button></div></div>';
+      });
+      html += '</div>';
+    }
+
+    // Analiz sonuçları
+    if (kayit && kayit.analiz_json) html += renderBeslenmeAnaliz(kayit);
+
+    // Son 7 gün
+    var gecmis = await beslenmeGecmisGetir(sporcu.id);
+    if (gecmis && gecmis.length > 1) {
+      html += '<div class="kart"><div class="kart-baslik">📊 Son 7 Gün</div>';
+      gecmis.slice(0,7).forEach(function(g) {
+        var gH = kaloriHedefiHesapla(sporcu, g.antrenman_gunu).hedef;
+        var gR = !g.toplam_kalori ? '#9ca3af' : g.toplam_kalori > gH*1.15 ? '#c81e1e' : g.toplam_kalori < gH*0.8 ? '#1a56db' : '#057a55';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<span style="font-size:12px;color:var(--gray-500)">' + tarihFormatla(g.tarih) + (g.antrenman_gunu?' 🏋️':'') + '</span>';
+        html += '<div style="display:flex;align-items:center;gap:8px">';
+        if (g.abur_cubur) html += '<span style="font-size:10px;color:#c81e1e">⚠️ abur cubur</span>';
+        html += '<span style="font-size:12px;font-weight:700;color:' + gR + '">' + (g.toplam_kalori||'—') + ' kal</span></div></div>';
+      });
+      html += '</div>';
+    }
+
+    div.innerHTML = html;
+    beslenmeUyariYukle();
+
+  } catch(e) {
+    div.innerHTML = '<p style="color:red">Hata: ' + e.message + '</p>';
+  }
+}
+
+// Yemek arama
+function yemekAramaFiltrele() {
+  var arama = (document.getElementById('yemekArama')?.value || '').toLowerCase().trim();
+  var sonucDiv = document.getElementById('yemekAramaSonuclari');
+  if (!sonucDiv) return;
+  if (!arama) { sonucDiv.style.display = 'none'; return; }
+
+  var sonuclar = tumYemekler.filter(function(y) {
+    return y.ad.toLowerCase().includes(arama);
+  }).slice(0, 10);
+
+  if (sonuclar.length === 0) {
+    sonucDiv.innerHTML = '<div style="padding:10px;font-size:12px;color:var(--gray-400)">Bulunamadı — aşağıdan yeni yemek ekleyebilirsin</div>';
+  } else {
+    sonucDiv.innerHTML = sonuclar.map(function(y) {
+      return '<div onclick="yemekSec(\'' + y.ad.replace(/'/g,'\\\'') + '\',' + (y.kalori_tabak||0) + ')" style="padding:10px 12px;cursor:pointer;border-bottom:1px solid var(--gray-100);font-size:13px;display:flex;justify-content:space-between" onmouseover="this.style.background=\'#f9fafb\'" onmouseout="this.style.background=\'white\'">'
+        + '<span>' + y.ad + '</span>'
+        + '<span style="color:var(--gray-400);font-size:11px">~' + (y.kalori_tabak||'?') + ' kal</span></div>';
+    }).join('');
+  }
+  sonucDiv.style.display = 'block';
+}
+
+var _seciliYemekAd = '';
+var _seciliYemekKalori = 0;
+
+function yemekSec(ad, kalori) {
+  _seciliYemekAd = ad;
+  _seciliYemekKalori = kalori;
+  var g = document.getElementById('seciliYemekGoster');
+  if (g) { g.textContent = ad + ' (~' + kalori + ' kal/porsiyon)'; g.style.color = 'var(--gray-800)'; }
+  var s = document.getElementById('yemekAramaSonuclari');
+  if (s) s.style.display = 'none';
+  var a = document.getElementById('yemekArama');
+  if (a) a.value = ad;
+}
+
+function yemekSepeteEkle() {
+  if (!_seciliYemekAd) { bildirimGoster('Önce bir yemek seç'); return; }
+  var miktarEl = document.getElementById('miktarSec');
+  var carpan = miktarEl ? parseFloat(miktarEl.options[miktarEl.selectedIndex]?.value||1) : 1;
+  var miktarAd = miktarEl ? miktarEl.options[miktarEl.selectedIndex]?.getAttribute('data-ad') : '1 porsiyon';
+  var kalori = Math.round(_seciliYemekKalori * carpan);
+  secilenYemekler.push({ miktar: miktarAd, yemek: _seciliYemekAd, kalori: kalori });
+  _seciliYemekAd = ''; _seciliYemekKalori = 0;
+  yemekListeKaydet();
+}
+
+async function yemekListeKaydet() {
+  var sporcu = oturumKullanici;
+  var bugun = new Date().toISOString().split('T')[0];
+  var toplamKalori = secilenYemekler.reduce(function(t,y){ return t+(y.kalori||0); }, 0);
+  var yemekMetni = secilenYemekler.map(function(y){ return y.miktar+' '+y.yemek; }).join(', ');
+  try {
+    var analiz = await yemekAnalizEt(yemekMetni, false, sporcu.beslenme_profil||'koru');
+    await beslenmeKaydet(sporcu.id, bugun, {
+      yemek_listesi_json: JSON.stringify(secilenYemekler),
+      toplam_kalori: analiz ? analiz.kalori : toplamKalori,
+      analiz_json: analiz ? JSON.stringify(analiz) : null,
+      abur_cubur: analiz && analiz.abur_cubur && analiz.abur_cubur.length > 0,
+      abur_cubur_notlar: analiz && analiz.abur_cubur ? analiz.abur_cubur.join(', ') : null
+    });
+    bildirimGoster('✅ Eklendi');
+    beslenmeEkraniYukle();
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function yemekListedenSil(index) {
+  secilenYemekler.splice(index, 1);
+  var sporcu = oturumKullanici;
+  var bugun = new Date().toISOString().split('T')[0];
+  var toplamKalori = secilenYemekler.reduce(function(t,y){ return t+(y.kalori||0); }, 0);
+  await beslenmeKaydet(sporcu.id, bugun, { yemek_listesi_json: JSON.stringify(secilenYemekler), toplam_kalori: toplamKalori });
+  bildirimGoster('Silindi');
+  beslenmeEkraniYukle();
+}
+
+function yeniYemekFormAc() {
+  var div = document.getElementById('yeniYemekFormDiv');
+  if (!div) return;
+  div.innerHTML = '<div style="margin-top:8px;padding:10px;background:var(--gray-50);border-radius:8px">'
+    + '<div class="form-row">'
+    + '<div class="form-grup"><label class="form-etiket">Yemek Adı *</label><input type="text" id="yeniYemekAd" class="form-input" placeholder="Tarhana çorbası"></div>'
+    + '<div class="form-grup"><label class="form-etiket">Kalori (1 porsiyon)</label><input type="number" id="yeniYemekKalori" class="form-input" placeholder="Boş bırakırsan tahmin edilir"></div>'
+    + '</div>'
+    + '<button onclick="yeniYemekKaydet()" class="btn btn-primary">Kaydet & Ekle</button> '
+    + '<button onclick="document.getElementById(\'yeniYemekFormDiv\').innerHTML=\'\'" class="btn btn-outline">İptal</button>'
+    + '</div>';
+}
+
+async function yeniYemekKaydet() {
+  var ad = document.getElementById('yeniYemekAd')?.value?.trim();
+  var kaloriEl = document.getElementById('yeniYemekKalori');
+  var kalori = kaloriEl ? (parseInt(kaloriEl.value)||null) : null;
+  if (!ad) { bildirimGoster('Yemek adı gerekli'); return; }
+  if (!kalori) {
+    bildirimGoster('Kalori hesaplanıyor...');
+    try {
+      var resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514', max_tokens: 100,
+          messages: [{ role: 'user', content: 'Türk mutfağında "' + ad + '" yemeğinin 1 standart ev porsiyonunun kalorisi kaçtır? Sadece sayıyı yaz. Örnek: 220' }]
+        })
+      });
+      var data = await resp.json();
+      var text = data.content?.[0]?.text?.trim()||'';
+      var h = parseInt(text.replace(/[^0-9]/g,''));
+      if (h > 0 && h < 2000) kalori = h;
+    } catch(e) {}
+  }
+  try {
+    await yemekEkle(ad, kalori, 'diger');
+    tumYemekler.push({ ad: ad, kalori_tabak: kalori, kategori: 'diger' });
+    yemekSec(ad, kalori||0);
+    document.getElementById('yeniYemekFormDiv').innerHTML = '';
+    bildirimGoster('✅ ' + ad + ' eklendi (~' + (kalori||'?') + ' kal)');
+  } catch(e) {
+    if (e.message.includes('duplicate')||e.message.includes('unique')) bildirimGoster('Bu yemek zaten listede');
+    else bildirimGoster('Hata: ' + e.message);
+  }
+}
+
+async function kiloGuncelle() {
+  var yeniKilo = parseFloat(document.getElementById('yeniKiloInput')?.value);
+  if (!yeniKilo) { bildirimGoster('Kilo gir'); return; }
+  try {
+    await sporcuGuncelle(oturumKullanici.id, { kilo_kg: yeniKilo });
+    oturumGuncelle({ kilo_kg: yeniKilo });
+    bildirimGoster('✅ Kilo güncellendi');
+    beslenmeEkraniYukle();
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function beslenmeAntrGunToggle(durum) {
+  var sporcu = oturumKullanici;
+  var bugun = new Date().toISOString().split('T')[0];
+  try {
+    await beslenmeKaydet(sporcu.id, bugun, { antrenman_gunu: durum });
+    beslenmeEkraniYukle();
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function beslenmeUyariYukle() {
+  var div = document.getElementById('beslenmeUyariDiv');
+  if (!div) return;
+  try {
+    var yarislar = await yarismalariGetir();
+    var bugun = new Date(); bugun.setHours(0,0,0,0);
+    var uyarilar = yarislar.filter(function(y) {
+      var g = Math.ceil((new Date(y.tarih) - bugun) / (1000*60*60*24));
+      return g > 0 && g <= 60;
+    });
+    if (!uyarilar.length) return;
+    var html = '';
+    uyarilar.forEach(function(y) {
+      var g = Math.ceil((new Date(y.tarih) - bugun) / (1000*60*60*24));
+      var acil = g <= 30;
+      html += '<div style="background:' + (acil?'#fef2f2':'#fff7ed') + ';border-radius:12px;padding:12px;margin-bottom:8px;border-left:4px solid ' + (acil?'#c81e1e':'#e65100') + '">';
+      html += '<div style="font-size:13px;font-weight:700;color:' + (acil?'#c81e1e':'#e65100') + '">' + (acil?'🔴 ':'🟠 ') + y.musabaka_adi + ' — ' + g + ' gün kaldı</div>';
+      html += '<div style="font-size:12px;color:var(--gray-600);margin-top:4px">Beslenme takibini düzenli tutman önemli. Hedef kilona ' + g + ' günün var.</div>';
+      html += '</div>';
+    });
+    div.innerHTML = html;
+  } catch(e) {}
+}
+
+// ── ANTRENÖR BESLENMEUYARİ ────────────────────────────────────────────────
+async function antrenorBeslenmeUyariYukle() {
+  try {
+    var uyarilar = await sporcuYarismaUyariGetir();
+    if (!uyarilar.length) return;
+    var html = '<div class="kart" style="border-left:4px solid #c81e1e"><div class="kart-baslik">🔔 Beslenme Takip Uyarıları</div>';
+    uyarilar.forEach(function(u) {
+      var hedefUzak = u.fark && parseFloat(u.fark) > 1;
+      html += '<div style="padding:8px 0;border-bottom:1px solid var(--gray-100)">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+      html += '<div>';
+      html += '<div style="font-size:13px;font-weight:700">' + u.sporcu.ad_soyad + '</div>';
+      html += '<div style="font-size:11px;color:var(--gray-500)">' + u.musabaka + ' — ' + u.gun + ' gün kaldı</div>';
+      if (u.fark && parseFloat(u.fark) > 0) {
+        html += '<div style="font-size:11px;color:#e65100">⚖️ Hedeften ' + u.fark + ' kg uzakta</div>';
+      }
+      html += '</div>';
+      var aktif = u.sporcu.beslenme_aktif;
+      html += '<button onclick="antrenorBeslenmeToggle(\'' + u.sporcu.id + '\',' + !aktif + ',this)" style="padding:5px 12px;border-radius:8px;border:none;font-size:11px;font-weight:700;cursor:pointer;background:' + (aktif?'#def7ec':'#fee2e2') + ';color:' + (aktif?'#057a55':'#c81e1e') + '">';
+      html += aktif ? '✅ Takip Açık' : '❌ Takip Kapalı';
+      html += '</button></div></div>';
+    });
+    html += '</div>';
+    // Sporcular listesinin başına ekle
+    var listDiv = document.getElementById('sporcuListesiDiv');
+    if (listDiv) listDiv.insertAdjacentHTML('beforebegin', html);
+  } catch(e) {}
+}
+
+async function antrenorBeslenmeToggle(sporcuId, durum, btn) {
+  try {
+    await beslenmeAktifToggle(sporcuId, durum);
+    btn.style.background = durum ? '#def7ec' : '#fee2e2';
+    btn.style.color = durum ? '#057a55' : '#c81e1e';
+    btn.textContent = durum ? '✅ Takip Açık' : '❌ Takip Kapalı';
+    bildirimGoster(durum ? '✅ Beslenme takibi açıldı' : 'Beslenme takibi kapatıldı');
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
 }
