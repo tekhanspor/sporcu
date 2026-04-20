@@ -1325,13 +1325,8 @@ async function sporcuBoyKiloGuncelle() {
   if (!Object.keys(guncelleme).length) { bildirimGoster('En az bir alan doldur'); return; }
   try {
     await sporcuGuncelle(oturumKullanici.id, guncelleme);
-    if (boy) oturumKullanici.boy_cm = boy;
-    if (kilo) oturumKullanici.kilo_kg = kilo;
-    if (dogum) oturumKullanici.dogum_tarihi = dogum;
-    if (hedefKilo) oturumKullanici.hedef_kilo = hedefKilo;
-    oturumKullanici.boy_cm = boy;
-    oturumKullanici.kilo_kg = kilo;
-    bildirimGoster('✅ Boy ve kilo güncellendi');
+    oturumGuncelle(guncelleme);
+    bildirimGoster('✅ Bilgilerin güncellendi');
     renderSporcuProfil(oturumKullanici);
   } catch(e) {
     bildirimGoster('Hata: ' + e.message);
@@ -2340,6 +2335,7 @@ async function beslenmeHedefiKaydet(sporcuId) {
   var profil = document.getElementById('beslenmeProfilInput')?.value || 'koru';
   try {
     await sporcuGuncelle(sporcuId, { hedef_kilo: hedefKilo, beslenme_profil: profil });
+    oturumGuncelle({ hedef_kilo: hedefKilo, beslenme_profil: profil });
     bildirimGoster('✅ Beslenme hedefi güncellendi');
     sporcuProfilAc(sporcuId);
   } catch(e) { bildirimGoster('Hata: ' + e.message); }
@@ -2667,7 +2663,7 @@ async function kiloGuncelle() {
   if (!yeniKilo) { bildirimGoster('Kilo gir'); return; }
   try {
     await sporcuGuncelle(oturumKullanici.id, { kilo_kg: yeniKilo });
-    oturumKullanici.kilo_kg = yeniKilo;
+    oturumGuncelle({ kilo_kg: yeniKilo });
     bildirimGoster('✅ Kilo güncellendi');
     beslenmeEkraniYukle();
   } catch(e) { bildirimGoster('Hata: ' + e.message); }
