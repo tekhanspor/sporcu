@@ -2725,18 +2725,25 @@ async function yarismaGuncelleKaydet(id) {
       yer: document.getElementById('yfYer')?.value?.trim() || null,
       aciklama: document.getElementById('yfAciklama')?.value?.trim() || null
     });
-    // Sporcu bağlantılarını güncelle
-    var checkboxlar = document.querySelectorAll('#yarismaForm input[type=checkbox]');
-    var baglilar = await yarismaSporcularGetir(id);
-    var eskiIdler = baglilar.map(function(b) { return b.sporcu_id; });
-    var yeniIdler = Array.from(checkboxlar).filter(function(c) { return c.checked; }).map(function(c) { return c.value; });
-    // Ekle
-    for (var nId of yeniIdler) {
-      if (!eskiIdler.includes(nId)) await yarismaSporcuEkle(id, nId);
-    }
-    // Sil
-    for (var eId of eskiIdler) {
-      if (!yeniIdler.includes(eId)) await yarismaSporcuSil(id, eId);
+    // Sporcu bağlantılarını güncelle (tablo yoksa sessizce geç)
+    try {
+      var checkboxlar = document.querySelectorAll('#yarismaForm input[type=checkbox]');
+      var baglilar = await yarismaSporcularGetir(id);
+      var eskiIdler = baglilar.map(function(b) { return b.sporcu_id; });
+      var yeniIdler = Array.from(checkboxlar)
+        .filter(function(c) { return c.checked; })
+        .map(function(c) { return c.value; });
+      // Ekle
+      var eklePromisler = yeniIdler
+        .filter(function(nId) { return !eskiIdler.includes(nId); })
+        .map(function(nId) { return yarismaSporcuEkle(id, nId); });
+      // Sil
+      var silPromisler = eskiIdler
+        .filter(function(eId) { return !yeniIdler.includes(eId); })
+        .map(function(eId) { return yarismaSporcuSil(id, eId); });
+      await Promise.all(eklePromisler.concat(silPromisler));
+    } catch(spErr) {
+      console.warn('Sporcu bağlantısı güncellenemedi:', spErr.message);
     }
     bildirimGoster('✅ Müsabaka güncellendi');
     yarismaTakvimiYukle('yarismaDiv', true);
