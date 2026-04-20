@@ -1026,3 +1026,88 @@ async function sporcuSil(id) {
   });
   if (!r.ok) throw new Error('Sporcu silinemedi');
 }
+
+// ── BESLENME ──────────────────────────────────────────────────────────────
+async function beslenmeGetir(sporcuId, tarih) {
+  var rows = await sbFetch('beslenme_gunluk?sporcu_id=eq.' + sporcuId + '&tarih=eq.' + tarih);
+  return rows && rows[0] ? rows[0] : null;
+}
+
+async function beslenmeGecmisGetir(sporcuId) {
+  var rows = await sbFetch('beslenme_gunluk?sporcu_id=eq.' + sporcuId + '&order=tarih.desc&limit=14');
+  return rows || [];
+}
+
+async function beslenmeKaydet(sporcuId, tarih, veri) {
+  // Önce var mı kontrol et
+  var mevcut = await beslenmeGetir(sporcuId, tarih);
+  var url = SUPABASE_URL + '/rest/v1/beslenme_gunluk';
+  var method = 'POST';
+  if (mevcut) {
+    url += '?id=eq.' + mevcut.id;
+    method = 'PATCH';
+  }
+  var r = await fetch(url, {
+    method: method,
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(Object.assign({ sporcu_id: sporcuId, tarih: tarih }, veri))
+  });
+  if (!r.ok) throw new Error('Beslenme kaydedilemedi');
+  return await r.json();
+}
+
+// Abur cubur listesi
+const ABUR_CUBUR = ['cips','çips','kola','cola','çikolata','cikolata','gofret',
+  'fast food','hamburger','pizza','patates kızartması','şeker','şekerleme',
+  'bisküvi','hazır meyve suyu','enerji içeceği','dondurma','waffle','kraker'];
+
+function aburCuburTespitEt(metin) {
+  if (!metin) return [];
+  var kucuk = metin.toLowerCase();
+  return ABUR_CUBUR.filter(function(k) { return kucuk.includes(k); });
+}
+
+// Protein içeriği değerlendir
+const PROTEIN_KAYNAKLAR = ['yumurta','et','tavuk','balık','balik','ton','peynir',
+  'yoğurt','yogurt','süt','sut','kuru fasulye','mercimek','nohut','köfte','kiyma'];
+
+function proteinPuanHesapla(metin) {
+  if (!metin) return 0;
+  var kucuk = metin.toLowerCase();
+  var bulunan = PROTEIN_KAYNAKLAR.filter(function(k) { return kucuk.includes(k); });
+  if (bulunan.length >= 3) return 3;
+  if (bulunan.length >= 2) return 2;
+  if (bulunan.length >= 1) return 1;
+  return 0;
+}
+
+// Günlük kalori hedefi hesapla
+function kaloriHedefiHesapla(sporcu, antrenmanGunu) {
+  var kilo = sporcu.kilo_kg || 55;
+  var boy = sporcu.boy_cm || 160;
+  var yas = yasHesapla(sporcu.dogum_tarihi) || 14;
+  var cin = sporcu.cinsiyet || 'Erkek';
+  var profil = sporcu.beslenme_profil || 'koru';
+
+  // Harris-Benedict bazal metabolizma
+  var bmr;
+  if (cin === 'Erkek') {
+    bmr = 88.4 + (13.4 * kilo) + (4.8 * boy) - (5.7 * yas);
+  } else {
+    bmr = 447.6 + (9.2 * kilo) + (3.1 * boy) - (4.3 * yas);
+  }
+
+  // Antrenman çarpanı
+  var carpan = antrenmanGunu ? 1.6 : 1.3;
+  var tdee = Math.round(bmr * carpan);
+
+  // Profile göre ayarla
+  if (profil === 'ver') {
+    return { hedef: tdee - 400, min: tdee - 600, max: tdee - 200, aciklama: 'Kilo verme modu' };
+  } else if (profil === 'ust_siklet') {
+    return { hedef: tdee + 200, min: tdee, max: tdee + 400, aciklama: 'Güç kazanım modu' };
+  } else {
+    return { hedef: tdee, min: tdee - 200, max: tdee + 200, aciklama: 'Kilo koruma modu' };
+  }
+}
