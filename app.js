@@ -623,6 +623,23 @@ function renderProfilTestler(testler, sporcu) {
         ${aciklama ? `<div style="font-size:12px;color:var(--gray-600);margin-top:6px;padding:8px 10px;background:${renk === 'green' ? '#f0fdf4' : renk === 'yellow' ? '#fefce8' : renk === 'orange' ? '#fff7ed' : '#fef2f2'};border-radius:8px;line-height:1.5">${aciklama}</div>` : ''}
       </div>`;
     }).join('')}
+    ${enSon.hrr_max ? (() => {
+      const hrr60v  = enSon.hrr_60  ? Math.round((enSon.hrr_max - enSon.hrr_60)  / 10 * 100) : null;
+      const hrr90v  = enSon.hrr_90  ? Math.round((enSon.hrr_max - enSon.hrr_90)  / 10 * 100) : null;
+      const hrr120v = enSon.hrr_120 ? Math.round((enSon.hrr_max - enSon.hrr_120) / 10 * 100) : null;
+      const hRenk = hrr60v >= 280 ? '#057a55' : hrr60v >= 180 ? '#e65100' : '#c81e1e';
+      const hYorum = hrr60v >= 280 ? '✅ Hızlı toparlanma — aerobik kapasite güçlü' : hrr60v >= 180 ? '🟡 Orta toparlanma' : '🔴 Yavaş toparlanma — aerobik kapasite geliştirilebilir';
+      return `<div style="margin-top:8px;padding:10px;background:var(--gray-50);border-radius:8px">
+        <div style="font-size:12px;font-weight:700;color:var(--gray-600);margin-bottom:6px">❤️ Kalp Atış Toparlanması</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px">
+          <span style="font-size:12px">HRmax: <b>${enSon.hrr_max} bpm</b></span>
+          ${hrr60v  ? `<span style="font-size:12px">HRR₆₀: <b style="color:${hRenk}">${hrr60v}%</b></span>`  : ''}
+          ${hrr90v  ? `<span style="font-size:12px">HRR₉₀: <b style="color:${hRenk}">${hrr90v}%</b></span>`  : ''}
+          ${hrr120v ? `<span style="font-size:12px">HRR₁₂₀: <b style="color:${hRenk}">${hrr120v}%</b></span>` : ''}
+        </div>
+        <div style="font-size:11px;color:${hRenk};font-weight:600">${hYorum}</div>
+      </div>`;
+    })() : ''}
     ${enSon.notlar ? `<div style="margin-top:10px;padding:8px;background:var(--gray-50);border-radius:8px;font-size:12px;color:var(--gray-500)">📝 ${enSon.notlar}</div>` : ''}
   </div>`;
 
@@ -1193,6 +1210,25 @@ function testEkleModalAc() {
   modalAc('testModal');
 }
 
+function hrrOnizle() {
+  var hrrMax = parseInt(document.getElementById('t_hrr_max')?.value) || 0;
+  var hr60   = parseInt(document.getElementById('t_hrr_60')?.value)  || 0;
+  var hr90   = parseInt(document.getElementById('t_hrr_90')?.value)  || 0;
+  var hr120  = parseInt(document.getElementById('t_hrr_120')?.value) || 0;
+  var div = document.getElementById('hrrOnizleDiv');
+  if (!div) return;
+  if (!hrrMax) { div.textContent = 'HRmax ve HR değerlerini gir'; return; }
+  var satirlar = [];
+  if (hr60)  satirlar.push('HRR₆₀: <b>' + Math.round((hrrMax - hr60) / 10 * 100) + '%</b>');
+  if (hr90)  satirlar.push('HRR₉₀: <b>' + Math.round((hrrMax - hr90) / 10 * 100) + '%</b>');
+  if (hr120) satirlar.push('HRR₁₂₀: <b>' + Math.round((hrrMax - hr120) / 10 * 100) + '%</b>');
+  if (satirlar.length === 0) { div.textContent = 'HR değerlerini gir'; return; }
+  // Toparlanma değerlendirmesi
+  var hrr60val = hr60 ? Math.round((hrrMax - hr60) / 10 * 100) : 0;
+  var yorum = hrr60val >= 280 ? '✅ Hızlı toparlanma' : hrr60val >= 180 ? '🟡 Orta toparlanma' : hrr60val > 0 ? '🔴 Yavaş toparlanma' : '';
+  div.innerHTML = satirlar.join(' · ') + (yorum ? '<br><span style="font-size:11px">' + yorum + '</span>' : '');
+}
+
 function fsktOnizle() {
   var turlar = [1,2,3,4,5].map(function(i) {
     return parseInt(document.getElementById('t_fskt_' + i).value) || 0;
@@ -1244,7 +1280,12 @@ async function testKaydet() {
     dck60_tekrar:        parseInt(document.getElementById('t_dck60').value)           || null,
     sinav_tekrar:        parseInt(document.getElementById('t_sinav').value)           || null,
     ...hesaplaFSKT(),
-    notlar: document.getElementById('t_notlar').value.trim() || null
+    notlar: document.getElementById('t_notlar').value.trim() || null,
+    // HRR hesabı
+    hrr_max: parseInt(document.getElementById('t_hrr_max')?.value) || null,
+    hrr_60: parseInt(document.getElementById('t_hrr_60')?.value) || null,
+    hrr_90: parseInt(document.getElementById('t_hrr_90')?.value) || null,
+    hrr_120: parseInt(document.getElementById('t_hrr_120')?.value) || null
   };
 
   try {
