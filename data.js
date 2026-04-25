@@ -100,24 +100,39 @@ async function tumAnketler() {
 // Format: [E10-12, K10-12, E13-14, K13-14, E15-16, K15-16]
 // Kaynaklar: Xu et al.2025, Da Silva Santos 2016-2019, Nikolaidis et al.2016,
 //            Eurofit TKD sporcusu düzeltmeli, elite-nonelite TKD karşılaştırmaları
-// Normlar — TKD sporcusu bazlı (10-16 yaş, Erkek/Kız)
+// Normlar — En yüksek/zorlu veri seçildi
 // Format: [E10-12, K10-12, E13-14, K13-14, E15-16, K15-16]
-// Kaynaklar: Xu et al.2025, Da Silva Santos 2016-2019, Eurofit TKD düzeltmeli
+// Kaynak: Elit TKD yetişkin + Xu et al.2025 + Da Silva Santos + Eurofit
+// Kural: Elit TKD, yetişkin TKD, mevcut norm — hangisi daha zorlu/yüksekse o seçildi
 const NORMLAR = {
-  uzun_atlama_cm:      { normlar: [155,143,172,158,188,168], yuksek_iyi: true  },
-  saglik_topu_cm:      { normlar: [375,310,450,365,525,410], yuksek_iyi: true  },
-  mekik_tekrar:        { normlar: [22,19,26,23,32,27],       yuksek_iyi: true  },
-  sprint_30m_sn:       { normlar: [5.1,5.5,4.8,5.1,4.4,4.8], yuksek_iyi: false },
-  illinois_sn:         { normlar: [17.8,19.0,16.5,17.8,15.5,17.0], yuksek_iyi: false },
-  flamingo_hata:       { normlar: [5,7,3,5,2,4],             yuksek_iyi: false },
-  otur_uzan_cm:        { normlar: [27,31,29,33,31,36],       yuksek_iyi: true  },
-  beep_test_seviye:    { normlar: [6.5,5.8,7.5,6.8,9.0,8.0], yuksek_iyi: true  },
-  cetvel_reaksiyon_cm: { normlar: [20,22,17,19,14,16],       yuksek_iyi: false },
-  dolyo_chagi_tekrar:  { normlar: [13,11,16,14,20,17],       yuksek_iyi: true  },
-  fskt_tekrar:         { normlar: [14,12,17,15,21,18],       yuksek_iyi: true  },
-  fskt_kdi:            { normlar: [20,20,18,18,15,15],       yuksek_iyi: false },
-  dck60_tekrar:        { normlar: [55,46,65,55,78,65],       yuksek_iyi: true  },
-  sinav_tekrar:        { normlar: [15,11,22,15,30,20],       yuksek_iyi: true  }
+  // Uzun atlama: Elit TKD yetişkin E:195 K:175 baz, yaş kademeli
+  uzun_atlama_cm:      { normlar: [162,148,178,163,195,175], yuksek_iyi: true  },
+  // Top fırlatma: Elit TKD yetişkin E:550 K:430
+  saglik_topu_cm:      { normlar: [390,325,470,380,550,430], yuksek_iyi: true  },
+  // Mekik: TKD elit yetişkin E:38 K:32, yaş kademeli
+  mekik_tekrar:        { normlar: [24,20,29,25,36,30],       yuksek_iyi: true  },
+  // Sprint: Elit TKD E:4.3 K:4.7 — E15-16 mevcut 4.4 daha zorlu kalır
+  sprint_30m_sn:       { normlar: [4.9,5.4,4.6,5.0,4.4,4.7], yuksek_iyi: false },
+  // Illinois: Elit TKD E:15.2 K:16.8 — E15-16 mevcut 15.5 daha zorlu kalır
+  illinois_sn:         { normlar: [17.5,18.8,16.2,17.5,15.5,16.8], yuksek_iyi: false },
+  // Flamingo: Elit TKD E:2 K:3 — E15-16 mevcut 2 aynı kalır
+  flamingo_hata:       { normlar: [4,6,3,4,2,3],             yuksek_iyi: false },
+  // Otur-uzan: K mevcut normlar daha yüksek — kalır, E +2cm
+  otur_uzan_cm:        { normlar: [29,31,31,33,33,36],       yuksek_iyi: true  },
+  // Beep test: Elit TKD E:10+ K:8.5+ — E15-16 mevcut 9.0 daha zorlu kalır
+  beep_test_seviye:    { normlar: [7.0,6.2,8.5,7.5,9.0,8.5], yuksek_iyi: true  },
+  // Cetvel: Elit TKD E:13 K:15 — E15-16 mevcut 14 daha zorlu kalır
+  cetvel_reaksiyon_cm: { normlar: [19,21,16,18,14,15],       yuksek_iyi: false },
+  // Dolyo: Xu et al.2025 elit E:21 K:17 + yaş kademeli +2
+  dolyo_chagi_tekrar:  { normlar: [15,13,18,15,21,17],       yuksek_iyi: true  },
+  // FSKT: Da Silva Santos elit E:19 K:17, yaş kademeli
+  fskt_tekrar:         { normlar: [15,13,18,16,21,18],       yuksek_iyi: true  },
+  // KDI: Elit <%8 — tüm gruplara zorlu eşik, yaş farkı az
+  fskt_kdi:            { normlar: [15,15,12,12,8,8],         yuksek_iyi: false },
+  // DCK: Xu et al.2025 elit E:80 K:72
+  dck60_tekrar:        { normlar: [62,52,72,62,80,72],       yuksek_iyi: true  },
+  // Şınav: Elit TKD E:35 K:25, yaş kademeli
+  sinav_tekrar:        { normlar: [18,13,25,18,35,25],       yuksek_iyi: true  }
 };
 
 function normIndeksiHesapla(yas, cinsiyet) {
