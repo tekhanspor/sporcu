@@ -150,7 +150,7 @@ function sporcuFiltrele() {
       <div class="sporcu-avatar">${basTaHarfler(s.ad_soyad)}</div>
       <div class="sporcu-info">
         <div class="sporcu-isim">${s.ad_soyad}</div>
-        <div class="sporcu-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || '—'}</div>
+        <div class="sporcu-meta">${yas} yaş · ${s.cinsiyet || '—'}</div>
         <div style="margin-top:2px">${testHatirlaticiEkle(s, s.son_test_tarihi)}</div>
       </div>
       <div class="sporcu-ok">›</div>
@@ -1474,7 +1474,7 @@ function renderSporcuProfil(s) {
     <div>
       <div class="profil-isim">${s.ad_soyad}</div>
       <div class="profil-meta">${yas} yaş · ${s.cinsiyet || '—'}</div>
-      <div class="profil-meta">${s.dan_kusak || ''}</div>
+
     </div>
   </div>
   <div class="istat-grid">
@@ -2985,6 +2985,7 @@ async function quizListesiYukle() {
       html += '<div style="flex:1"><div style="font-size:13px;font-weight:700">' + q.baslik + '</div>';
       html += '<div style="font-size:11px;color:var(--gray-400)">' + soruSayisi + ' soru</div></div>';
       html += '<div style="display:flex;gap:6px">';
+      html += '<button onclick="quizIzleyenleriGoster(&quot;' + q.id + '&quot;,&quot;' + q.baslik + '&quot;)" style="background:none;border:1px solid var(--gray-200);border-radius:6px;font-size:11px;padding:3px 8px;cursor:pointer">👁 Kim İzledi</button>';
       html += '<button onclick="quizDuzenle(&quot;' + q.id + '&quot;)" style="background:none;border:1px solid var(--gray-200);border-radius:6px;font-size:11px;padding:3px 8px;cursor:pointer">Düzenle</button>';
       html += '<button onclick="quizSilBtn(&quot;' + q.id + '&quot;)" style="background:none;border:none;color:#c81e1e;cursor:pointer;font-size:18px;line-height:1">×</button>';
       html += '</div></div>';
@@ -3002,12 +3003,15 @@ async function quizListesiYukle() {
       var eklenme = new Date(l.olusturma_tarihi);
       var farkGun = Math.floor((bugun - eklenme) / (1000*60*60*24));
       var thumbId = youtubeIdAl(l.url);
-      html += '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);align-items:center">';
+      html += '<div style="padding:8px 0;border-bottom:1px solid var(--gray-100)">';
+      html += '<div style="display:flex;gap:10px;align-items:center">';
       if (thumbId) html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:70px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0">';
       html += '<div style="flex:1"><a href="' + l.url + '" target="_blank" style="font-size:13px;font-weight:600;color:var(--primary);text-decoration:none">' + l.baslik + '</a>';
       if (farkGun < 7) html += ' <span style="font-size:10px;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:10px;font-weight:700">YENİ</span>';
       html += '</div>';
       html += '<button onclick="linkSilBtn(&quot;' + l.id + '&quot;)" style="background:none;border:none;color:var(--gray-300);cursor:pointer;font-size:20px">×</button>';
+      html += '</div>';
+      html += '<button onclick="linkIzleyenleriGoster(&quot;' + l.id + '&quot;,&quot;' + l.baslik + '&quot;)" style="background:none;border:none;color:var(--primary);font-size:11px;cursor:pointer;margin-top:2px;padding:0">👁 Kim izledi?</button>';
       html += '</div>';
     });
   }
@@ -3175,7 +3179,7 @@ async function sporcuQuizYukle() {
       var thumbId = youtubeIdAl(l.url);
       html += '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);align-items:center">';
       if (thumbId) html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:70px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0">';
-      html += '<div style="flex:1"><a href="' + l.url + '" target="_blank" style="font-size:13px;font-weight:600;color:var(--primary);text-decoration:none">' + l.baslik + '</a>';
+      html += '<div style="flex:1"><a href="' + l.url + '" target="_blank" onclick="linkIzlemeKaydet(&quot;' + oturumKullanici.id + '&quot;,&quot;' + l.id + '&quot;)" style="font-size:13px;font-weight:600;color:var(--primary);text-decoration:none">' + l.baslik + '</a>';
       if (farkGun < 7) html += ' <span style="font-size:10px;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:10px;font-weight:700">YENİ</span>';
       html += '</div></div>';
     });
@@ -3197,6 +3201,8 @@ async function quizBaslat(quizId) {
   aktifQuiz = quiz;
   aktifSoruIndex = 0;
   dogruSayisi = 0;
+  // İzleme kaydı
+  videoIzlemeKaydet(oturumKullanici.id, quizId).catch(function(){});
 
   var videoId = youtubeIdAl(quiz.youtube_url);
   if (!videoId) { bildirimGoster('Geçersiz YouTube linki'); return; }
@@ -3392,4 +3398,99 @@ function quizTekrarIzle(soruIndex) {
       }
     }
   }, 300);
+}
+
+async function quizIzleyenleriGoster(quizId, baslik) {
+  try {
+    var izleyenler = await quizIzleyenleriGetir(quizId);
+    var cevaplar = await sbFetch('quiz_cevaplar?quiz_id=eq.' + quizId + '&select=sporcu_id,dogru_sayisi,toplam_soru') || [];
+
+    var popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+
+    var kart = document.createElement('div');
+    kart.style.cssText = 'background:white;border-radius:16px;padding:20px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto';
+
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+    html += '<div style="font-size:14px;font-weight:700">👁 ' + baslik + '</div>';
+    html += '<button onclick="this.closest(\'[style*=fixed]\').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--gray-400)">×</button>';
+    html += '</div>';
+
+    if (!izleyenler || izleyenler.length === 0) {
+      html += '<div style="text-align:center;color:var(--gray-400);padding:20px">Henüz kimse izlemedi</div>';
+    } else {
+      // Tekil sporcu listesi
+      var sporcuMap = {};
+      izleyenler.forEach(function(i) {
+        var ad = i.sporcular ? i.sporcular.ad_soyad : i.sporcu_id;
+        if (!sporcuMap[i.sporcu_id]) {
+          sporcuMap[i.sporcu_id] = { ad: ad, sayac: 0, son: i.izleme_tarihi };
+        }
+        sporcuMap[i.sporcu_id].sayac++;
+      });
+
+      Object.keys(sporcuMap).forEach(function(sid) {
+        var s = sporcuMap[sid];
+        var cevap = cevaplar.find(function(c) { return c.sporcu_id === sid; });
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div>';
+        html += '<div style="font-size:13px;font-weight:600">' + s.ad + '</div>';
+        html += '<div style="font-size:11px;color:var(--gray-400)">' + s.sayac + ' kez izledi · ' + tarihFormatla(s.son) + '</div>';
+        html += '</div>';
+        if (cevap) {
+          var oran = Math.round((cevap.dogru_sayisi / cevap.toplam_soru) * 100);
+          var renk = oran >= 70 ? '#057a55' : oran >= 50 ? '#e65100' : '#c81e1e';
+          html += '<div style="font-size:12px;font-weight:700;color:' + renk + '">' + cevap.dogru_sayisi + '/' + cevap.toplam_soru + ' (' + oran + '%)</div>';
+        } else {
+          html += '<div style="font-size:11px;color:var(--gray-400)">Quiz yapmadı</div>';
+        }
+        html += '</div>';
+      });
+    }
+
+    kart.innerHTML = html;
+    popup.appendChild(kart);
+    document.body.appendChild(popup);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function linkIzleyenleriGoster(linkId, baslik) {
+  try {
+    var izleyenler = await linkIzleyenleriGetir(linkId);
+    var popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    var kart = document.createElement('div');
+    kart.style.cssText = 'background:white;border-radius:16px;padding:20px;width:100%;max-width:400px;max-height:80vh;overflow-y:auto';
+
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+    html += '<div style="font-size:14px;font-weight:700">👁 ' + baslik + '</div>';
+    html += '<button onclick="this.closest(\'[style*=fixed]\').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--gray-400)">×</button>';
+    html += '</div>';
+
+    if (!izleyenler || izleyenler.length === 0) {
+      html += '<div style="text-align:center;color:var(--gray-400);padding:20px">Henüz kimse izlemedi</div>';
+    } else {
+      var sporcuMap = {};
+      izleyenler.forEach(function(i) {
+        var ad = i.sporcular ? i.sporcular.ad_soyad : i.sporcu_id;
+        if (!sporcuMap[i.sporcu_id]) {
+          sporcuMap[i.sporcu_id] = { ad: ad, sayac: 0, son: i.izleme_tarihi };
+        }
+        sporcuMap[i.sporcu_id].sayac++;
+      });
+
+      Object.keys(sporcuMap).forEach(function(sid) {
+        var s = sporcuMap[sid];
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div><div style="font-size:13px;font-weight:600">' + s.ad + '</div>';
+        html += '<div style="font-size:11px;color:var(--gray-400)">' + tarihFormatla(s.son) + '</div></div>';
+        html += '<div style="font-size:12px;color:var(--gray-500)">' + s.sayac + ' kez izledi</div>';
+        html += '</div>';
+      });
+    }
+
+    kart.innerHTML = html;
+    popup.appendChild(kart);
+    document.body.appendChild(popup);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
 }
