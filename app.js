@@ -166,7 +166,7 @@ function tabSec(tab, btn) {
     divs.forEach(function(d) { d.style.display = 'none'; });
     el.style.display = 'block';
   }
-  if (tab === 'linkler') linkKutuphanesiniYukle('antrenorLinkDiv', true);
+  if (tab === 'linkler') quizListesiYukle();
   if (tab === 'yarisma') yarismaTakvimiYukle('yarismaDiv', true);
 }
 
@@ -972,19 +972,26 @@ function renderRecete(testler, anketler, sporcu) {
       return renk === 'red' || renk === 'orange';
     });
     if (zayiflar.length > 0) {
-      html += `<div class="kart"><div class="kart-baslik">💊 Motorik Antrenman Reçetesi</div>
-      ${zayiflar.map(alan => {
+      html += '<div class="kart"><div class="kart-baslik">💊 Motorik Antrenman Reçetesi</div>';
+      zayiflar.forEach(function(alan) {
         const { durum } = testDurumu(alan, test[alan], yas, cin);
-        return `<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
-            <span style="font-size:13px;font-weight:600">${TEST_ETIKETLERI[alan].ad}</span>
-            <span class="badge badge-${durum.includes('🔴') ? 'red' : 'orange'}">${durum}</span>
-          </div>
-          <div style="font-size:12px;color:var(--gray-500)">${motorikReceteGetir(alan)}</div>
-        </div>`;
-      }).join('')}</div>`;
+        const ozellikAd = MOTORIK_OZELLIK[alan] || TEST_ETIKETLERI[alan].ad;
+        const badgeRenk = durum.includes('🔴') ? 'red' : 'orange';
+        const receteMetni = motorikReceteGetir(alan);
+        html += '<div style="padding:12px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">';
+        html += '<span style="font-size:13px;font-weight:700">' + ozellikAd + '</span>';
+        html += '<span class="badge badge-' + badgeRenk + '">' + durum + '</span>';
+        html += '</div>';
+        const receteDiv = document.createElement('div');
+        receteDiv.style.cssText = 'font-size:12px;color:var(--gray-600);line-height:1.9;background:var(--gray-50);padding:10px;border-radius:8px';
+        receteDiv.innerHTML = receteMetni;
+        html += receteDiv.outerHTML;
+        html += '</div>';
+      });
+      html += '</div>';
     } else {
-      html += '<div class="kart"><div class="kart-baslik">💊 Motorik Reçete</div><div style="color:#057a55;padding:12px 0">✅ Tüm testler norm düzeyinde veya üzerinde!</div></div>';
+      html += '<div class="kart"><div class="kart-baslik">💊 Motorik Reçete</div><div style="color:#057a55;padding:12px 0">✅ Tüm testler norm düzeyinde veya üzerinde! Böyle devam!</div></div>';
     }
   }
 
@@ -1046,24 +1053,166 @@ function renderRecete(testler, anketler, sporcu) {
 
   if (!html) html = '<div class="bos-durum"><span class="ikon">💊</span><p>Reçete için test ve anket verileri gerekli</p></div>';
   document.getElementById('profilReceteDiv').innerHTML = html;
+
 }
+
+const MOTORIK_OZELLIK = {
+  uzun_atlama_cm:      '💥 Patlayıcı Güç',
+  saglik_topu_cm:      '💥 Patlayıcı Güç (Üst Vücut)',
+  mekik_tekrar:        '💪 Karın & Gövde Gücü',
+  sprint_30m_sn:       '⚡ Hız',
+  illinois_sn:         '🔄 Çeviklik',
+  flamingo_hata:       '🧘 Denge',
+  otur_uzan_cm:        '🤸 Esneklik',
+  beep_test_seviye:    '🫀 Aerobik Kapasite',
+  cetvel_reaksiyon_cm: '⚡ Reaksiyon & Dikkat',
+  dolyo_chagi_tekrar:  '🦵 Tekme Hızı',
+  fskt_tekrar:         '🔁 Anaerobik Dayanıklılık',
+  fskt_kdi:            '📉 Kondisyon Sürekliliği',
+  dck60_tekrar:        '🔋 Uzun Süreli Güç',
+  sinav_tekrar:        '💪 Üst Vücut Dayanıklılığı'
+};
 
 function motorikReceteGetir(alan) {
   const r = {
-    uzun_atlama_cm: 'Box Jump 3x8, Squat Jump 3x10, Lunge Jump 3x8. Haftada 3 kez.',
-    saglik_topu_cm: 'Med-Ball Fırlatma 3x8, Plyometrik Push-Up 3x10. Haftada 3 kez.',
-    mekik_tekrar: 'Plank 3x30sn, Russian Twist 3x20, Mekik 3x25. Her gün.',
-    sprint_30m_sn: 'Uçuş Sprintleri 6-10x20-30m, Merdiven Drill 4x. Tam dinlenme.',
-    illinois_sn: 'Illinois x5, T-Drill 5x, 505 Çeviklik 6x. Haftada 3 kez.',
-    flamingo_hata: 'Tek ayak denge 3x30sn, BOSU Squat, gözler kapalı denge. Haftada 4 kez.',
-    otur_uzan_cm: 'PNF Esneme 3x30sn, Bacak sallamaları, dinamik esneme. Her gün.',
-    beep_test_seviye: 'Tempo koşu 20-40dk, Interval koşu 1:1. %65-80 maks. KAH.',
-    cember_koord_sn: 'Çember atlama 4-6 set, koordinasyon merdiveni. Haftada 3 kez.',
-    cetvel_reaksiyon_cm: 'Cetvel düşürme 5x5, renk komutu sprint 8x. Haftada 3 kez.',
-    el_dinamometre_kg: 'Hand Grip 3x30sn, Wrist Curls 3x15, Dead Hang 3x. Haftada 3 kez.',
-    wingate_wkg: 'Tabata Squat Jump, 30m All-Out Sprint x6. Tam dinlenme.'
+
+    uzun_atlama_cm: `
+      <b>💥 Patlayıcı Güç</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Her gün yapabilirsin — malzeme gerekmez.<br>
+      • Squat Jump: Çök, iki ayakla yukarı fırlat, yumuşak in. 3 set × 10 tekrar.<br>
+      • Lunge Jump: Bir adım öne çök, zıpla ve ayak değiştir. 3 set × 8 tekrar.<br>
+      • Tek ayak hop: Sağ ayakla 5 hop → sol ayakla 5 hop. 3 set.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Ağır çalışma yapma. Sadece hafif 2 set squat jump, vücudu hazır tut.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> 5-6 squat jump yeterli — kasları uyandırır, yorgunluk vermez.`,
+
+    saglik_topu_cm: `
+      <b>💥 Patlayıcı Güç (Üst Vücut)</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Malzeme gerekmez, duvara karşı da yapılabilir.<br>
+      • Patlayıcı şınav: İnerken yavaş, kalkarken iki el yerden kalksın. 3 set × 8 tekrar.<br>
+      • Duvara itme: Duvara 50cm mesafede dur, öne düş, iki elle dur, geri it. 3 set × 10.<br>
+      • Yumruk kombinasyonu hızlı: 10sn boyunca mümkün olan en hızlı yumruk. 5 set.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Hafif germe ve hafif patlayıcı çalışma.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Kolları çevir, omuz açma hareketi yap.`,
+
+    mekik_tekrar: `
+      <b>💪 Karın & Gövde Gücü</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Hiç malzeme gerekmez, yerde yapılır.<br>
+      • Mekik: Dizler bükük, eller ensede. 3 set × 20 tekrar.<br>
+      • Plank: Dirsek üzerinde düz dur. 3 set × 30 saniye. Her hafta 5sn artır.<br>
+      • Bacak indirme: Sırt üstü yat, bacakları dik tut, yavaşça indir, yere değdirme. 3 set × 10.<br>
+      • Yan plank: Her iki taraf 20sn. 3 set.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Sadece plank yap — 2 set × 30sn.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> 10 mekik yeterli — gövdeyi aktive eder.`,
+
+    sprint_30m_sn: `
+      <b>⚡ Hız</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Açık alan yeterli — park, bahçe, koridor.<br>
+      • 20-30 adım sprint: Tam hızla koş, yürüyerek geri dön. 6-8 tekrar. Tam dinlenme şart.<br>
+      • Duvardan sprint başlangıcı: Duvara ellerini koy, 45 derece eğil, sinyal gelince patla.<br>
+      • Merdiven koşusu: Eğer merdiven varsa iki basamak atlayarak çık. 5 set.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Sadece 3-4 kısa sprint, vücudu uyan dursun.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> 2-3 kısa hızlı adım yeterli.`,
+
+    illinois_sn: `
+      <b>🔄 Çeviklik</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Yer işaretleri veya ayakkabılarla yapılır.<br>
+      • Yön değiştirme koşusu: 5 adım sağa sprint, dur, 5 adım sola sprint. 8 set.<br>
+      • Salınım adımı: Savunma pozisyonunda sağa-sola hızlı kayma. 30sn × 5 set.<br>
+      • Geri koşu + dönüş: 5 adım geri koş, dönerek öne sprint. 8 tekrar.<br>
+      • TKD adımı: Rakip yaklaşırken geri çekil, fırsat çıkınca öne patla. 10 tekrar.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Hafif yön değiştirme, sadece ısınma amaçlı.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Savunma adımlarıyla ısın, ritim bul.`,
+
+    flamingo_hata: `
+      <b>🧘 Denge</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Her yerde yapılabilir, hiç malzeme gerekmez.<br>
+      • Tek ayak duruş: 30sn sağ, 30sn sol. Gözler açık → sonra kapalı. 3 set.<br>
+      • Tek ayak squat: Bir ayak üzerinde yavaşça çök. 3 set × 8 tekrar.<br>
+      • Tekme pozisyonunda tut: Dolyo chagi pozisyonunu 5sn tut, indir. 10 tekrar her ayak.<br>
+      • Yastık/katlanmış battaniye üzerinde tek ayak duruş: 20sn × 3 set.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Denge çalışması her gün yapılabilir, yormuyor.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Tek ayak üzerinde 10sn dur — odaklanma ve denge için.`,
+
+    otur_uzan_cm: `
+      <b>🤸 Esneklik</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Sadece antrenman SONRASI — asla soğuk kasla yapma.<br>
+      • Hamstring germe: Otur, bacaklar düz, öne uzan. 30sn tut. 3 tekrar.<br>
+      • Kelebek: Ayak tabanlarını birleştir, dizleri yere doğru bastır. 30sn. 3 tekrar.<br>
+      • İç uyluk: Ayakları yana aç, yavaşça yere yaklaş. 30sn tut.<br>
+      • Ayakta hamstring: Ayağı sandalyeye koy, öne eğil. 30sn her bacak.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Hafif dinamik germe — bacak sallama, diz çekme.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Statik germe YAPMA — kas gevşer, patlayıcılık düşer. Sadece dinamik hareketler.`,
+
+    beep_test_seviye: `
+      <b>🫀 Aerobik Kapasite (Nefes Dayanıklılığı)</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Açık alan veya uzun koridor yeterli.<br>
+      • Tempo koşusu: Nefes alıp verebileceğin hızda 15-20 dk koş. Haftada 2-3 kez.<br>
+      • Merdiven koşusu: Çık-in, dur, 1dk dinlen. 5-8 set. Merdiven yoksa yerinde yüksek diz koşusu.<br>
+      • 3 raunt simülasyonu: 2dk boyunca tekme-savunma karışımı sürekli hareket, 1dk dinlen. 3 raund.<br>
+      • Burpee: 10 tekrar → 30sn dinlen. 5 set. Nefes dayanıklılığını hızlı geliştirir.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Ağır koşu yapma. 10dk hafif tempolu yürüyüş-koşu yeterli.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Derin ve ritmik nefes al. Vücudunu ısıt ama yorma.`,
+
+    cetvel_reaksiyon_cm: `
+      <b>⚡ Reaksiyon & Dikkat</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Arkadaşınla veya aynaya karşı yapılabilir.<br>
+      • El tepki drilli: Arkadaşın elini kaldırınca sen hemen tekme at veya hareket et. 10 tekrar.<br>
+      • Ayna drilli: Karşındaki kişinin hareketini 0.5sn gecikmeli taklit et. 1dk × 5 set.<br>
+      • Bekleyip patla: Gözlerini kapat, ses duyunca hemen harekete geç. 10 tekrar.<br>
+      • Top yakala: Arkadaşın aniden bir şey fırlatsın, sen yakala. Basit ama çok etkili.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Reaksiyon drilleri yapılabilir — yormuyor, odak artırıyor.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Gözlerini kapat 10sn, aç. Odaklan. Rakibinin ilk hareketine dikkat et.`,
+
+    dolyo_chagi_tekrar: `
+      <b>🦵 Tekme Hızı</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Kese veya ped yoksa havaya da yapılabilir.<br>
+      • 10sn hızlı tekme: Mümkün olan en hızlı dolyo chagi, 10sn. 30sn dinlen. 8 set.<br>
+      • Yavaş-hızlı-yavaş: 5 yavaş tekme → 5 çok hızlı → 5 yavaş. Kas kontrolü öğretir.<br>
+      • Tek ayak güçlendirme: Tekme atılan ayakla tek ayak hop 3×10. Destek bacağı güçlendirir.<br>
+      • Bant çalışması (bant varsa): Ayak bileğine lastik bant takıp tekme at. 3 set × 15.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Hafif teknik çalışma, hız odaklı değil.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> 10 hızlı tekme her ayakla — kasları uyandırır.`,
+
+    fskt_tekrar: `
+      <b>🔁 Anaerobik Dayanıklılık (Tekme Kondisyonu)</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Kese veya havaya yapılabilir.<br>
+      • FSKT tekrar: 10sn hızlı tekme → 10sn dinlen. Bunu 5 tur yap. Haftada 2x.<br>
+      • Tabata tekme: 20sn hızlı → 10sn dinlen × 8 set. Çok etkili ama zor.<br>
+      • 30sn sürekli tekme: Dur madan 30sn at, 30sn dinlen. 5 set.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Ağır kondisyon çalışması yapma. Sadece 2 set FSKT.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> 5sn hızlı tekme × 3 set — kasları aktive et, yorma.`,
+
+    fskt_kdi: `
+      <b>📉 Kondisyon Sürekliliği (Turlar Arası Düşüş)</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Aerobik taban olmadan bu düzelmez — önce nefes kapasitesi.<br>
+      • Tempo koşusu: Nefes alıp verebileceğin tempoda 15-20dk. Haftada 3x. Bu en önemli adım.<br>
+      • Interval tekme: 10sn hızlı → 10sn dinlen × 10 set. Her hafta 1 set ekle.<br>
+      • Maç simülasyonu: 2dk sürekli hareket → 1dk dinlen × 3. Gerçek maç koşullarını taklit et.<br>
+      • Burpee + tekme: 5 burpee → 10sn hızlı tekme. 5 set. Yorgunluk altında tekme pratiği.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Ağır çalışma yapma. Bacaklar dinç olsun.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Derin nefes al. Son raundda da güçlü olduğunu kafanda canlandır.`,
+
+    dck60_tekrar: `
+      <b>🔋 Uzun Süreli Güç (60sn Dayanıklılık)</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Hem aerobik hem anaerobik çalışma gerekir.<br>
+      • 60sn kesintisiz tekme: Dur madan 60sn at. Sayı önemli değil, durmamak önemli. 3 set.<br>
+      • Merdiven + tekme: Çık-in, hemen 10 tekme at. 5 set.<br>
+      • Yerinde yüksek diz: 20sn → 10sn hızlı tekme → 20sn yüksek diz. 5 set.<br>
+      • Tempo koşusu: Haftada 2-3x 15-20dk. Aerobik taban olmadan 60sn güçlü kalınmaz.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Sadece 2 set 30sn tekme — bacakları uyandır.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> Son dakikada da güçlü olduğunu düşün. Rakibin yorulur, sen devam et.`,
+
+    sinav_tekrar: `
+      <b>💪 Üst Vücut Dayanıklılığı</b><br>
+      <b>🏋️ Antrenman döneminde:</b> Hiç malzeme gerekmez.<br>
+      • Şınav: Göğüs yere değsin, dirsekler tam açılsın. 3 set × maks tekrar. Her hafta 2 tekrar ekle.<br>
+      • Diz şınavı: Şınav zorsa önce dizden başla. Aynı teknik, daha kolay.<br>
+      • Plank şınav: Plank pozisyonundan şınav pozisyonuna geç. 3 set × 10.<br>
+      • Yavaş şınav: 3sn in, 3sn çık. Güç gelişimi için çok etkili. 3 set × 8.<br><br>
+      <b>📅 Müsabakaya 2-3 gün kala:</b> Üst vücut çalışması yapma — kollar dinlensin.<br><br>
+      <b>⚡ Maçtan hemen önce:</b> 10 şınav yeterli — omuzları ve kolları ısıtır.`
   };
-  return r[alan] || 'Antrenman planına eklenecek.';
+  return r[alan] || 'Antrenörünle birlikte çalış.';
 }
 
 function psikolojiAlanAdi(k) {
@@ -1451,7 +1600,7 @@ function sporcuTabSec(tab, btn) {
   if (tab === 'anketim') anketIzinKontrol();
   if (tab === 'sonuclarim') sporcuSonuclariniYukle();
   if (tab === 'takvim') yarismaTakvimiYukle('sporcuYarismaDiv', false);
-  if (tab === 'linkler') linkKutuphanesiniYukle('sporcuLinkDiv', false);
+  if (tab === 'linkler') sporcuQuizYukle();
   if (tab === 'beslenme') beslenmeEkraniYukle();
 }
 
@@ -2778,4 +2927,399 @@ function miktarSecildi() {
     onizleEl.textContent = miktarAd + ' ' + _seciliYemekAd + ' ≈ ' + kalori + ' kalori';
     onizleEl.style.color = 'var(--primary)';
   }
+}
+
+// ── TAKTİK QUİZ SİSTEMİ ──────────────────────────────────────────────────
+var aktifQuiz = null;
+var aktifSoruIndex = 0;
+var dogruSayisi = 0;
+var ytPlayer = null;
+var ytHazir = false;
+
+// YouTube iframe API yükle
+function ytApiYukle() {
+  if (window.YT) return;
+  var tag = document.createElement('script');
+  tag.src = 'https://www.youtube.com/iframe_api';
+  document.head.appendChild(tag);
+}
+
+window.onYouTubeIframeAPIReady = function() {
+  ytHazir = true;
+};
+
+function youtubeIdAl(url) {
+  var match = url.match(/(?:v=|youtu\.be\/)([^&?/]+)/);
+  return match ? match[1] : null;
+}
+
+// ── ANTRENÖR: QUİZ LİSTESİ ───────────────────────────────────────────────
+async function quizListesiYukle() {
+  var div = document.getElementById('antrenorLinkDiv');
+  if (!div) return;
+
+  var quizler = await quizleriGetir();
+  var linkler = await linkleriGetir();
+  var bugun = new Date();
+
+  var html = '';
+
+  // Quiz bölümü
+  html += '<div class="kart"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">';
+  html += '<div class="kart-baslik" style="margin:0">🧩 Taktik Quiz</div>';
+  html += '<button class="btn btn-primary" onclick="quizOlusturAc()" style="font-size:12px;padding:6px 12px">+ Quiz Ekle</button>';
+  html += '</div>';
+  html += '<div id="quizOlusturDiv"></div>';
+
+  if (quizler.length === 0) {
+    html += '<div style="font-size:13px;color:var(--gray-400);padding:8px 0">Henüz quiz yok.</div>';
+  } else {
+    quizler.forEach(function(q) {
+      var soruSayisi = Array.isArray(q.sorular) ? q.sorular.length : 0;
+      var thumbId = youtubeIdAl(q.youtube_url);
+      html += '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100);align-items:center">';
+      if (thumbId) {
+        html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:70px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0">';
+      }
+      html += '<div style="flex:1"><div style="font-size:13px;font-weight:700">' + q.baslik + '</div>';
+      html += '<div style="font-size:11px;color:var(--gray-400)">' + soruSayisi + ' soru</div></div>';
+      html += '<div style="display:flex;gap:6px">';
+      html += '<button onclick="quizDuzenle(&quot;' + q.id + '&quot;)" style="background:none;border:1px solid var(--gray-200);border-radius:6px;font-size:11px;padding:3px 8px;cursor:pointer">Düzenle</button>';
+      html += '<button onclick="quizSilBtn(&quot;' + q.id + '&quot;)" style="background:none;border:none;color:#c81e1e;cursor:pointer;font-size:18px;line-height:1">×</button>';
+      html += '</div></div>';
+    });
+  }
+  html += '</div>';
+
+  // Video kütüphanesi
+  html += '<div class="kart"><div class="kart-baslik">🎬 Videolar</div>';
+  html += '<div style="margin-bottom:10px"><div class="form-grup"><label class="form-etiket">Başlık</label><input type="text" id="linkBaslik" class="form-input" placeholder="Video başlığı"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">URL</label><input type="text" id="linkUrl" class="form-input" placeholder="https://youtube.com/..."></div>';
+  html += '<button class="btn btn-primary" onclick="linkKaydet()">Ekle</button></div>';
+  if (linkler.length > 0) {
+    linkler.forEach(function(l) {
+      var eklenme = new Date(l.olusturma_tarihi);
+      var farkGun = Math.floor((bugun - eklenme) / (1000*60*60*24));
+      var thumbId = youtubeIdAl(l.url);
+      html += '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);align-items:center">';
+      if (thumbId) html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:70px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0">';
+      html += '<div style="flex:1"><a href="' + l.url + '" target="_blank" style="font-size:13px;font-weight:600;color:var(--primary);text-decoration:none">' + l.baslik + '</a>';
+      if (farkGun < 7) html += ' <span style="font-size:10px;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:10px;font-weight:700">YENİ</span>';
+      html += '</div>';
+      html += '<button onclick="linkSilBtn(&quot;' + l.id + '&quot;)" style="background:none;border:none;color:var(--gray-300);cursor:pointer;font-size:20px">×</button>';
+      html += '</div>';
+    });
+  }
+  html += '</div>';
+
+  div.innerHTML = html;
+}
+
+function quizOlusturAc() {
+  var div = document.getElementById('quizOlusturDiv');
+  if (!div) return;
+  div.innerHTML = '<div style="background:var(--gray-50);border-radius:10px;padding:12px;margin-bottom:12px">' +
+    '<div class="form-grup"><label class="form-etiket">Quiz Başlığı *</label><input type="text" id="qBaslik" class="form-input" placeholder="Savunma Taktikleri Quiz 1"></div>' +
+    '<div class="form-grup"><label class="form-etiket">YouTube URL *</label><input type="text" id="qUrl" class="form-input" placeholder="https://youtube.com/watch?v=..."></div>' +
+    '<div style="font-size:12px;color:var(--gray-500);margin-bottom:8px">Soruları kaydettikten sonra düzenle bölümünden ekleyebilirsin.</div>' +
+    '<div style="display:flex;gap:8px">' +
+    '<button class="btn btn-primary" onclick="quizKaydet()">Kaydet</button>' +
+    '<button class="btn btn-outline" onclick="document.getElementById(\'quizOlusturDiv\').innerHTML=\'\'">İptal</button>' +
+    '</div></div>';
+}
+
+async function quizKaydet() {
+  var baslik = document.getElementById('qBaslik')?.value?.trim();
+  var url = document.getElementById('qUrl')?.value?.trim();
+  if (!baslik || !url) { bildirimGoster('Başlık ve URL gerekli'); return; }
+  try {
+    await quizEkle({ baslik: baslik, youtube_url: url, sorular: [] });
+    bildirimGoster('✅ Quiz oluşturuldu — şimdi düzenle butonuyla soru ekle');
+    quizListesiYukle();
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function quizSilBtn(id) {
+  if (!confirm('Bu quizi silmek istediğine emin misin?')) return;
+  try {
+    await quizSil(id);
+    bildirimGoster('Silindi');
+    quizListesiYukle();
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+async function quizDuzenle(id) {
+  var quiz = await quizGetir(id);
+  if (!quiz) return;
+  var sorular = Array.isArray(quiz.sorular) ? quiz.sorular : [];
+  var thumbId = youtubeIdAl(quiz.youtube_url);
+
+  var html = '<div style="background:var(--gray-50);border-radius:10px;padding:12px;margin-bottom:12px">';
+  html += '<div style="font-size:14px;font-weight:700;margin-bottom:10px">✏️ ' + quiz.baslik + '</div>';
+  if (thumbId) html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:160px;border-radius:8px;margin-bottom:10px">';
+
+  // Mevcut sorular
+  if (sorular.length > 0) {
+    html += '<div style="margin-bottom:12px">';
+    sorular.forEach(function(s, i) {
+      html += '<div style="background:white;border-radius:8px;padding:8px;margin-bottom:6px;font-size:12px">';
+      html += '<div style="font-weight:700;margin-bottom:4px">⏱ ' + s.saniye + 'sn — ' + s.soru + '</div>';
+      html += '<div style="color:var(--gray-500)">✅ ' + s.siklar[s.dogru] + '</div>';
+      html += '<button onclick="soruSilBtn(&quot;' + id + '&quot;,' + i + ')" style="background:none;border:none;color:#c81e1e;font-size:11px;cursor:pointer;margin-top:4px">Sil</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Yeni soru ekle
+  html += '<div style="border-top:1px solid var(--gray-200);padding-top:10px;margin-top:8px">';
+  html += '<div style="font-size:12px;font-weight:700;margin-bottom:8px">+ Yeni Soru Ekle</div>';
+  html += '<div class="form-row">';
+  html += '<div class="form-grup"><label class="form-etiket">Video saniyesi (sn)</label><input type="number" id="sSaniye" class="form-input" placeholder="45"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Hangi köşe?</label><select id="sKose" class="form-input"><option value="mavi">Mavi köşe</option><option value="kirmizi">Kırmızı köşe</option></select></div>';
+  html += '</div>';
+  html += '<div class="form-grup"><label class="form-etiket">Soru</label><input type="text" id="sSoru" class="form-input" placeholder="Bu pozisyonda ne yapmalı?"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Şık A</label><input type="text" id="sA" class="form-input" placeholder="Dolyo chagi at"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Şık B</label><input type="text" id="sB" class="form-input" placeholder="Geri çekil"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Şık C</label><input type="text" id="sC" class="form-input" placeholder="Savun ve karşı atak"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Şık D</label><input type="text" id="sD" class="form-input" placeholder="Pozisyon al ve bekle"></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Doğru cevap</label><select id="sDogru" class="form-input"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select></div>';
+  html += '<div class="form-grup"><label class="form-etiket">Açıklama</label><input type="text" id="sAciklama" class="form-input" placeholder="Bu pozisyonda rakip açıkta çünkü..."></div>';
+  html += '<div style="display:flex;gap:8px;margin-top:8px">';
+  html += '<button class="btn btn-primary" onclick="soruEkle(&quot;' + id + '&quot;)">Soru Ekle</button>';
+  html += '<button class="btn btn-outline" onclick="quizListesiYukle()">Kapat</button>';
+  html += '</div></div></div>';
+
+  document.getElementById('quizOlusturDiv').innerHTML = html;
+}
+
+async function soruEkle(quizId) {
+  var saniye = parseInt(document.getElementById('sSaniye')?.value);
+  var kose = document.getElementById('sKose')?.value;
+  var soru = document.getElementById('sSoru')?.value?.trim();
+  var a = document.getElementById('sA')?.value?.trim();
+  var b = document.getElementById('sB')?.value?.trim();
+  var c = document.getElementById('sC')?.value?.trim();
+  var d = document.getElementById('sD')?.value?.trim();
+  var dogru = parseInt(document.getElementById('sDogru')?.value);
+  var aciklama = document.getElementById('sAciklama')?.value?.trim();
+
+  if (!saniye || !soru || !a || !b || !c || !d) { bildirimGoster('Tüm alanları doldur'); return; }
+
+  var quiz = await quizGetir(quizId);
+  var sorular = Array.isArray(quiz.sorular) ? quiz.sorular : [];
+  sorular.push({ saniye: saniye, kose: kose, soru: soru, siklar: [a,b,c,d], dogru: dogru, aciklama: aciklama || '' });
+  sorular.sort(function(x,y) { return x.saniye - y.saniye; });
+
+  await quizGuncelle(quizId, { sorular: sorular });
+  bildirimGoster('✅ Soru eklendi');
+  quizDuzenle(quizId);
+}
+
+async function soruSilBtn(quizId, index) {
+  var quiz = await quizGetir(quizId);
+  var sorular = Array.isArray(quiz.sorular) ? quiz.sorular : [];
+  sorular.splice(index, 1);
+  await quizGuncelle(quizId, { sorular: sorular });
+  bildirimGoster('Soru silindi');
+  quizDuzenle(quizId);
+}
+
+// ── SPORCU: QUİZ OYNAMA ───────────────────────────────────────────────────
+async function sporcuQuizYukle() {
+  var div = document.getElementById('sporcuLinkDiv');
+  if (!div) return;
+  div.innerHTML = '<div class="yukleniyor"><div class="spinner"></div></div>';
+  ytApiYukle();
+
+  var [quizler, linkler, cevaplar] = await Promise.all([
+    quizleriGetir(),
+    linkleriGetir(),
+    quizCevaplariGetir(oturumKullanici.id)
+  ]);
+
+  var html = '';
+
+  // Quiz bölümü
+  if (quizler.length > 0) {
+    html += '<div class="kart"><div class="kart-baslik">🧩 Taktik Quiz</div>';
+    quizler.forEach(function(q) {
+      var cevap = cevaplar.find(function(c) { return c.quiz_id === q.id; });
+      var soruSayisi = Array.isArray(q.sorular) ? q.sorular.length : 0;
+      var thumbId = youtubeIdAl(q.youtube_url);
+      html += '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100);align-items:center">';
+      if (thumbId) html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:70px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0">';
+      html += '<div style="flex:1">';
+      html += '<div style="font-size:13px;font-weight:700">' + q.baslik + '</div>';
+      html += '<div style="font-size:11px;color:var(--gray-400)">' + soruSayisi + ' soru</div>';
+      if (cevap && cevap.tamamlandi) {
+        var oran = Math.round((cevap.dogru_sayisi / cevap.toplam_soru) * 100);
+        html += '<div style="font-size:11px;color:#057a55;font-weight:600">✅ Tamamlandı — ' + cevap.dogru_sayisi + '/' + cevap.toplam_soru + ' doğru (' + oran + '%)</div>';
+      }
+      html += '</div>';
+      html += '<button onclick="quizBaslat(&quot;' + q.id + '&quot;)" class="btn btn-primary" style="font-size:12px;padding:6px 12px;white-space:nowrap">' + (cevap && cevap.tamamlandi ? '🔄 Tekrar' : '▶ Başla') + '</button>';
+      html += '</div>';
+    });
+    html += '</div>';
+  }
+
+  // Video kütüphanesi
+  if (linkler.length > 0) {
+    html += '<div class="kart"><div class="kart-baslik">🎬 Antrenör Videoları</div>';
+    var bugun = new Date();
+    linkler.forEach(function(l) {
+      var eklenme = new Date(l.olusturma_tarihi);
+      var farkGun = Math.floor((bugun - eklenme) / (1000*60*60*24));
+      var thumbId = youtubeIdAl(l.url);
+      html += '<div style="display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--gray-100);align-items:center">';
+      if (thumbId) html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:70px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0">';
+      html += '<div style="flex:1"><a href="' + l.url + '" target="_blank" style="font-size:13px;font-weight:600;color:var(--primary);text-decoration:none">' + l.baslik + '</a>';
+      if (farkGun < 7) html += ' <span style="font-size:10px;background:#fef3c7;color:#b45309;padding:2px 6px;border-radius:10px;font-weight:700">YENİ</span>';
+      html += '</div></div>';
+    });
+    html += '</div>';
+  }
+
+  if (!quizler.length && !linkler.length) {
+    html = '<div class="bos-durum"><span class="ikon">🎬</span><p>Henüz içerik eklenmemiş.</p></div>';
+  }
+
+  div.innerHTML = html;
+}
+
+async function quizBaslat(quizId) {
+  var quiz = await quizGetir(quizId);
+  if (!quiz || !Array.isArray(quiz.sorular) || quiz.sorular.length === 0) {
+    bildirimGoster('Bu quizde henüz soru yok'); return;
+  }
+  aktifQuiz = quiz;
+  aktifSoruIndex = 0;
+  dogruSayisi = 0;
+
+  var videoId = youtubeIdAl(quiz.youtube_url);
+  if (!videoId) { bildirimGoster('Geçersiz YouTube linki'); return; }
+
+  var div = document.getElementById('sporcuLinkDiv');
+  div.innerHTML = '<div id="quizOynatmaDiv">' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+    '<div style="font-size:14px;font-weight:700">' + quiz.baslik + '</div>' +
+    '<button onclick="sporcuQuizYukle()" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:13px">✕ Çık</button>' +
+    '</div>' +
+    '<div id="ytContainer" style="width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;margin-bottom:10px">' +
+    '<div id="ytPlayer"></div>' +
+    '</div>' +
+    '<div id="quizSoruDiv"></div>' +
+    '</div>';
+
+  // YouTube player oluştur
+  setTimeout(function() {
+    if (!window.YT || !window.YT.Player) {
+      // YT henüz yüklenmediyse tekrar dene
+      setTimeout(function() { quizPlayerOlustur(videoId); }, 1500);
+    } else {
+      quizPlayerOlustur(videoId);
+    }
+  }, 500);
+}
+
+function quizPlayerOlustur(videoId) {
+  ytPlayer = new YT.Player('ytPlayer', {
+    videoId: videoId,
+    playerVars: { rel: 0, modestbranding: 1 },
+    events: {
+      onReady: function(e) {
+        e.target.playVideo();
+        quizSoruKontrol();
+      },
+      onStateChange: function(e) {
+        if (e.data === YT.PlayerState.PLAYING) {
+          quizSoruKontrol();
+        }
+      }
+    }
+  });
+}
+
+var quizInterval = null;
+
+function quizSoruKontrol() {
+  if (quizInterval) clearInterval(quizInterval);
+  quizInterval = setInterval(function() {
+    if (!ytPlayer || !aktifQuiz) return;
+    if (aktifSoruIndex >= aktifQuiz.sorular.length) {
+      clearInterval(quizInterval);
+      return;
+    }
+    var sure = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
+    var soruSaniye = aktifQuiz.sorular[aktifSoruIndex].saniye;
+    if (sure >= soruSaniye) {
+      ytPlayer.pauseVideo();
+      clearInterval(quizInterval);
+      quizSoruGoster(aktifSoruIndex);
+    }
+  }, 500);
+}
+
+function quizSoruGoster(index) {
+  var soru = aktifQuiz.sorular[index];
+  var koseRenk = soru.kose === 'mavi' ? '#1a56db' : '#c81e1e';
+  var koseAd = soru.kose === 'mavi' ? '🔵 Mavi Köşe' : '🔴 Kırmızı Köşe';
+
+  var html = '<div style="background:var(--gray-50);border-radius:12px;padding:14px">';
+  html += '<div style="font-size:11px;font-weight:700;color:' + koseRenk + ';margin-bottom:6px">' + koseAd + ' ne yapmalı?</div>';
+  html += '<div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px">' + soru.soru + '</div>';
+  var harfler = ['A', 'B', 'C', 'D'];
+  soru.siklar.forEach(function(sik, i) {
+    html += '<button onclick="quizCevapla(' + index + ',' + i + ')" style="width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border-radius:10px;border:2px solid var(--gray-200);background:white;cursor:pointer;font-size:13px;font-weight:600">';
+    html += '<span style="color:var(--primary);margin-right:8px">' + harfler[i] + ')</span>' + sik;
+    html += '</button>';
+  });
+  html += '<div style="font-size:11px;color:var(--gray-400);text-align:center;margin-top:6px">Soru ' + (index+1) + ' / ' + aktifQuiz.sorular.length + '</div>';
+  html += '</div>';
+
+  document.getElementById('quizSoruDiv').innerHTML = html;
+}
+
+function quizCevapla(soruIndex, secim) {
+  var soru = aktifQuiz.sorular[soruIndex];
+  var dogru = secim === soru.dogru;
+  if (dogru) dogruSayisi++;
+
+  var harfler = ['A', 'B', 'C', 'D'];
+  var html = '<div style="background:' + (dogru ? '#f0fdf4' : '#fef2f2') + ';border-radius:12px;padding:14px">';
+  html += '<div style="font-size:16px;font-weight:800;color:' + (dogru ? '#057a55' : '#c81e1e') + ';margin-bottom:8px">';
+  html += dogru ? '✅ Doğru!' : '❌ Yanlış!';
+  html += '</div>';
+  if (!dogru) {
+    html += '<div style="font-size:13px;color:var(--gray-700);margin-bottom:6px">Doğru cevap: <b>' + harfler[soru.dogru] + ') ' + soru.siklar[soru.dogru] + '</b></div>';
+  }
+  if (soru.aciklama) {
+    html += '<div style="font-size:12px;color:var(--gray-600);background:white;padding:8px 10px;border-radius:8px;margin-bottom:10px;line-height:1.6">💡 ' + soru.aciklama + '</div>';
+  }
+
+  aktifSoruIndex++;
+
+  if (aktifSoruIndex >= aktifQuiz.sorular.length) {
+    // Quiz bitti
+    var oran = Math.round((dogruSayisi / aktifQuiz.sorular.length) * 100);
+    html += '<div style="text-align:center;padding:10px">';
+    html += '<div style="font-size:20px;font-weight:800;color:' + (oran >= 70 ? '#057a55' : oran >= 50 ? '#e65100' : '#c81e1e') + '">' + oran + '%</div>';
+    html += '<div style="font-size:13px;color:var(--gray-600);margin:4px 0">' + dogruSayisi + ' / ' + aktifQuiz.sorular.length + ' doğru</div>';
+    html += '<div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">' + (oran >= 70 ? '🏆 Harika taktik okuma!' : oran >= 50 ? '👍 İyi gidiyorsun' : '💪 Antrenmanla gelişeceksin') + '</div>';
+    html += '<button class="btn btn-primary" onclick="sporcuQuizYukle()">Quizlere Dön</button>';
+    html += '</div>';
+    // Sonucu kaydet
+    quizCevapKaydet(oturumKullanici.id, aktifQuiz.id, dogruSayisi, aktifQuiz.sorular.length).catch(function(){});
+  } else {
+    html += '<button class="btn btn-primary" onclick="quizDevam()" style="width:100%">▶ Devam Et</button>';
+  }
+  html += '</div>';
+
+  document.getElementById('quizSoruDiv').innerHTML = html;
+}
+
+function quizDevam() {
+  document.getElementById('quizSoruDiv').innerHTML = '';
+  ytPlayer.playVideo();
+  quizSoruKontrol();
 }
