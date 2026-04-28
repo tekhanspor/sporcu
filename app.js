@@ -3147,17 +3147,18 @@ async function sporcuQuizYukle() {
       var cevap = cevaplar.find(function(c) { return c.quiz_id === q.id; });
       var soruSayisi = Array.isArray(q.sorular) ? q.sorular.length : 0;
       var thumbId = youtubeIdAl(q.youtube_url);
-      html += '<div style="display:flex;gap:10px;padding:10px 0;border-bottom:1px solid var(--gray-100);align-items:center">';
+      html += '<div style="padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+      html += '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:8px">';
       if (thumbId) html += '<img src="https://img.youtube.com/vi/' + thumbId + '/mqdefault.jpg" style="width:70px;height:48px;object-fit:cover;border-radius:8px;flex-shrink:0">';
-      html += '<div style="flex:1">';
+      html += '<div style="flex:1;min-width:0">';
       html += '<div style="font-size:13px;font-weight:700">' + q.baslik + '</div>';
       html += '<div style="font-size:11px;color:var(--gray-400)">' + soruSayisi + ' soru</div>';
       if (cevap && cevap.tamamlandi) {
         var oran = Math.round((cevap.dogru_sayisi / cevap.toplam_soru) * 100);
-        html += '<div style="font-size:11px;color:#057a55;font-weight:600">✅ Tamamlandı — ' + cevap.dogru_sayisi + '/' + cevap.toplam_soru + ' doğru (' + oran + '%)</div>';
+        html += '<div style="font-size:11px;color:#057a55;font-weight:600">✅ ' + cevap.dogru_sayisi + '/' + cevap.toplam_soru + ' doğru (' + oran + '%)</div>';
       }
-      html += '</div>';
-      html += '<button onclick="quizBaslat(&quot;' + q.id + '&quot;)" class="btn btn-primary" style="font-size:12px;padding:6px 12px;white-space:nowrap">' + (cevap && cevap.tamamlandi ? '🔄 Tekrar' : '▶ Başla') + '</button>';
+      html += '</div></div>';
+      html += '<button onclick="quizBaslat(&quot;' + q.id + '&quot;)" class="btn btn-primary" style="width:100%;font-size:13px">' + (cevap && cevap.tamamlandi ? '🔄 Tekrar Başla' : '▶ Quiz Başlat') + '</button>';
       html += '</div>';
     });
     html += '</div>';
@@ -3205,8 +3206,8 @@ async function quizBaslat(quizId) {
     '<div style="font-size:14px;font-weight:700">' + quiz.baslik + '</div>' +
     '<button onclick="sporcuQuizYukle()" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:13px">✕ Çık</button>' +
     '</div>' +
-    '<div id="ytContainer" style="width:100%;aspect-ratio:16/9;border-radius:10px;overflow:hidden;margin-bottom:10px">' +
-    '<div id="ytPlayer"></div>' +
+    '<div id="ytContainer" style="width:100%;position:relative;padding-bottom:56.25%;border-radius:10px;overflow:hidden;margin-bottom:10px;background:#000">' +
+    '<div id="ytPlayer" style="position:absolute;top:0;left:0;width:100%;height:100%"></div>' +
     '</div>' +
     '<div id="quizSoruDiv"></div>' +
     '</div>';
@@ -3225,6 +3226,8 @@ async function quizBaslat(quizId) {
 function quizPlayerOlustur(videoId) {
   ytPlayer = new YT.Player('ytPlayer', {
     videoId: videoId,
+    width: '100%',
+    height: '100%',
     playerVars: { rel: 0, modestbranding: 1 },
     events: {
       onReady: function(e) {
