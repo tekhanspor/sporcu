@@ -1410,3 +1410,23 @@ async function quizCevapKaydet(sporcuId, quizId, dogru, toplam) {
 async function quizCevaplariGetir(sporcuId) {
   return await sbFetch('quiz_cevaplar?sporcu_id=eq.' + sporcuId) || [];
 }
+
+// ── İÇERİK OKUMA TAKİBİ ──────────────────────────────────────────────────
+async function icerikOkumaKaydet(sporcuId, bolum, baslik) {
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/icerik_okuma', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json' },
+      body: JSON.stringify({ sporcu_id: sporcuId, bolum: bolum, baslik: baslik })
+    });
+  } catch(e) {}
+}
+
+async function sporcuOkumalariniGetir(sporcuId) {
+  return await sbFetch('icerik_okuma?sporcu_id=eq.' + sporcuId + '&order=okuma_tarihi.desc') || [];
+}
+
+async function tumOkumalarGetir() {
+  return await sbFetch('icerik_okuma?select=sporcu_id,bolum,baslik,okuma_tarihi,sporcular(ad_soyad)&order=okuma_tarihi.desc') || [];
+}
