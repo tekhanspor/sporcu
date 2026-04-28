@@ -168,6 +168,7 @@ function tabSec(tab, btn) {
     el.style.display = 'block';
   }
   if (tab === 'linkler') quizListesiYukle();
+  if (tab === 'aktivite') aktiviteYukle();
   if (tab === 'yarisma') yarismaTakvimiYukle('yarismaDiv', true);
 }
 
@@ -3588,4 +3589,189 @@ async function sporcuOkumalariniGoster(sporcuId, sporcuAd) {
     popup.appendChild(kart);
     document.body.appendChild(popup);
   } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+// ── AKTİVİTE SEKMESİ ─────────────────────────────────────────────────────
+async function aktiviteYukle() {
+  var div = document.getElementById('tab-aktivite');
+  if (!div) return;
+  div.innerHTML = '<div class="yukleniyor"><div class="spinner"></div></div>';
+
+  try {
+    // Tüm verileri paralel çek
+    var [sporcular, testler, anketler, okumalar, videoIzlemeler, linkIzlemeler, quizCevaplar] = await Promise.all([
+      sbFetch('sporcular?aktif=eq.true&select=id,ad_soyad,cinsiyet,dogum_tarihi'),
+      sbFetch('motorik_testler?order=test_tarihi.desc'),
+      sbFetch('psikoloji_anketler?order=anket_tarihi.desc'),
+      sbFetch('icerik_okuma?select=sporcu_id,bolum,baslik,okuma_tarihi'),
+      sbFetch('video_izleme?select=sporcu_id,quiz_id,izleme_tarihi'),
+      sbFetch('link_izleme?select=sporcu_id,link_id,izleme_tarihi'),
+      sbFetch('quiz_cevaplar?select=sporcu_id,dogru_sayisi,toplam_soru')
+    ]);
+
+    // Her sporcu için en son test al
+    var sporcuTestMap = {};
+    (testler || []).forEach(function(t) {
+      if (!sporcuTestMap[t.sporcu_id]) sporcuTestMap[t.sporcu_id] = t;
+    });
+
+    // Her sporcu için en son anket al
+    var sporcuAnketMap = {};
+    (anketler || []).forEach(function(a) {
+      if (!sporcuAnketMap[a.sporcu_id]) sporcuAnketMap[a.sporcu_id] = a;
+    });
+
+    var html = '';
+
+    // ── 1. MOTORİK TESTLER ──────────────────────────────────────────────
+    html += '<div class="kart"><div class="kart-baslik">💪 Motorik Testler</div>';
+
+    var motorikAlanlar = [
+      { k: 'uzun_atlama_cm',     ad: 'Uzun Atlama',       yuksekIyi: true,  birim: 'cm'  },
+      { k: 'saglik_topu_cm',     ad: 'Top Fırlatma',      yuksekIyi: true,  birim: 'cm'  },
+      { k: 'mekik_tekrar',       ad: '30sn Mekik',        yuksekIyi: true,  birim: 'tekrar' },
+      { k: 'sprint_30m_sn',      ad: '30m Sprint',        yuksekIyi: false, birim: 'sn'  },
+      { k: 'illinois_sn',        ad: 'Illinois',          yuksekIyi: false, birim: 'sn'  },
+      { k: 'flamingo_hata',      ad: 'Flamingo',          yuksekIyi: false, birim: 'hata' },
+      { k: 'otur_uzan_cm',       ad: 'Otur-Uzan',         yuksekIyi: true,  birim: 'cm'  },
+      { k: 'beep_test_seviye',   ad: 'Beep Test',         yuksekIyi: true,  birim: 'seviye' },
+      { k: 'cetvel_reaksiyon_cm',ad: 'Cetvel Reaksiyon',  yuksekIyi: false, birim: 'cm'  },
+      { k: 'dolyo_chagi_tekrar', ad: 'Dolyo Chagi (10sn)',yuksekIyi: true,  birim: 'tekrar' },
+      { k: 'fskt_tekrar',        ad: 'FSKT',              yuksekIyi: true,  birim: 'tekrar' },
+      { k: 'fskt_kdi',           ad: 'KDI',               yuksekIyi: false, birim: '%'   },
+      { k: 'dck60_tekrar',       ad: 'DCK 60sn',          yuksekIyi: true,  birim: 'tekrar' },
+      { k: 'sinav_tekrar',       ad: 'Şınav',             yuksekIyi: true,  birim: 'tekrar' }
+    ];
+
+    motorikAlanlar.forEach(function(alan) {
+      var satirlar = [];
+      (sporcular || []).forEach(function(s) {
+        var t = sporcuTestMap[s.id];
+        if (!t || t[alan.k] === null || t[alan.k] === undefined) return;
+        satirlar.push({ ad: s.ad_soyad, deger: parseFloat(t[alan.k]) });
+      });
+      if (satirlar.length === 0) return;
+
+      satirlar.sort(function(a, b) {
+        return alan.yuksekIyi ? b.deger - a.deger : a.deger - b.deger;
+      });
+
+      html += '<div style="margin-bottom:14px">';
+      html += '<div style="font-size:12px;font-weight:700;color:var(--gray-500);margin-bottom:6px">' + alan.ad + '</div>';
+      var madalyalar = ['🥇','🥈','🥉'];
+      satirlar.slice(0, 5).forEach(function(s, i) {
+        var renk = i === 0 ? '#b45309' : i === 1 ? '#6b7280' : i === 2 ? '#92400e' : 'var(--gray-600)';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:3px;background:' + (i === 0 ? '#fef3c7' : 'var(--gray-50)') + '">';
+        html += '<span style="font-size:13px">' + (madalyalar[i] || (i+1)+'.') + ' ' + s.ad + '</span>';
+        html += '<span style="font-size:12px;font-weight:700;color:' + renk + '">' + s.deger + ' ' + alan.birim + '</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // ── 2. PSİKOLOJİK SKORLAR ────────────────────────────────────────────
+    html += '<div class="kart"><div class="kart-baslik">🧠 Psikolojik Skorlar</div>';
+
+    var psikoAlanlar = [
+      { k: 'bilisselKaygi', ad: '😰 Bilişsel Kaygı',  ters: true,  max: 36 },
+      { k: 'somatikKaygi',  ad: '💓 Somatik Kaygı',   ters: true,  max: 36 },
+      { k: 'ozguven',       ad: '💪 Özgüven',          ters: false, max: 36 },
+      { k: 'gorevYon',      ad: '🎯 Görev Yönelimi',  ters: false, max: 5  },
+      { k: 'egoYon',        ad: '🏆 Ego Yönelimi',    ters: true,  max: 5  },
+      { k: 'kontrol',       ad: '🧘 Mental Kontrol',   ters: false, max: 5  },
+      { k: 'baglilik',      ad: '🔗 Bağlılık',         ters: false, max: 5  },
+      { k: 'meydan',        ad: '⚡ Meydan Okuma',    ters: false, max: 5  },
+      { k: 'guven',         ad: '🛡 Güven',            ters: false, max: 5  },
+      { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',   ters: true,  max: 5  }
+    ];
+
+    psikoAlanlar.forEach(function(alan) {
+      var satirlar = [];
+      (sporcular || []).forEach(function(s) {
+        var a = sporcuAnketMap[s.id];
+        if (!a) return;
+        var p = psikolojiPuanlari(a);
+        var deger = p[alan.k];
+        if (!deger) return;
+        // Normalize: yüksek = iyi
+        var skor = alan.ters ? Math.round((1 - deger/alan.max) * 100) : Math.round((deger/alan.max) * 100);
+        satirlar.push({ ad: s.ad_soyad, skor: skor, deger: deger });
+      });
+      if (satirlar.length === 0) return;
+      satirlar.sort(function(a, b) { return b.skor - a.skor; });
+
+      html += '<div style="margin-bottom:14px">';
+      html += '<div style="font-size:12px;font-weight:700;color:var(--gray-500);margin-bottom:6px">' + alan.ad + '</div>';
+      var madalyalar = ['🥇','🥈','🥉'];
+      satirlar.slice(0, 5).forEach(function(s, i) {
+        var renk = s.skor >= 70 ? '#057a55' : s.skor >= 50 ? '#e65100' : '#c81e1e';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:3px;background:' + (i === 0 ? '#f0fdf4' : 'var(--gray-50)') + '">';
+        html += '<span style="font-size:13px">' + (madalyalar[i] || (i+1)+'.') + ' ' + s.ad + '</span>';
+        html += '<span style="font-size:12px;font-weight:700;color:' + renk + '">' + s.skor + '%</span>';
+        html += '</div>';
+      });
+      html += '</div>';
+    });
+    html += '</div>';
+
+    // ── 3. OKUMALAR ───────────────────────────────────────────────────────
+    html += '<div class="kart"><div class="kart-baslik">📖 İçerik Okumaları</div>';
+    var okumaSayac = {};
+    (okumalar || []).forEach(function(o) {
+      if (!okumaSayac[o.sporcu_id]) okumaSayac[o.sporcu_id] = 0;
+      okumaSayac[o.sporcu_id]++;
+    });
+    var okumaListesi = Object.keys(okumaSayac).map(function(sid) {
+      var s = (sporcular||[]).find(function(x){ return x.id === sid; });
+      return { ad: s ? s.ad_soyad : '?', sayac: okumaSayac[sid] };
+    }).sort(function(a,b){ return b.sayac - a.sayac; });
+
+    if (okumaListesi.length === 0) {
+      html += '<div style="color:var(--gray-400);font-size:13px;padding:8px 0">Henüz okuma yok</div>';
+    } else {
+      var madalyalar = ['🥇','🥈','🥉'];
+      okumaListesi.slice(0,5).forEach(function(s, i) {
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:8px;margin-bottom:3px;background:' + (i===0?'#fef3c7':'var(--gray-50)') + '">';
+        html += '<span style="font-size:13px">' + (madalyalar[i]||(i+1)+'.') + ' ' + s.ad + '</span>';
+        html += '<span style="font-size:12px;font-weight:700;color:var(--gray-600)">' + s.sayac + ' içerik</span>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+
+    // ── 4. VİDEO İZLEMELER ───────────────────────────────────────────────
+    html += '<div class="kart"><div class="kart-baslik">🎬 Video İzlemeleri</div>';
+    var izlemeSayac = {};
+    [...(videoIzlemeler||[]), ...(linkIzlemeler||[])].forEach(function(i) {
+      if (!izlemeSayac[i.sporcu_id]) izlemeSayac[i.sporcu_id] = 0;
+      izlemeSayac[i.sporcu_id]++;
+    });
+    // Quiz cevaplarını da ekle
+    (quizCevaplar||[]).forEach(function(c) {
+      if (!izlemeSayac[c.sporcu_id]) izlemeSayac[c.sporcu_id] = 0;
+      izlemeSayac[c.sporcu_id]++;
+    });
+    var izlemeListesi = Object.keys(izlemeSayac).map(function(sid) {
+      var s = (sporcular||[]).find(function(x){ return x.id === sid; });
+      return { ad: s ? s.ad_soyad : '?', sayac: izlemeSayac[sid] };
+    }).sort(function(a,b){ return b.sayac - a.sayac; });
+
+    if (izlemeListesi.length === 0) {
+      html += '<div style="color:var(--gray-400);font-size:13px;padding:8px 0">Henüz izleme yok</div>';
+    } else {
+      var madalyalar = ['🥇','🥈','🥉'];
+      izlemeListesi.slice(0,5).forEach(function(s, i) {
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:8px;margin-bottom:3px;background:' + (i===0?'#fef3c7':'var(--gray-50)') + '">';
+        html += '<span style="font-size:13px">' + (madalyalar[i]||(i+1)+'.') + ' ' + s.ad + '</span>';
+        html += '<span style="font-size:12px;font-weight:700;color:var(--gray-600)">' + s.sayac + ' izleme</span>';
+        html += '</div>';
+      });
+    }
+    html += '</div>';
+
+    div.innerHTML = html;
+  } catch(e) {
+    div.innerHTML = '<p style="color:red">Hata: ' + e.message + '</p>';
+  }
 }
