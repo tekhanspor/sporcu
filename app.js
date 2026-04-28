@@ -480,7 +480,8 @@ function renderProfilHeader(s) {
       <div class="profil-isim">${s.ad_soyad}</div>
       <div class="profil-meta">${yas} yaş · ${s.cinsiyet || '—'} · ${s.dan_kusak || '—'}</div>
     </div>
-    <button style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer" onclick="sporcuDuzModalAc('${s.id}')">Düzenle</button>
+    <button style="margin-left:auto;background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer" onclick="sporcuOkumalariniGoster('${s.id}','${s.ad_soyad}')">📖</button>
+    <button style="background:rgba(255,255,255,0.2);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer;margin-left:6px" onclick="sporcuDuzModalAc('${s.id}')">Düzenle</button>
     <button style="background:rgba(255,0,0,0.3);border:none;border-radius:8px;padding:8px 12px;color:white;font-size:13px;cursor:pointer;margin-left:6px" onclick="sporcuSilBtn('${s.id}','${s.ad_soyad}')">Sil</button>
   </div>`;
 }
@@ -1921,7 +1922,12 @@ async function sporcuSonuclariniYukle() {
         { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',  antK: 'dikkatBozAnt',max: 5,  ters: true }
       ];
 
-      html += '<div class="kart"><div class="kart-baslik">🧠 Psikolojik Profilim — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
+      html += '<div class="kart">';
+      html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+      html += '<div class="kart-baslik" style="margin:0">🧠 Sporcu Öz Bildirim Formu — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
+      html += '<button onclick="gizliKartAc(this,\'psikoloji_profil\',\'Sporcu Öz Bildirim Formu\')" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">▼ Oku</button>';
+      html += '</div>';
+      html += '<div style="display:none">';
       boyutlar.forEach(function(b) {
         var spVal = sp[b.k];
         if (!spVal) return;
@@ -1959,7 +1965,8 @@ async function sporcuSonuclariniYukle() {
         }
         html += '</div>';
       });
-      html += '</div>';
+      html += '</div>'; // icerik kapanış
+      html += '</div>'; // kart kapanış
     }
 
     // PSİKOLOJİK REÇETE — SPORCU VERSİYONU
@@ -1972,7 +1979,12 @@ async function sporcuSonuclariniYukle() {
         return r.renk === 'red' || r.renk === 'orange';
       });
       if (spZayiflar.length > 0) {
-        html += '<div class="kart"><div class="kart-baslik">💊 Psikolojik Reçetem</div>';
+        html += '<div class="kart">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+        html += '<div class="kart-baslik" style="margin:0">💊 Psikolojik Reçetem</div>';
+        html += '<button onclick="gizliKartAc(this,\'psikoloji_recete\',\'Psikolojik Reçetem\')" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">▼ Oku</button>';
+        html += '</div>';
+        html += '<div style="display:none">';
         spZayiflar.forEach(function(k) {
           var r = psikolojiBoyutDurumu(k, p2[k]);
           var barRenk = r.renk === 'orange' ? '#e65100' : '#c81e1e';
@@ -1989,7 +2001,8 @@ async function sporcuSonuclariniYukle() {
           html += receteDiv.outerHTML;
           html += '</div>';
         });
-        html += '</div>';
+        html += '</div>'; // icerik kapanış
+        html += '</div>'; // kart kapanış
       }
     }
 
@@ -1998,7 +2011,12 @@ async function sporcuSonuclariniYukle() {
       var sp2 = psikolojiPuanlari(anketler[0]);
       var skorlar2 = sahaPerfSkorlari(sp2);
       if (skorlar2) {
-        html += '<div class="kart"><div class="kart-baslik">🧠 Saha Performans Profilim</div>';
+        html += '<div class="kart">';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center">';
+        html += '<div class="kart-baslik" style="margin:0">🧠 Saha Performans Profilim</div>';
+        html += '<button onclick="gizliKartAc(this,\'saha_performans\',\'Saha Performans Profilim\')" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">▼ Oku</button>';
+        html += '</div>';
+        html += '<div style="display:none">';
         Object.keys(SAHA_PERF_SPORCU).forEach(function(key) {
           var tanim = SAHA_PERF_SPORCU[key];
           var skor = skorlar2[key];
@@ -2018,7 +2036,8 @@ async function sporcuSonuclariniYukle() {
           html += aciklama.metin + '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklama.tavsiye + '</span>';
           html += '</div></div>';
         });
-        html += '</div>';
+        html += '</div>'; // icerik kapanış
+        html += '</div>'; // kart kapanış
       }
     }
 
@@ -2478,6 +2497,22 @@ async function antrenorBeslenmeOzetiGoster(sporcuId, sporcuAd) {
   });
   html += '</div>';
   div.insertAdjacentHTML('afterbegin', html);
+}
+
+
+// ── GİZLE/GÖSTER KART ────────────────────────────────────────────────────
+function gizliKartAc(btn, bolum, baslik) {
+  var icerik = btn.parentElement.nextElementSibling;
+  if (!icerik) return;
+  if (icerik.style.display === 'none' || icerik.style.display === '') {
+    icerik.style.display = 'block';
+    btn.textContent = '▲ Kapat';
+    // Okuma kaydı
+    icerikOkumaKaydet(oturumKullanici.id, bolum, baslik).catch(function(){});
+  } else {
+    icerik.style.display = 'none';
+    btn.textContent = '▼ Oku';
+  }
 }
 
 // ── BESLENME SİSTEMİ ──────────────────────────────────────────────────────
@@ -3485,6 +3520,54 @@ async function linkIzleyenleriGoster(linkId, baslik) {
         html += '<div><div style="font-size:13px;font-weight:600">' + s.ad + '</div>';
         html += '<div style="font-size:11px;color:var(--gray-400)">' + tarihFormatla(s.son) + '</div></div>';
         html += '<div style="font-size:12px;color:var(--gray-500)">' + s.sayac + ' kez izledi</div>';
+        html += '</div>';
+      });
+    }
+
+    kart.innerHTML = html;
+    popup.appendChild(kart);
+    document.body.appendChild(popup);
+  } catch(e) { bildirimGoster('Hata: ' + e.message); }
+}
+
+// ── OKUMA TAKİBİ GÖRÜNTÜLEME ──────────────────────────────────────────────
+async function sporcuOkumalariniGoster(sporcuId, sporcuAd) {
+  try {
+    var okumalar = await sporcuOkumalariniGetir(sporcuId);
+
+    var popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px';
+    var kart = document.createElement('div');
+    kart.style.cssText = 'background:white;border-radius:16px;padding:20px;width:100%;max-width:420px;max-height:85vh;overflow-y:auto';
+
+    var html = '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">';
+    html += '<div style="font-size:14px;font-weight:700">📖 ' + sporcuAd + ' — Okuma Takibi</div>';
+    html += '<button onclick="this.closest(\'[style*=fixed]\').remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--gray-400)">×</button>';
+    html += '</div>';
+
+    if (!okumalar || okumalar.length === 0) {
+      html += '<div style="text-align:center;color:var(--gray-400);padding:20px">Henüz hiçbir içerik okunmadı</div>';
+    } else {
+      // Bölüm bazında grupla
+      var bolumMap = {};
+      var bolumAdlari = {
+        'psikoloji_profil': '🧠 Sporcu Öz Bildirim Formu',
+        'psikoloji_recete': '💊 Psikolojik Reçetem',
+        'saha_performans': '🧠 Saha Performans Profili'
+      };
+      okumalar.forEach(function(o) {
+        if (!bolumMap[o.bolum]) bolumMap[o.bolum] = { sayac: 0, son: o.okuma_tarihi };
+        bolumMap[o.bolum].sayac++;
+      });
+
+      Object.keys(bolumMap).forEach(function(b) {
+        var bilgi = bolumMap[b];
+        var ad = bolumAdlari[b] || b;
+        var renk = bilgi.sayac >= 5 ? '#057a55' : bilgi.sayac >= 2 ? '#e65100' : '#c81e1e';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div><div style="font-size:13px;font-weight:600">' + ad + '</div>';
+        html += '<div style="font-size:11px;color:var(--gray-400)">Son: ' + tarihFormatla(bilgi.son) + '</div></div>';
+        html += '<div style="font-size:16px;font-weight:800;color:' + renk + '">' + bilgi.sayac + 'x</div>';
         html += '</div>';
       });
     }
