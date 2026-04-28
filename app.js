@@ -725,7 +725,7 @@ function renderProfilPsikoloji(anketler, antPsiko) {
       { k: 'dikkatHatasi',  ad: '⚠️ Dikkat Hatası',  max: 5,  ters: true }
     ];
     // key = psikoloji boyutu adı (PSIKO_ACIKLAMALAR için)
-    html += '<div class="kart"><div class="kart-baslik">👤 Sporcu Öz-Bildirimi — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
+    html += '<div class="kart"><div style="display:flex;justify-content:space-between;align-items:center"><div class="kart-baslik" style="margin:0">👤 Sporcu Öz-Bildirimi — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div><button onclick="anketSilBtn(&quot;' + anketler[0].id + '&quot;)" style="background:none;border:1px solid #fca5a5;border-radius:6px;color:#c81e1e;font-size:11px;padding:2px 8px;cursor:pointer;font-weight:600">Sil</button></div>';
     boyutlar.forEach(function(b) {
       const val = p[b.k];
       if (!val) return;
