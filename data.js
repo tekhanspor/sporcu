@@ -1326,6 +1326,36 @@ async function sporcuYarismaUyariGetir() {
 }
 
 // ── TAKTİK QUİZ ──────────────────────────────────────────────────────────
+async function linkIzlemeKaydet(sporcuId, linkId) {
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/link_izleme', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json' },
+      body: JSON.stringify({ sporcu_id: sporcuId, link_id: linkId })
+    });
+  } catch(e) {}
+}
+
+async function linkIzleyenleriGetir(linkId) {
+  return await sbFetch('link_izleme?link_id=eq.' + linkId + '&select=sporcu_id,izleme_tarihi,sporcular(ad_soyad)&order=izleme_tarihi.desc') || [];
+}
+
+async function videoIzlemeKaydet(sporcuId, quizId) {
+  try {
+    await fetch(SUPABASE_URL + '/rest/v1/video_izleme', {
+      method: 'POST',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json' },
+      body: JSON.stringify({ sporcu_id: sporcuId, quiz_id: quizId })
+    });
+  } catch(e) {}
+}
+
+async function quizIzleyenleriGetir(quizId) {
+  var rows = await sbFetch('video_izleme?quiz_id=eq.' + quizId + '&select=sporcu_id,izleme_tarihi,sporcular(ad_soyad)&order=izleme_tarihi.desc') || [];
+  return rows;
+}
 async function quizleriGetir() {
   return await sbFetch('taktik_quiz?order=olusturma_tarihi.desc') || [];
 }
