@@ -36,6 +36,7 @@ function ekranGoster(id) {
 function bildirimGoster(mesaj, sure = 2500) {
   const el = document.getElementById('bildirim');
   el.textContent = mesaj;
+  el.style.zIndex = '99999';
   el.classList.add('goster');
   setTimeout(() => el.classList.remove('goster'), sure);
 }
@@ -3224,26 +3225,23 @@ async function quizBaslat(quizId) {
 }
 
 function quizPlayerOlustur(videoId) {
+  var ilkSaniye = aktifQuiz.sorular[0] ? Math.max(0, aktifQuiz.sorular[0].saniye - 5) : 0;
   ytPlayer = new YT.Player('ytPlayer', {
     videoId: videoId,
     width: '100%',
     height: '100%',
-    playerVars: { rel: 0, modestbranding: 1 },
+    playerVars: { rel: 0, modestbranding: 1, start: ilkSaniye },
     events: {
       onReady: function(e) {
         e.target.playVideo();
         quizSoruKontrol();
-      },
-      onStateChange: function(e) {
-        if (e.data === YT.PlayerState.PLAYING) {
-          quizSoruKontrol();
-        }
       }
     }
   });
 }
 
 var quizInterval = null;
+var quizBekliyor = false;
 
 function quizSoruKontrol() {
   if (quizInterval) clearInterval(quizInterval);
@@ -3255,12 +3253,13 @@ function quizSoruKontrol() {
     }
     var sure = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
     var soruSaniye = aktifQuiz.sorular[aktifSoruIndex].saniye;
-    if (sure >= soruSaniye) {
-      ytPlayer.pauseVideo();
+    if (sure >= soruSaniye && !quizBekliyor) {
+      quizBekliyor = true;
       clearInterval(quizInterval);
+      ytPlayer.pauseVideo();
       quizSoruGoster(aktifSoruIndex);
     }
-  }, 500);
+  }, 300);
 }
 
 function quizSoruGoster(index) {
@@ -3327,7 +3326,10 @@ function quizCevapla(soruIndex, secim) {
     html += '</div>';
     quizCevapKaydet(oturumKullanici.id, aktifQuiz.id, dogruSayisi, aktifQuiz.sorular.length).catch(function(){});
   } else {
-    html += '<button class="btn btn-primary" style="width:100%" onclick="quizDevam()">▶ Devam Et</button>';
+    html += '<div style="display:flex;gap:8px;margin-top:4px">';
+    html += '<button class="btn btn-outline" style="flex:1;font-size:12px" onclick="quizTekrarIzle(' + aktifSoruIndex + ')">🔄 Tekrar İzle</button>';
+    html += '<button class="btn btn-primary" style="flex:1;font-size:12px" onclick="quizDevam()">▶ Devam Et</button>';
+    html += '</div>';
   }
 
   kart.innerHTML = html;
@@ -3336,8 +3338,58 @@ function quizCevapla(soruIndex, secim) {
 function quizDevam() {
   var popup = document.getElementById('quizPopup');
   if (popup) popup.remove();
+  quizBekliyor = false;
+  // Cevap sonrası 3sn oynat
+  ytPlayer.playVideo();
   setTimeout(function() {
+    ytPlayer.pauseVideo();
+    // Tekrar: 5sn öncesinden soru+3sn'ye kadar sorusuz
+    var gecenSoru = aktifQuiz.sorular[aktifSoruIndex - 1];
+    var tekrarBas = Math.max(0, gecenSoru.saniye - 5);
+    var tekrarBit = gecenSoru.saniye + 3;
+    ytPlayer.seekTo(tekrarBas, true);
     ytPlayer.playVideo();
-    quizSoruKontrol();
-  }, 1500);
+    var tekrarInterval = setInterval(function() {
+      var t = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
+      if (t >= tekrarBit) {
+        clearInterval(tekrarInterval);
+        ytPlayer.pauseVideo();
+        // Bir sonraki soruya geç
+        if (aktifSoruIndex < aktifQuiz.sorular.length) {
+          var sonrakiBas = Math.max(0, aktifQuiz.sorular[aktifSoruIndex].saniye - 5);
+          ytPlayer.seekTo(sonrakiBas, true);
+          setTimeout(function() {
+            ytPlayer.playVideo();
+            quizSoruKontrol();
+          }, 500);
+        }
+      }
+    }, 300);
+  }, 3000);
+}
+
+function quizTekrarIzle(soruIndex) {
+  var popup = document.getElementById('quizPopup');
+  if (popup) popup.remove();
+  quizBekliyor = false;
+  var gecenSoru = aktifQuiz.sorular[soruIndex - 1];
+  var tekrarBas = Math.max(0, gecenSoru.saniye - 5);
+  var tekrarBit = gecenSoru.saniye + 3;
+  ytPlayer.seekTo(tekrarBas, true);
+  ytPlayer.playVideo();
+  var tekrarInterval = setInterval(function() {
+    var t = ytPlayer.getCurrentTime ? ytPlayer.getCurrentTime() : 0;
+    if (t >= tekrarBit) {
+      clearInterval(tekrarInterval);
+      ytPlayer.pauseVideo();
+      if (aktifSoruIndex < aktifQuiz.sorular.length) {
+        var sonrakiBas = Math.max(0, aktifQuiz.sorular[aktifSoruIndex].saniye - 5);
+        ytPlayer.seekTo(sonrakiBas, true);
+        setTimeout(function() {
+          ytPlayer.playVideo();
+          quizSoruKontrol();
+        }, 500);
+      }
+    }
+  }, 300);
 }
