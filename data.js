@@ -1324,3 +1324,59 @@ async function sporcuYarismaUyariGetir() {
   });
   return uyarilar;
 }
+
+// ── TAKTİK QUİZ ──────────────────────────────────────────────────────────
+async function quizleriGetir() {
+  return await sbFetch('taktik_quiz?order=olusturma_tarihi.desc') || [];
+}
+async function quizGetir(id) {
+  var rows = await sbFetch('taktik_quiz?id=eq.' + id);
+  return rows && rows[0] ? rows[0] : null;
+}
+async function quizEkle(veri) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/taktik_quiz', {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify(veri)
+  });
+  if (!r.ok) throw new Error('Quiz eklenemedi');
+  return await r.json();
+}
+async function quizGuncelle(id, veri) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/taktik_quiz?id=eq.' + id, {
+    method: 'PATCH',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json' },
+    body: JSON.stringify(veri)
+  });
+  if (!r.ok) throw new Error('Quiz güncellenemedi');
+}
+async function quizSil(id) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/taktik_quiz?id=eq.' + id, {
+    method: 'DELETE',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY }
+  });
+  if (!r.ok) throw new Error('Quiz silinemedi');
+}
+async function quizCevapKaydet(sporcuId, quizId, dogru, toplam) {
+  var r = await fetch(SUPABASE_URL + '/rest/v1/quiz_cevaplar', {
+    method: 'POST',
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation' },
+    body: JSON.stringify({ sporcu_id: sporcuId, quiz_id: quizId,
+      dogru_sayisi: dogru, toplam_soru: toplam, tamamlandi: true })
+  });
+  if (!r.ok) {
+    // Zaten varsa güncelle
+    await fetch(SUPABASE_URL + '/rest/v1/quiz_cevaplar?sporcu_id=eq.' + sporcuId + '&quiz_id=eq.' + quizId, {
+      method: 'PATCH',
+      headers: { 'apikey': SUPABASE_KEY, 'Authorization': 'Bearer ' + SUPABASE_KEY,
+        'Content-Type': 'application/json' },
+      body: JSON.stringify({ dogru_sayisi: dogru, toplam_soru: toplam, tamamlandi: true })
+    });
+  }
+}
+async function quizCevaplariGetir(sporcuId) {
+  return await sbFetch('quiz_cevaplar?sporcu_id=eq.' + sporcuId) || [];
+}
