@@ -1923,9 +1923,7 @@ async function sporcuSonuclariniYukle() {
       ];
 
       html += '<div class="kart">';
-      html += '<div style="display:flex;justify-content:space-between;align-items:center">';
       html += '<div class="kart-baslik" style="margin:0">🧠 Sporcu Öz Bildirim Formu — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
-      html += '<button onclick="gizliKartAc(this,\'psikoloji_profil\',\'Sporcu Öz Bildirim Formu\')" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">▼ Oku</button>';
       html += '</div>';
       html += '<div style="display:none">';
       boyutlar.forEach(function(b) {
@@ -1983,9 +1981,7 @@ async function sporcuSonuclariniYukle() {
       });
       if (spZayiflar.length > 0) {
         html += '<div class="kart">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center">';
         html += '<div class="kart-baslik" style="margin:0">💊 Psikolojik Reçetem</div>';
-        html += '<button onclick="gizliKartAc(this,\'psikoloji_recete\',\'Psikolojik Reçetem\')" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">▼ Oku</button>';
         html += '</div>';
         html += '<div style="display:none">';
         spZayiflar.forEach(function(k) {
@@ -2018,9 +2014,7 @@ async function sporcuSonuclariniYukle() {
       var skorlar2 = sahaPerfSkorlari(sp2);
       if (skorlar2) {
         html += '<div class="kart">';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center">';
         html += '<div class="kart-baslik" style="margin:0">🧠 Saha Performans Profilim</div>';
-        html += '<button onclick="gizliKartAc(this,\'saha_performans\',\'Saha Performans Profilim\')" style="background:var(--primary);color:white;border:none;border-radius:8px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">▼ Oku</button>';
         html += '</div>';
         html += '<div style="display:none">';
         Object.keys(SAHA_PERF_SPORCU).forEach(function(key) {
