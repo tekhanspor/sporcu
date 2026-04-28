@@ -1958,10 +1958,13 @@ async function sporcuSonuclariniYukle() {
         html += '<span class="badge badge-' + (r.renk === 'green' ? 'green' : r.renk === 'orange' ? 'orange' : 'red') + '">' + r.durum + '</span>';
         html += '</div></div>';
         if (aciklamaObj) {
-          html += '<div style="font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
+          var acikId = 'acik_' + b.k + '_' + Math.floor(Math.random()*9999);
+          html += '<div style="margin-top:6px">';
+          html += '<button onclick="gizliAciklamaAc(this,&quot;' + b.k + '&quot;,&quot;psikoloji_profil&quot;,&quot;' + b.ad + '&quot;)" style="background:none;border:1px solid var(--gray-200);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--primary);cursor:pointer">▼ Oku</button>';
+          html += '<div style="display:none;font-size:12px;color:var(--gray-700);margin-top:6px;padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
           html += aciklamaObj.metin;
           html += '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklamaObj.tavsiye + '</span>';
-          html += '</div>';
+          html += '</div></div>';
         }
         html += '</div>';
       });
@@ -1995,10 +1998,13 @@ async function sporcuSonuclariniYukle() {
           html += '<span style="font-size:13px;font-weight:600">' + psikolojiAlanAdi(k) + '</span>';
           html += '<span class="badge badge-' + (r.renk === 'orange' ? 'orange' : 'red') + '">' + r.durum + '</span>';
           html += '</div>';
+          html += '<div style="margin-top:6px">';
+          html += '<button onclick="gizliAciklamaAc(this,&quot;' + k + '&quot;,&quot;psikoloji_recete&quot;,&quot;' + psikolojiAlanAdi(k) + '&quot;)" style="background:none;border:1px solid var(--gray-200);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--primary);cursor:pointer">▼ Oku</button>';
           var receteDiv = document.createElement('div');
-          receteDiv.style.cssText = 'font-size:12px;color:var(--gray-600);line-height:1.9;background:' + bgRenk + ';padding:10px;border-radius:8px';
+          receteDiv.style.cssText = 'display:none;font-size:12px;color:var(--gray-600);line-height:1.9;background:' + bgRenk + ';padding:10px;border-radius:8px;margin-top:6px';
           receteDiv.innerHTML = recete;
           html += receteDiv.outerHTML;
+          html += '</div>';
           html += '</div>';
         });
         html += '</div>'; // icerik kapanış
@@ -2032,9 +2038,12 @@ async function sporcuSonuclariniYukle() {
           html += '<span style="font-size:13px;font-weight:800;color:' + barRenk + '">' + gosterSkor + '</span>';
           html += '</div>';
           html += '<div class="ilerleme-kap" style="margin-bottom:8px"><div class="ilerleme-bar" style="width:' + gosterSkor + '%;background:' + barRenk + '"></div></div>';
-          html += '<div style="font-size:12px;color:var(--gray-700);padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6">';
+          html += '<div style="margin-top:4px">';
+          html += '<button onclick="gizliAciklamaAc(this,&quot;' + key + '&quot;,&quot;saha_performans&quot;,&quot;' + tanim.baslik + '&quot;)" style="background:none;border:1px solid var(--gray-200);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--primary);cursor:pointer">▼ Oku</button>';
+          html += '<div style="display:none;font-size:12px;color:var(--gray-700);padding:8px 10px;background:' + bgRenk + ';border-radius:8px;line-height:1.6;margin-top:6px">';
           html += aciklama.metin + '<br><br><span style="color:' + barRenk + ';font-weight:600">' + aciklama.tavsiye + '</span>';
           html += '</div></div>';
+          html += '</div>';
         });
         html += '</div>'; // icerik kapanış
         html += '</div>'; // kart kapanış
@@ -2509,6 +2518,19 @@ function gizliKartAc(btn, bolum, baslik) {
     btn.textContent = '▲ Kapat';
     // Okuma kaydı
     icerikOkumaKaydet(oturumKullanici.id, bolum, baslik).catch(function(){});
+  } else {
+    icerik.style.display = 'none';
+    btn.textContent = '▼ Oku';
+  }
+}
+
+function gizliAciklamaAc(btn, key, bolum, baslik) {
+  var icerik = btn.nextElementSibling;
+  if (!icerik) return;
+  if (icerik.style.display === 'none' || icerik.style.display === '') {
+    icerik.style.display = 'block';
+    btn.textContent = '▲ Kapat';
+    icerikOkumaKaydet(oturumKullanici.id, bolum + '_' + key, baslik).catch(function(){});
   } else {
     icerik.style.display = 'none';
     btn.textContent = '▼ Oku';
@@ -3550,24 +3572,23 @@ async function sporcuOkumalariniGoster(sporcuId, sporcuAd) {
     } else {
       // Bölüm bazında grupla
       var bolumMap = {};
-      var bolumAdlari = {
-        'psikoloji_profil': '🧠 Sporcu Öz Bildirim Formu',
-        'psikoloji_recete': '💊 Psikolojik Reçetem',
-        'saha_performans': '🧠 Saha Performans Profili'
-      };
       okumalar.forEach(function(o) {
-        if (!bolumMap[o.bolum]) bolumMap[o.bolum] = { sayac: 0, son: o.okuma_tarihi };
-        bolumMap[o.bolum].sayac++;
+        var key = o.bolum + '|||' + o.baslik;
+        if (!bolumMap[key]) bolumMap[key] = { bolum: o.bolum, baslik: o.baslik, sayac: 0, son: o.okuma_tarihi };
+        bolumMap[key].sayac++;
       });
 
-      Object.keys(bolumMap).forEach(function(b) {
-        var bilgi = bolumMap[b];
-        var ad = bolumAdlari[b] || b;
-        var renk = bilgi.sayac >= 5 ? '#057a55' : bilgi.sayac >= 2 ? '#e65100' : '#c81e1e';
-        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid var(--gray-100)">';
-        html += '<div><div style="font-size:13px;font-weight:600">' + ad + '</div>';
-        html += '<div style="font-size:11px;color:var(--gray-400)">Son: ' + tarihFormatla(bilgi.son) + '</div></div>';
-        html += '<div style="font-size:16px;font-weight:800;color:' + renk + '">' + bilgi.sayac + 'x</div>';
+      // Ana bölümler önce
+      var sirali = Object.values(bolumMap).sort(function(a,b) {
+        return new Date(b.son) - new Date(a.son);
+      });
+
+      sirali.forEach(function(bilgi) {
+        var renk = bilgi.sayac >= 5 ? '#057a55' : bilgi.sayac >= 2 ? '#e65100' : '#6b7280';
+        html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--gray-100)">';
+        html += '<div><div style="font-size:12px;font-weight:600">' + bilgi.baslik + '</div>';
+        html += '<div style="font-size:10px;color:var(--gray-400)">Son: ' + tarihFormatla(bilgi.son) + '</div></div>';
+        html += '<div style="font-size:15px;font-weight:800;color:' + renk + '">' + bilgi.sayac + 'x</div>';
         html += '</div>';
       });
     }
