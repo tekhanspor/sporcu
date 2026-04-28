@@ -3267,62 +3267,77 @@ function quizSoruGoster(index) {
   var soru = aktifQuiz.sorular[index];
   var koseRenk = soru.kose === 'mavi' ? '#1a56db' : '#c81e1e';
   var koseAd = soru.kose === 'mavi' ? '🔵 Mavi Köşe' : '🔴 Kırmızı Köşe';
-
-  var html = '<div style="background:var(--gray-50);border-radius:12px;padding:14px">';
-  html += '<div style="font-size:11px;font-weight:700;color:' + koseRenk + ';margin-bottom:6px">' + koseAd + ' ne yapmalı?</div>';
-  html += '<div style="font-size:14px;font-weight:700;color:var(--gray-800);margin-bottom:12px">' + soru.soru + '</div>';
   var harfler = ['A', 'B', 'C', 'D'];
+
+  // Mevcut popup varsa kaldır
+  var eskiPopup = document.getElementById('quizPopup');
+  if (eskiPopup) eskiPopup.remove();
+
+  var popup = document.createElement('div');
+  popup.id = 'quizPopup';
+  popup.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:flex-end;justify-content:center;padding:0';
+
+  var kart = document.createElement('div');
+  kart.style.cssText = 'background:white;border-radius:20px 20px 0 0;padding:20px 16px;width:100%;max-height:80vh;overflow-y:auto;animation:slideUp 0.3s ease';
+
+  var html = '<div style="width:40px;height:4px;background:var(--gray-200);border-radius:2px;margin:0 auto 14px"></div>';
+  html += '<div style="font-size:11px;font-weight:700;color:' + koseRenk + ';margin-bottom:6px">' + koseAd + ' ne yapmalı?</div>';
+  html += '<div style="font-size:15px;font-weight:700;color:var(--gray-800);margin-bottom:14px;line-height:1.4">' + soru.soru + '</div>';
   soru.siklar.forEach(function(sik, i) {
-    html += '<button onclick="quizCevapla(' + index + ',' + i + ')" style="width:100%;text-align:left;padding:10px 14px;margin-bottom:6px;border-radius:10px;border:2px solid var(--gray-200);background:white;cursor:pointer;font-size:13px;font-weight:600">';
-    html += '<span style="color:var(--primary);margin-right:8px">' + harfler[i] + ')</span>' + sik;
+    html += '<button onclick="quizCevapla(' + index + ',' + i + ')" style="width:100%;text-align:left;padding:12px 14px;margin-bottom:8px;border-radius:12px;border:2px solid var(--gray-200);background:white;cursor:pointer;font-size:13px;font-weight:600;display:block">';
+    html += '<span style="color:var(--primary);margin-right:8px;font-weight:800">' + harfler[i] + ')</span>' + sik;
     html += '</button>';
   });
-  html += '<div style="font-size:11px;color:var(--gray-400);text-align:center;margin-top:6px">Soru ' + (index+1) + ' / ' + aktifQuiz.sorular.length + '</div>';
-  html += '</div>';
+  html += '<div style="font-size:11px;color:var(--gray-400);text-align:center;margin-top:8px">Soru ' + (index+1) + ' / ' + aktifQuiz.sorular.length + '</div>';
 
-  document.getElementById('quizSoruDiv').innerHTML = html;
+  kart.innerHTML = html;
+  popup.appendChild(kart);
+  document.body.appendChild(popup);
 }
 
 function quizCevapla(soruIndex, secim) {
   var soru = aktifQuiz.sorular[soruIndex];
   var dogru = secim === soru.dogru;
   if (dogru) dogruSayisi++;
+  aktifSoruIndex++;
 
   var harfler = ['A', 'B', 'C', 'D'];
-  var html = '<div style="background:' + (dogru ? '#f0fdf4' : '#fef2f2') + ';border-radius:12px;padding:14px">';
-  html += '<div style="font-size:16px;font-weight:800;color:' + (dogru ? '#057a55' : '#c81e1e') + ';margin-bottom:8px">';
+  var popup = document.getElementById('quizPopup');
+  if (!popup) return;
+
+  var kart = popup.querySelector('div');
+  var html = '<div style="width:40px;height:4px;background:var(--gray-200);border-radius:2px;margin:0 auto 14px"></div>';
+  html += '<div style="font-size:20px;font-weight:800;color:' + (dogru ? '#057a55' : '#c81e1e') + ';margin-bottom:10px;text-align:center">';
   html += dogru ? '✅ Doğru!' : '❌ Yanlış!';
   html += '</div>';
   if (!dogru) {
-    html += '<div style="font-size:13px;color:var(--gray-700);margin-bottom:6px">Doğru cevap: <b>' + harfler[soru.dogru] + ') ' + soru.siklar[soru.dogru] + '</b></div>';
+    html += '<div style="font-size:13px;color:var(--gray-700);margin-bottom:8px;background:#f0fdf4;padding:10px;border-radius:8px">Doğru cevap: <b>' + harfler[soru.dogru] + ') ' + soru.siklar[soru.dogru] + '</b></div>';
   }
   if (soru.aciklama) {
-    html += '<div style="font-size:12px;color:var(--gray-600);background:white;padding:8px 10px;border-radius:8px;margin-bottom:10px;line-height:1.6">💡 ' + soru.aciklama + '</div>';
+    html += '<div style="font-size:13px;color:var(--gray-600);background:var(--gray-50);padding:10px 12px;border-radius:8px;margin-bottom:12px;line-height:1.7">💡 ' + soru.aciklama + '</div>';
   }
-
-  aktifSoruIndex++;
 
   if (aktifSoruIndex >= aktifQuiz.sorular.length) {
-    // Quiz bitti
     var oran = Math.round((dogruSayisi / aktifQuiz.sorular.length) * 100);
-    html += '<div style="text-align:center;padding:10px">';
-    html += '<div style="font-size:20px;font-weight:800;color:' + (oran >= 70 ? '#057a55' : oran >= 50 ? '#e65100' : '#c81e1e') + '">' + oran + '%</div>';
+    html += '<div style="text-align:center;padding:10px 0">';
+    html += '<div style="font-size:32px;font-weight:800;color:' + (oran >= 70 ? '#057a55' : oran >= 50 ? '#e65100' : '#c81e1e') + '">' + oran + '%</div>';
     html += '<div style="font-size:13px;color:var(--gray-600);margin:4px 0">' + dogruSayisi + ' / ' + aktifQuiz.sorular.length + ' doğru</div>';
-    html += '<div style="font-size:12px;color:var(--gray-500);margin-bottom:12px">' + (oran >= 70 ? '🏆 Harika taktik okuma!' : oran >= 50 ? '👍 İyi gidiyorsun' : '💪 Antrenmanla gelişeceksin') + '</div>';
-    html += '<button class="btn btn-primary" onclick="sporcuQuizYukle()">Quizlere Dön</button>';
+    html += '<div style="font-size:13px;margin-bottom:16px">' + (oran >= 70 ? '🏆 Harika taktik okuma!' : oran >= 50 ? '👍 İyi gidiyorsun' : '💪 Antrenmanla gelişeceksin') + '</div>';
+    html += '<button class="btn btn-primary" style="width:100%" onclick="sporcuQuizYukle()">Quizlere Dön</button>';
     html += '</div>';
-    // Sonucu kaydet
     quizCevapKaydet(oturumKullanici.id, aktifQuiz.id, dogruSayisi, aktifQuiz.sorular.length).catch(function(){});
   } else {
-    html += '<button class="btn btn-primary" onclick="quizDevam()" style="width:100%">▶ Devam Et</button>';
+    html += '<button class="btn btn-primary" style="width:100%" onclick="quizDevam()">▶ Devam Et</button>';
   }
-  html += '</div>';
 
-  document.getElementById('quizSoruDiv').innerHTML = html;
+  kart.innerHTML = html;
 }
 
 function quizDevam() {
-  document.getElementById('quizSoruDiv').innerHTML = '';
-  ytPlayer.playVideo();
-  quizSoruKontrol();
+  var popup = document.getElementById('quizPopup');
+  if (popup) popup.remove();
+  setTimeout(function() {
+    ytPlayer.playVideo();
+    quizSoruKontrol();
+  }, 1500);
 }
