@@ -549,3 +549,8 @@ canvas { max-width: 100%; }
   .form-row { grid-template-columns: 1fr; }
   .istat-grid { grid-template-columns: 1fr; }
 }
+
+@keyframes slideUp {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
