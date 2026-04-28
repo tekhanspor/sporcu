@@ -1923,9 +1923,8 @@ async function sporcuSonuclariniYukle() {
       ];
 
       html += '<div class="kart">';
-      html += '<div class="kart-baslik" style="margin:0">🧠 Sporcu Öz Bildirim Formu — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
-      html += '</div>';
-      html += '<div style="display:none">';
+      html += '<div class="kart-baslik">🧠 Sporcu Öz Bildirim Formu — ' + tarihFormatla(anketler[0].anket_tarihi) + '</div>';
+      html += '<div>';
       boyutlar.forEach(function(b) {
         var spVal = sp[b.k];
         if (!spVal) return;
@@ -1981,9 +1980,8 @@ async function sporcuSonuclariniYukle() {
       });
       if (spZayiflar.length > 0) {
         html += '<div class="kart">';
-        html += '<div class="kart-baslik" style="margin:0">💊 Psikolojik Reçetem</div>';
-        html += '</div>';
-        html += '<div style="display:none">';
+        html += '<div class="kart-baslik">💊 Psikolojik Reçetem</div>';
+        html += '<div>';
         spZayiflar.forEach(function(k) {
           var r = psikolojiBoyutDurumu(k, p2[k]);
           var barRenk = r.renk === 'orange' ? '#e65100' : '#c81e1e';
@@ -2014,9 +2012,8 @@ async function sporcuSonuclariniYukle() {
       var skorlar2 = sahaPerfSkorlari(sp2);
       if (skorlar2) {
         html += '<div class="kart">';
-        html += '<div class="kart-baslik" style="margin:0">🧠 Saha Performans Profilim</div>';
-        html += '</div>';
-        html += '<div style="display:none">';
+        html += '<div class="kart-baslik">🧠 Saha Performans Profilim</div>';
+        html += '<div>';
         Object.keys(SAHA_PERF_SPORCU).forEach(function(key) {
           var tanim = SAHA_PERF_SPORCU[key];
           var skor = skorlar2[key];
